@@ -1,0 +1,77 @@
+What's next?
+ - Keyboard navigation,
+   - Auto- or always-select formula box, too.
+ - Better formula display/input,
+ - Data structures that can handle references cross-table?
+   - Just need a "dot" operator I think. And a "call"...
+ - Tables :-(
+
+
+
+OK, tech design for tables :-).
+  - At first we can have n global "templates". All templates are global.
+  - Extend parser to allow `func(param=expr, ...)`. Recursive?
+  - When a formula is just `func(params)?` we put a `templateId` on it.
+  - Templates have names, heh.
+
+
+
+
+What do we need?
+
+Sub-table stuff:
+ - Internal scrolling?
+ - Display of complex data types:
+  - Arrays,
+  - Objects,
+  - "Tables".
+
+Compilation
+
+Collaboration...
+
+Cell formatting
+
+
+I think I've had a change of heart. Let's do this properly:
+ - Every page is a function,
+ - Every cell is returned by id (or name?)
+ - We call the function once and wire up the contents.
+
+What about interop?
+ - Later. "Compat import/export" etc.
+What about ever collecting garbage?
+ - Later. "Mark variables as in/out."
+What about closures?
+ - They're fine.
+
+
+
+What's next after that? Ideas:
+ - A proper formula box,
+ - Better formula parsing,
+ - Thinking about the data model a bit more.
+   - "template" property alongside value/error?
+ - Thinking about laziness and/or conditional evaluation.
+    - Possibly only evaluate functions when we use the `.` operator.
+      - That way we can pass functions around without evaluating them.
+      - Oh, is that _real_ laziness? It nests, after all...
+      - We _do_ want the global sheets to evaluate, though.
+        Let's not do "real" laziness. It won't translate into JS anyway.
+        "Fake" laziness ("`.` means call") is compatible with real JS kinda.
+        Definitely memoize though.
+      Is it good enough for conditional execution and side-effects? Maybe not.
+      It's confusing. How would we write `fib`?
+      Too confusing.
+      Make a special form. Either:
+       - a `cond` cell format, or
+       - a "delay" syntax. I like `[]` because it looks like a cell :-)
+        - `[1].value`, or `(){ }`. lazy() is ok too...
+          `if(n < 2, 1, lazy(fib(n-1) + fib(n-2)))` if it can work.
+          might need to say `if(.., {value: 1}, lazy(...)).value` though :-(
+          Then I like `if(.., [1], [...]).value`.
+          What about actual arrays, then? We could use $[] I guess... or #[]
+          Hmm, I kinda like that for an anonymous function :-).
+          It could literally make an anonymous function? "Click on the #"
+
+Great, I guess that works. (Productive...)

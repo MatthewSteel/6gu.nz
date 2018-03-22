@@ -1,0 +1,30 @@
+.Cell {
+  display: flex;
+  flex-direction: column;
+  background-color: #FDFDFD;
+  font: helvetica;
+  margin: 1px;
+  flex: 1 1 auto;
+  min-height: 4ex;
+}
+
+.Cell .Name {
+  flex: 0 1 20px;
+  margin: 1px;
+  color: #55C;
+  background-color: #FAFAFA;
+  border-bottom: 1px solid #F4F4F4
+}
+
+.Cell .Value {
+  flex: 1 1 auto;
+  color: #666;
+  margin: 0px 1px 1px;
+  background-color: #FDFDFD;
+}
+
+.Cell.selected {
+  border: 1px solid blue;
+  margin: 0px;
+}
+
