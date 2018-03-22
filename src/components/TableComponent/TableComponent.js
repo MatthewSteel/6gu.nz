@@ -7,7 +7,7 @@ import {
 } from '../../selectors/formulas/formulas';
 import CellComponent from '../CellComponent/CellComponent';
 import FormulaComponent from '../FormulaComponent/FormulaComponent';
-import { setFormula } from '../../redux/store';
+import { deleteCell, setFormula } from '../../redux/store';
 import './TableComponent.css';
 
 const mapStateToProps = (state, ownProps) => {
@@ -21,6 +21,7 @@ const mapStateToProps = (state, ownProps) => {
 };
 
 const mapDispatchToProps = dispatch => ({
+  deleteCellProp: cellId => dispatch(deleteCell(cellId)),
   setCellFormula: (tableId, cellId, formula) => dispatch(setFormula(tableId, cellId, formula)),
 });
 
@@ -47,8 +48,13 @@ class TableComponent extends Component {
   }
 
   setFormula(stringFormula) {
-    const { tableId, setCellFormula } = this.props;
-    setCellFormula(tableId, this.state.selection, stringFormula);
+    const { deleteCellProp, tableId, setCellFormula } = this.props;
+    const { selection } = this.state;
+    if (stringFormula === '') {
+      deleteCellProp(selection);
+    } else {
+      setCellFormula(tableId, selection, stringFormula);
+    }
   }
 
   selectedCellId(selection) {
