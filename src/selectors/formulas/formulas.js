@@ -1,9 +1,11 @@
 import { createSelector } from 'reselect';
 import store from '../../redux/store';
 
-const getTableCells = state => [].concat(...state.tables.map(({ cells }) => cells));
-const getTableCellsById = createSelector(
-  getTableCells,
+const getCells = state => state.cells;
+const getTables = state => state.tables;
+
+const getCellsById = createSelector(
+  getCells,
   (cells) => {
     const ret = {};
     cells.forEach((cell) => { ret[cell.id] = cell; });
@@ -11,8 +13,34 @@ const getTableCellsById = createSelector(
   },
 );
 
-const getTableCellsByName = createSelector(
-  getTableCells,
+const getCellsByTableIdHelper = createSelector(
+  getCells,
+  (cells) => {
+    const ret = {};
+    cells.forEach((cell) => {
+      if (!ret[cell.tableId]) ret[cell.tableId] = [];
+      ret[cell.tableId].push(cell);
+    });
+    return ret;
+  },
+);
+
+export const getTablesById = createSelector(
+  getTables,
+  (tables) => {
+    const ret = {};
+    tables.forEach((table) => { ret[table.id] = table; });
+    return ret;
+  },
+);
+
+export const getCellsByTableId = (state, tableId) => {
+  const cellsByTableId = getCellsByTableIdHelper(state);
+  return cellsByTableId[tableId] || [];
+};
+
+const getCellsByName = createSelector(
+  getCells,
   (cells) => {
     const ret = {};
     cells.forEach((cell) => { ret[cell.name] = cell; });
@@ -21,7 +49,7 @@ const getTableCellsByName = createSelector(
 );
 
 const getCellFormulaGraph = createSelector(
-  getTableCells,
+  getCells,
   (cells) => {
     const graph = {};
     cells.forEach(({ id, formula }) => {
@@ -65,16 +93,16 @@ export const getTopoSortedCellIds = createSelector(
 
 
 export const getCellValuesById = createSelector(
-  getTableCellsById,
+  getCellsById,
   getTopoSortedCellIds,
-  (tableCellsById, sortedCellIds) => {
+  (cellsById, sortedCellIds) => {
     const ret = {};
 
     // eslint-disable-next-line no-unused-vars
     const pleaseThrow = (e) => { throw e; }; // used in eval
 
     sortedCellIds.forEach((id) => {
-      const { formula } = tableCellsById[id];
+      const { formula } = cellsById[id];
       const invalidRefs = formula
         .map(({ ref }) => ref).filter(Boolean)
         .filter(ref => !(ref in ret));
@@ -198,10 +226,10 @@ const parseTokens = (tokens) => {
 
 
 const subNamesForRefs = (nameFormula) => {
-  const tableCellsByName = getTableCellsByName(store.getState());
+  const cellsByName = getCellsByName(store.getState());
   return nameFormula.map((term) => {
     if (term.name) {
-      const cell = tableCellsByName[term.name];
+      const cell = cellsByName[term.name];
       if (!cell) return { badRef: term.name };
       return { ref: cell.id };
     }
@@ -218,17 +246,17 @@ export const parseFormula = (s) => {
   };
 };
 
-const unparseTerm = (term, tableCellsById) => {
+const unparseTerm = (term, cellsById) => {
   if (term.value !== undefined) return JSON.stringify(term.value);
   if (term.op) return term.op;
-  if (term.ref) return tableCellsById[term.ref].name;
+  if (term.ref) return cellsById[term.ref].name;
   if (term.badRef) return term.badRef;
   throw new Error('Unknown term type');
 };
 
 export const stringFormula = (cellId) => {
-  const tableCellsById = getTableCellsById(store.getState());
-  const cell = tableCellsById[cellId];
+  const cellsById = getCellsById(store.getState());
+  const cell = cellsById[cellId];
   if (!cell) return '';
 
   const retToJoin = [];
@@ -237,7 +265,7 @@ export const stringFormula = (cellId) => {
   }
   retToJoin.push('=');
   cell.formula.forEach((term) => {
-    retToJoin.push(unparseTerm(term, tableCellsById));
+    retToJoin.push(unparseTerm(term, cellsById));
   });
   return retToJoin.join(' ');
 };

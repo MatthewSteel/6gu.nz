@@ -1,6 +1,10 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
-import { getCellValuesById } from '../../selectors/formulas/formulas';
+import {
+  getCellsByTableId,
+  getCellValuesById,
+  getTablesById,
+} from '../../selectors/formulas/formulas';
 import CellComponent from '../CellComponent/CellComponent';
 import FormulaComponent from '../FormulaComponent/FormulaComponent';
 import { setFormula } from '../../redux/store';
@@ -8,13 +12,12 @@ import './TableComponent.css';
 
 const mapStateToProps = (state, ownProps) => {
   const { tableId } = ownProps;
-  const { tables } = state;
-  const table = tables.find(({ id }) => id === tableId);
-  const cellValuesById = getCellValuesById(state);
-  return {
-    cellValuesById,
-    tableData: table,
+  const ret = {
+    cellValuesById: getCellValuesById(state),
+    table: getTablesById(state)[tableId],
+    cells: getCellsByTableId(state, tableId),
   };
+  return ret;
 };
 
 const mapDispatchToProps = dispatch => ({
@@ -44,12 +47,12 @@ class TableComponent extends Component {
   }
 
   setFormula(stringFormula) {
-    const { tableData, setCellFormula } = this.props;
-    setCellFormula(tableData.id, this.state.selection, stringFormula);
+    const { tableId, setCellFormula } = this.props;
+    setCellFormula(tableId, this.state.selection, stringFormula);
   }
 
   selectedCellId(selection) {
-    const { cells } = this.props.tableData;
+    const { cells } = this.props;
     const selectedCell = cells.find(cell => isWithin(selection, cell));
     return selectedCell ?
       selectedCell.id :
@@ -57,16 +60,16 @@ class TableComponent extends Component {
   }
 
   render() {
-    const { tableData, cellValuesById } = this.props;
+    const { cells, cellValuesById, table } = this.props;
     const { selection } = this.state;
     const style = {
-      gridTemplateColumns: 'auto '.repeat(tableData.width).trim(),
-      gridTemplateRows: 'auto '.repeat(tableData.height).trim(),
+      gridTemplateColumns: 'auto '.repeat(table.width).trim(),
+      gridTemplateRows: 'auto '.repeat(table.height).trim(),
     };
 
     const drawnCells = new Set();
 
-    const filledCells = tableData.cells.map((cell) => {
+    const filledCells = cells.map((cell) => {
       const { id, x, y, width, height, name } = cell;
 
       for (let dy = 1; dy <= height; ++dy) {
@@ -93,8 +96,8 @@ class TableComponent extends Component {
     });
 
     const emptyCells = [];
-    for (let cy = 1; cy <= tableData.height; ++cy) {
-      for (let cx = 1; cx <= tableData.width; ++cx) {
+    for (let cy = 1; cy <= table.height; ++cy) {
+      for (let cx = 1; cx <= table.width; ++cx) {
         const place = `_${cy}_${cx}`;
         if (drawnCells.has(place)) continue;
         const cellSelected = place === selection;

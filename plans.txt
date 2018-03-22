@@ -14,10 +14,30 @@ OK, tech design for tables :-).
   - When a formula is just `func(params)?` we put a `templateId` on it.
   - Templates have names, heh.
 
+Hmm, there's some annoying stuff around default args, between-sheet references, functions and circular references. In v0 I'm going to have no recursion, function calls happen when they seem to happen, dots being dots, etc.
+
+
+What do things look like from top-level?
+
+Compile sheets to functions ahead of time and store them in an object. That's easy enough.
+When we call a function, we say `{ ...valuesForSheet, ...args }` where `valuesForSheet` has been filled in.
+What I'm most worried about is top-level stuff -- can we compile it and reuse it? Kinda -- if terms are removed, the tsort stays intact. If terms are inserted, the ordering need only change between the two points (and we can run things from that point on.) We can chunk the computation and it can be JITted just fine.
+
+(When a node is added, we're lucky -- we can do with a linear scan and just put it "as late as possible" into the computation DAG.)
+
+Sounds like a decent plan.
+
+Steps:
+  1. Cross-sheet and (in-global-self-sheet) formulas made explicit,
+  2. Cell-deletion working (somehow?),
+  3. Compile functions,
+  4. Put functions and calls into the graph,
+
+Boy a lot of stuff is going to get rewritten when we need to make this fast...
 
 
 
-What do we need?
+What else do we need?
 
 Sub-table stuff:
  - Internal scrolling?
