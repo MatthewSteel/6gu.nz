@@ -256,6 +256,10 @@ const subNamesForRefs = (nameFormula, tableId) => {
       );
       const cell = tableCellsByName[refCellName];
       if (!cell) return { badRef: term.name };
+
+      if (refTableName) {
+        return { ref: cell.id, tableRef: refTableId };
+      }
       return { ref: cell.id };
     }
     return term;
@@ -271,16 +275,22 @@ export const parseFormula = (s, tableId) => {
   };
 };
 
-const unparseTerm = (term, cellsById) => {
+const unparseTerm = (term, cellsById, tablesById) => {
   if (term.value !== undefined) return JSON.stringify(term.value);
   if (term.op) return term.op;
-  if (term.ref) return cellsById[term.ref].name;
+  if (term.ref) {
+    if (term.tableRef) {
+      return `${tablesById[term.tableRef].name}.${cellsById[term.ref].name}`
+    }
+    return cellsById[term.ref].name;
+  }
   if (term.badRef) return term.badRef;
   throw new Error('Unknown term type');
 };
 
 export const stringFormula = (cellId) => {
   const cellsById = getCellsById(store.getState());
+  const tablesById = getTablesById(store.getState());
   const cell = cellsById[cellId];
   if (!cell) return '';
 
@@ -290,7 +300,7 @@ export const stringFormula = (cellId) => {
   }
   retToJoin.push('=');
   cell.formula.forEach((term) => {
-    retToJoin.push(unparseTerm(term, cellsById));
+    retToJoin.push(unparseTerm(term, cellsById, tablesById));
   });
   return retToJoin.join(' ');
 };
