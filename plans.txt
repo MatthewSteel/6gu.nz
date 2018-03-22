@@ -35,6 +35,18 @@ Steps:
 Boy a lot of stuff is going to get rewritten when we need to make this fast...
 
 
+Hmm, there's an annoying normalisation question -- all "far" references are global, but "near" references can be either local or global.
+
+For the moment let's make all near references local. :-) :-(.
+
+I think we need to write a proper parser now :-(((.
+
+
+
+
+
+
+
 
 What else do we need?
 

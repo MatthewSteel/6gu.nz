@@ -84,7 +84,7 @@ const rootReducer = (state, action) => {
     const existingCell = state.cells.find(({ id }) => id === cellId);
 
     const cell = existingCell || defaultCellForLocation(tableId, cellId);
-    const newFormula = parseFormula(stringFormula);
+    const newFormula = parseFormula(stringFormula, cell.tableId);
 
     return {
       ...state,

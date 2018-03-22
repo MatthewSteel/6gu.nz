@@ -25,6 +25,23 @@ const getCellsByTableIdHelper = createSelector(
   },
 );
 
+const getCellsByNameForTableIdHelper = createSelector(
+  getCells,
+  (cells) => {
+    const ret = {};
+    cells.forEach((cell) => {
+      if (!ret[cell.tableId]) ret[cell.tableId] = {};
+      ret[cell.tableId][cell.name] = cell;
+    });
+    return ret;
+  },
+);
+
+const getCellsByNameForTableId = (state, tableId) => {
+  const cellsByTableId = getCellsByNameForTableIdHelper(state);
+  return cellsByTableId[tableId] || {};
+};
+
 export const getTablesById = createSelector(
   getTables,
   (tables) => {
@@ -39,11 +56,11 @@ export const getCellsByTableId = (state, tableId) => {
   return cellsByTableId[tableId] || [];
 };
 
-const getCellsByName = createSelector(
-  getCells,
-  (cells) => {
+const getTablesByName = createSelector(
+  getTables,
+  (tables) => {
     const ret = {};
-    cells.forEach((cell) => { ret[cell.name] = cell; });
+    tables.forEach((table) => { ret[table.name] = table; });
     return ret;
   },
 );
@@ -134,9 +151,11 @@ export const getCellValuesById = createSelector(
 
 
 const canStartName = c => c.match(/^[a-zA-Z_]$/u);
-const isNameChar = c => c.match(/^[0-9a-zA-Z_]$/u);
+const isNameChar = c => c.match(/^[0-9a-zA-Z_.]$/u);
 
 const lexName = (input, i) => {
+  // TODO: We shouldn't do `.` parsing in the lexer, we should do it in the
+  // parser...
   let j;
   for (j = i; j < input.length && isNameChar(input.charAt(j)); ++j);
   return { matchEnd: j, token: { name: input.substring(i, j) } };
@@ -198,38 +217,44 @@ const lexFormula = (input) => {
   return ret;
 };
 
-const parseTokens = (tokens) => {
-  const assignments = tokens.filter(token => token.assignment);
-  if (assignments.length > 1) {
-    throw new Error('Only one assignment allowed in a formula');
-  }
-  if (assignments.length === 1) {
-    if (tokens[0].assignment) return { formula: tokens.slice(1) };
-    else if (tokens[1].assignment) {
-      if (!tokens[0].name) {
-        throw new Error('Assignment operator can only follow a name.');
-      }
-      if (tokens.length === 2) {
-        // No formula after the assignment operator
-        // Best to have something...
-        tokens.push({ value: 0 });
-      }
-      return {
-        name: tokens[0].name,
-        formula: tokens.slice(2),
-      };
-    }
-    throw new Error('Assignment in the middle of a formula');
-  }
-  return { formula: tokens };
+const parseExpression = (tokens) => {
+  if (tokens.length === 0) return [{ value: 0 }];
+  // TODO: proper parsing and error-handling.
+  return tokens;
 };
 
+const parseTokens = (tokens) => {
+  // There are two legal forms for formulas
+  //  1. name? = expression?
+  //  2. expression
+  if (tokens[0] && tokens[0].assignment) {
+    return { formula: parseExpression(tokens.slice(1)) };
+  }
+  if (tokens[1] && tokens[1].assignment && tokens[0].name) {
+    return {
+      name: tokens[0].name,
+      formula: parseExpression(tokens.slice(2)),
+    };
+  }
+  return { formula: parseExpression(tokens) };
+};
 
-const subNamesForRefs = (nameFormula) => {
-  const cellsByName = getCellsByName(store.getState());
+const subNamesForRefs = (nameFormula, tableId) => {
+  const tablesByName = getTablesByName(store.getState());
   return nameFormula.map((term) => {
     if (term.name) {
-      const cell = cellsByName[term.name];
+      const parts = term.name.split('.');
+      if (parts.length > 2) return { badRef: term.name };
+      const refCellName = parts.pop();
+      const refTableName = parts.pop();
+      const refTableId = refTableName ? tablesByName[refTableName].id : tableId;
+      if (!refTableId) return { badRef: term.name };
+
+      const tableCellsByName = getCellsByNameForTableId(
+        store.getState(),
+        refTableId,
+      );
+      const cell = tableCellsByName[refCellName];
       if (!cell) return { badRef: term.name };
       return { ref: cell.id };
     }
@@ -237,12 +262,12 @@ const subNamesForRefs = (nameFormula) => {
   });
 };
 
-export const parseFormula = (s) => {
+export const parseFormula = (s, tableId) => {
   const nameFormula = parseTokens(lexFormula(s));
   if (!nameFormula.formula) return nameFormula; // maybe just a name?
   return {
     ...nameFormula,
-    formula: subNamesForRefs(nameFormula.formula),
+    formula: subNamesForRefs(nameFormula.formula, tableId),
   };
 };
 
