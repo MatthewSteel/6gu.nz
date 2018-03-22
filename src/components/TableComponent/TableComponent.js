@@ -25,8 +25,7 @@ const mapDispatchToProps = dispatch => ({
   setCellFormula: (tableId, cellId, formula) => dispatch(setFormula(tableId, cellId, formula)),
 });
 
-const isWithin = (selection, cell) => {
-  const [selY, selX] = selection;
+const isWithin = (selY, selX, cell) => {
   const { x, y, width, height } = cell;
   return (
     y <= selY && selY < y + height &&
@@ -37,14 +36,30 @@ const isWithin = (selection, cell) => {
 class TableComponent extends Component {
   constructor(props) {
     super(props);
-    this.state = { selection: [0, 0] };
     this.selectedCellId = this.selectedCellId.bind(this);
     this.setSelection = this.setSelection.bind(this);
     this.setFormula = this.setFormula.bind(this);
+    this.updateSelection = this.updateSelection.bind(this);
+
+    this.state = {
+      selY: 0,
+      selX: 0,
+      selection: this.selectedCellId(0, 0),
+    };
   }
 
-  setSelection(y, x) {
-    this.setState({ selection: this.selectedCellId([y, x]) });
+  componentDidUpdate() {
+    if (!this.state.selection) {
+      this.updateSelection();
+    }
+  }
+
+  setSelection(selY, selX) {
+    this.setState({
+      selY,
+      selX,
+      selection: this.selectedCellId(selY, selX),
+    });
   }
 
   setFormula(stringFormula) {
@@ -55,14 +70,20 @@ class TableComponent extends Component {
     } else {
       setCellFormula(tableId, selection, stringFormula);
     }
+    this.setState({ selection: null });
   }
 
-  selectedCellId(selection) {
+  selectedCellId(selY, selX) {
     const { cells } = this.props;
-    const selectedCell = cells.find(cell => isWithin(selection, cell));
+    const selectedCell = cells.find(cell => isWithin(selY, selX, cell));
     return selectedCell ?
       selectedCell.id :
-      `_${selection[0] + 1}_${selection[1] + 1}`;
+      `_${selY + 1}_${selX + 1}`;
+  }
+
+  updateSelection() {
+    const { selY, selX } = this.state;
+    this.setState({ selection: this.selectedCellId(selY, selX) });
   }
 
   render() {
@@ -125,7 +146,8 @@ class TableComponent extends Component {
       }
     }
     return (
-      <div>
+      <div className="TableContainer">
+        <div className="TableTitle">{table.name}</div>
         <div
           className="Table"
           style={style}

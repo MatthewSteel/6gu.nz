@@ -29,9 +29,8 @@ Sounds like a decent plan.
 
 Steps:
   1. Cross-sheet and (in-global-self-sheet) formulas made explicit,
-  2. Cell-deletion working (somehow?),
-  3. Compile functions,
-  4. Put functions and calls into the graph,
+  2. Compile functions (up-front),
+  3. Put functions and calls into the graph,
 
 Boy a lot of stuff is going to get rewritten when we need to make this fast...
 

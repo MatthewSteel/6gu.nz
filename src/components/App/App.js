@@ -8,6 +8,7 @@ const App = () => (
   <Provider store={store}>
     <div className="App">
       <TableComponent tableId="table0" />
+      <TableComponent tableId="table1" />
     </div>
   </Provider>
 );

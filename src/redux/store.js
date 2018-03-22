@@ -8,6 +8,11 @@ const initialState = {
     name: 'table0',
     width: 6,
     height: 6,
+  }, {
+    id: 'table1',
+    name: 'table1',
+    width: 6,
+    height: 6,
   }],
   cells: [{
     id: 'cell0',
@@ -102,6 +107,7 @@ const rootReducer = (state, action) => {
     const { cellId } = action.payload;
     const existingCell = state.cells.find(({ id }) => id === cellId);
 
+    if (!existingCell) return state;
     const cellName = existingCell.name;
 
     return {

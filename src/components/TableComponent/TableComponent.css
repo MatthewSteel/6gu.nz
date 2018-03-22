@@ -1,3 +1,15 @@
+.TableContainer {
+  display: flex;
+  flex-direction: column;
+  margin: 20px;
+}
+
+.TableTitle {
+  font-weight: 700;
+  color: #55C;
+  background-color: #EDEDFF;
+}
+
 .Table {
   text-align: center;
   display: grid;
