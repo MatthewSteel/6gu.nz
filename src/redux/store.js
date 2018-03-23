@@ -1,6 +1,11 @@
 import { createStore } from 'redux';
 import uuidv4 from 'uuid-v4';
-import { parseFormula } from '../selectors/formulas/formulas';
+import {
+  getCellsById,
+  getTablesById,
+  parseFormula,
+  unparseTerm,
+} from '../selectors/formulas/formulas';
 
 const initialState = {
   tables: [{
@@ -108,7 +113,9 @@ const rootReducer = (state, action) => {
     const existingCell = state.cells.find(({ id }) => id === cellId);
 
     if (!existingCell) return state;
-    const cellName = existingCell.name;
+
+    const cellsById = getCellsById(state);
+    const tablesById = getTablesById(state);
 
     return {
       ...state,
@@ -118,7 +125,7 @@ const rootReducer = (state, action) => {
           ...cell,
           formula: cell.formula.map((term) => {
             if (term.ref && term.ref === cellId) {
-              return { badRef: cellName };
+              return { badRef: unparseTerm(term, cellsById, tablesById) };
             }
             return term;
           }),

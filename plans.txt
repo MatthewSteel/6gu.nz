@@ -1,11 +1,13 @@
-What's next?
- - Keyboard navigation,
-   - Auto- or always-select formula box, too.
- - Better formula display/input,
- - Data structures that can handle references cross-table?
-   - Just need a "dot" operator I think. And a "call"...
- - Tables :-(
-
+The long list:
+ - better keyboard nav,
+ - better formula display/input,
+ - complex data structures :-(
+ - compiled functions and calls
+ - storage
+ - js interop,
+ - collaboration,
+ - dynamic sheet creation etc.
+ - custom cell formatting incl charts.
 
 
 OK, tech design for tables :-).
@@ -28,9 +30,8 @@ What I'm most worried about is top-level stuff -- can we compile it and reuse it
 Sounds like a decent plan.
 
 Steps:
-  1. Cross-sheet and (in-global-self-sheet) formulas made explicit,
-  2. Compile functions (up-front),
-  3. Put functions and calls into the graph,
+  1. Compile functions (up-front),
+  2. Put functions and calls into the graph,
 
 Boy a lot of stuff is going to get rewritten when we need to make this fast...
 

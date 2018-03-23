@@ -4,7 +4,7 @@ import store from '../../redux/store';
 const getCells = state => state.cells;
 const getTables = state => state.tables;
 
-const getCellsById = createSelector(
+export const getCellsById = createSelector(
   getCells,
   (cells) => {
     const ret = {};
@@ -275,12 +275,12 @@ export const parseFormula = (s, tableId) => {
   };
 };
 
-const unparseTerm = (term, cellsById, tablesById) => {
+export const unparseTerm = (term, cellsById, tablesById) => {
   if (term.value !== undefined) return JSON.stringify(term.value);
   if (term.op) return term.op;
   if (term.ref) {
     if (term.tableRef) {
-      return `${tablesById[term.tableRef].name}.${cellsById[term.ref].name}`
+      return `${tablesById[term.tableRef].name}.${cellsById[term.ref].name}`;
     }
     return cellsById[term.ref].name;
   }
