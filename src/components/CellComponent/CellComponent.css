@@ -13,7 +13,8 @@
   margin: 1px;
   color: #55C;
   background-color: #FAFAFA;
-  border-bottom: 1px solid #F4F4F4
+  border-bottom: 1px solid #F4F4F4;
+  text-overflow: ellipsis;
 }
 
 .Cell .Value {
@@ -21,6 +22,7 @@
   color: #666;
   margin: 0px 1px 1px;
   background-color: #FDFDFD;
+  text-overflow: ellipsis;
 }
 
 .Cell.selected {

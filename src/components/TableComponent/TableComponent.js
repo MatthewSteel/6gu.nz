@@ -33,6 +33,11 @@ const isWithin = (selY, selX, cell) => {
   );
 };
 
+const defaultFormatter = (value) => {
+  if (typeof value === 'string') return value;
+  return JSON.stringify(value);
+};
+
 class TableComponent extends Component {
   constructor(props) {
     super(props);
@@ -115,7 +120,7 @@ class TableComponent extends Component {
           height={height}
           name={name}
           value={cellValuesById[id]}
-          fmt={v => v}
+          fmt={defaultFormatter}
           selected={selected}
           setSelection={this.setSelection}
         />
@@ -138,7 +143,7 @@ class TableComponent extends Component {
             height={1}
             name=""
             value="&nbsp;"
-            fmt={v => v}
+            fmt={defaultFormatter}
             selected={cellSelected}
             setSelection={this.setSelection}
           />
