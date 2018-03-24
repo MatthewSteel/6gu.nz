@@ -113,22 +113,22 @@ export const getTopoSortedCellIds = createSelector(
 const getCell = (id, things) => things[id].value;
 
 
-// eslint-disable-next-line no-unused-vars
-const call = (thing, args, globals) => {
-  const { value } = thing;
-  if (value !== undefined && value.f && typeof value.f === 'function') {
-    return value.f(args, globals, value.f);
-  }
-  throw new Error(thing.error || 'Not callable');
-};
-
-
 const expandExpr = (formula, cell, cellsById, inFunction) => {
   const expandedTerms = formula.map(term =>
     // eslint-disable-next-line no-use-before-define
     expandTerm(term, cell, cellsById, inFunction));
   return expandedTerms.join(' ');
 };
+
+// NOTE: We are ok with "undefined is not a function", but would rather not
+// leak "cannot read property 'f' of undefined"
+// eslint-disable-next-line no-unused-vars
+const call = (value = {}, args, globals) => value.f(args, globals, value.f);
+
+// NOTE: We are ok with "cannot read property '`key`' of undefined" but would
+// rather not leak "cannot read property 'data' of undefined"
+// eslint-disable-next-line no-unused-vars
+const lookup = (value = {}, key) => value.data[key];
 
 
 const expandTerm = (term, cell, cellsById, inFunction) => {
@@ -141,6 +141,7 @@ const expandTerm = (term, cell, cellsById, inFunction) => {
   }
   if (term.call) {
     const expandedCallee = expandTerm(term.call);
+    // TODO: actually assignments. JSON.stringify(name): expr.
     const expandedArgs = term.args.map(argExpr =>
       expandExpr(argExpr, cell, cellsById, inFunction));
     const joinedArgs = `{${expandedArgs.join(', ')}}`;
