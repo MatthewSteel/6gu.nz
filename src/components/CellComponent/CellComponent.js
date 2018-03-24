@@ -2,6 +2,16 @@ import React, { Component } from 'react';
 import classNames from 'classnames';
 import './CellComponent.css';
 
+const getCellContents = (value, fmt) => {
+  if (!value) {
+    return { formattedValue: 'Err: \u21BB', error: true };
+  }
+  if (value.error) {
+    return { formattedValue: `Err: ${value.error}`, error: true };
+  }
+  return { formattedValue: fmt(value.value), error: false };
+};
+
 class CellComponent extends Component {
   constructor(props) {
     super(props);
@@ -21,9 +31,7 @@ class CellComponent extends Component {
       gridColumn: `${x} / span ${width}`,
       gridRow: `${y} / span ${height}`,
     };
-    const formattedValue = value ?
-      (value.error || fmt(value.value)) :
-      'ERR';
+    const { error, formattedValue } = getCellContents(value, fmt);
 
     return (
       <div
@@ -40,7 +48,12 @@ class CellComponent extends Component {
           </div>
         )}
         {name && (
-          <div className="Value">
+          <div
+            className={classNames(
+              'Value',
+              { CellError: error },
+            )}
+          >
             {formattedValue}
           </div>
         )}

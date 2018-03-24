@@ -23,7 +23,7 @@ const initialState = {
     id: 'cell0',
     tableId: 'table0',
     name: 'Fred',
-    formula: [{ value: 'foo' }],
+    formula: [{ value: 0 }],
     x: 0,
     y: 0,
     width: 1,

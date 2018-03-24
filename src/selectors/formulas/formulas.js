@@ -109,43 +109,105 @@ export const getTopoSortedCellIds = createSelector(
 );
 
 
+// eslint-disable-next-line no-unused-vars
+const getCell = (id, things) => things[id].value;
+
+
+// eslint-disable-next-line no-unused-vars
+const call = (thing, args, globals) => {
+  const { value } = thing;
+  if (value !== undefined && value.f && typeof value.f === 'function') {
+    return value.f(args, globals, value.f);
+  }
+  throw new Error(thing.error || 'Not callable');
+};
+
+// eslint-disable-next-line no-unused-vars
+const raise = (err) => { throw new Error(err); };
+
+
+const expandExpr = (formula, cell, cellsById, inFunction) => {
+  const expandedTerms = formula.map(term =>
+    // eslint-disable-next-line no-use-before-define
+    expandTerm(term, cell, cellsById, inFunction));
+  return expandedTerms.join(' ');
+};
+
+
+const expandTerm = (term, cell, cellsById, inFunction) => {
+  if (term.ref) {
+    const refTable = cellsById[term.ref].tableId;
+    const isLocalRef = inFunction && cell.tableId === refTable;
+    const tableName = isLocalRef ? 'data' : 'globals';
+    const lookupValue = isLocalRef ? cellsById[term.ref].name : term.ref;
+    return `getCell(${JSON.stringify(lookupValue)}, ${tableName})`;
+  }
+  if (term.call) {
+    const expandedCallee = expandTerm(term.call);
+    const expandedArgs = term.args.map(argExpr =>
+      expandExpr(argExpr, cell, cellsById, inFunction));
+    const joinedArgs = `{${expandedArgs.join(', ')}}`;
+    return `call(${expandedCallee}, ${joinedArgs}, globals)`;
+  }
+  if (term.op) return term.op;
+  if (term.badRef) return `raise(${JSON.stringify(term.badRef)})`;
+  if (term.value !== undefined) return JSON.stringify(term.value);
+  throw new Error(`unknown term type ${JSON.stringify(term)}`);
+};
+
+
+const getBadRefsForTerm = (term) => {
+  if (term.ref) return [];
+  if (term.call) {
+    return [].concat(
+      ...getBadRefsForTerm(term.call),
+      // eslint-disable-next-line no-use-before-define
+      ...[].concat(...term.args.map(getBadRefsForExpr)),
+    );
+  }
+  if (term.op) return [];
+  if (term.value !== undefined) return [];
+  if (term.badRef) return [term];
+  throw new Error(`unknown term type ${JSON.stringify(term)}`);
+};
+
+
+const getBadRefsForExpr = expr =>
+  [].concat(...expr.map(getBadRefsForTerm));
+
+
 export const getCellValuesById = createSelector(
   getCellsById,
   getTopoSortedCellIds,
   (cellsById, sortedCellIds) => {
-    const ret = {};
-
-    // eslint-disable-next-line no-unused-vars
-    const pleaseThrow = (e) => { throw e; }; // used in eval
+    const globals = {};
 
     sortedCellIds.forEach((id) => {
-      const { formula } = cellsById[id];
+      const cell = cellsById[id];
+      const { formula } = cell;
       const invalidRefs = formula
         .map(({ ref }) => ref).filter(Boolean)
-        .filter(ref => !(ref in ret));
+        .filter(ref => !(ref in globals));
+
       if (invalidRefs.length > 0) {
         // Depends on a circular reference cell :-(
         return;
       }
-      if (formula.length === 0) {
-        ret[id] = { value: 0 };
+      const badRefs = getBadRefsForExpr(cell.formula);
+      if (badRefs.length > 0) {
+        globals[id] = { error: badRefs[0].badRef };
         return;
       }
 
-      const stringParts = formula.map((term, i) => {
-        if (term.ref) return `(ret["${term.ref}"].value !== undefined ? ret["${term.ref}"].value : pleaseThrow(ret["${term.ref}"].error))`;
-        if (term.badRef) return `pleaseThrow(new Error(formula[${i}].badRef))`;
-        if (term.op) return term.op;
-        return `formula[${i}].value`;
-      });
+      const expandedExpr = expandExpr(formula, cell, cellsById, false);
       try {
         // eslint-disable-next-line no-eval
-        ret[id] = { value: eval(stringParts.join(' ')) };
+        globals[id] = { value: eval(expandedExpr) };
       } catch (e) {
-        ret[id] = { error: e.toString() };
+        globals[id] = { error: e.toString() };
       }
     });
-    return ret;
+    return globals;
   },
 );
 

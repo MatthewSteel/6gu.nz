@@ -25,6 +25,10 @@
   text-overflow: ellipsis;
 }
 
+.Cell .Value.CellError {
+  color: #C44;
+}
+
 .Cell.selected {
   border: 1px solid blue;
   margin: 0px;
