@@ -10,6 +10,21 @@ The long list:
  - custom cell formatting incl charts.
 
 
+
+Very short term:
+ - Catch parsing errors in the action creator,
+ - Parse lookups and calls,
+ - Validate parens and ops,
+ - Compile functions and run them,
+ - Display errors.
+
+Then:
+ - Browse the tree. That's an "easy" but frigging awesome feature.
+
+Then:
+ - Complex data types? That's hard, man...
+
+
 OK, tech design for tables :-).
   - At first we can have n global "templates". All templates are global.
   - Extend parser to allow `func(param=expr, ...)`. Recursive?

@@ -122,11 +122,15 @@ const expandExpr = (formula, cell, cellsById, inFunction) => {
 
 // NOTE: We are ok with "undefined is not a function", but would rather not
 // leak "cannot read property 'f' of undefined"
+// TODO: Will probably become a problem if it is not an object...
+// Probably just call it `evaluate` or `call` and leak it?
 // eslint-disable-next-line no-unused-vars
 const call = (value = {}, args, globals) => value.f(args, globals, value.f);
 
 // NOTE: We are ok with "cannot read property '`key`' of undefined" but would
 // rather not leak "cannot read property 'data' of undefined"
+// TODO: Will probably become a problem if it is not an object...
+// Probably just call it `contents` and leak it?
 // eslint-disable-next-line no-unused-vars
 const lookup = (value = {}, key) => value.data[key];
 
@@ -210,15 +214,24 @@ export const getCellValuesById = createSelector(
 
 
 const canStartName = c => c.match(/^[a-zA-Z_]$/u);
+// TODO: We shouldn't do `.` parsing in the lexer, we should do it in the
+// parser...
 const isNameChar = c => c.match(/^[0-9a-zA-Z_.]$/u);
 
 const lexName = (input, i) => {
-  // TODO: We shouldn't do `.` parsing in the lexer, we should do it in the
-  // parser...
-  // Actually, maybe just lex `.foo` as `{ lookupName: foo }`?
   let j;
   for (j = i; j < input.length && isNameChar(input.charAt(j)); ++j);
   return { matchEnd: j, token: { name: input.substring(i, j) } };
+};
+
+const lexLookup = (input, i) => {
+  let j;
+  for (j = i + 1; j < input.length && isNameChar(input.charAt(j)); ++j);
+  if (j === i + 1) {
+    throw new Error('No valid name after "." character');
+  }
+  // Keep `lookup` vs `lookupName` so we can `unparse` appropriately
+  return { matchEnd: j, token: { lookupName: input.substring(i + 1, j) } };
 };
 
 const lexNumber = (input, i) => {
@@ -263,6 +276,7 @@ const lexOne = (input, i) => {
   if (next === '"') return lexString(input, i);
   if (next.match(/^\s$/)) return chompWhitespace(input, i);
   if (next === '=') return { matchEnd: i + 1, token: { assignment: next } };
+  if (next === '.') return lexLookup(input, i);
   throw new Error(`don't know what to do with '${next}'`);
 };
 
