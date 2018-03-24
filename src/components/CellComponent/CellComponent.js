@@ -3,13 +3,10 @@ import classNames from 'classnames';
 import './CellComponent.css';
 
 const getCellContents = (value, fmt) => {
-  if (!value) {
-    return { formattedValue: 'Err: \u21BB', error: true };
+  if (!value || value.error) {
+    return { error: true, formattedValue: '\u00A0' }; // nbsp
   }
-  if (value.error) {
-    return { formattedValue: `Err: ${value.error}`, error: true };
-  }
-  return { formattedValue: fmt(value.value), error: false };
+  return { formattedValue: fmt(value.value) };
 };
 
 class CellComponent extends Component {

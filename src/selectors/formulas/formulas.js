@@ -122,9 +122,6 @@ const call = (thing, args, globals) => {
   throw new Error(thing.error || 'Not callable');
 };
 
-// eslint-disable-next-line no-unused-vars
-const raise = (err) => { throw new Error(err); };
-
 
 const expandExpr = (formula, cell, cellsById, inFunction) => {
   const expandedTerms = formula.map(term =>
@@ -150,7 +147,6 @@ const expandTerm = (term, cell, cellsById, inFunction) => {
     return `call(${expandedCallee}, ${joinedArgs}, globals)`;
   }
   if (term.op) return term.op;
-  if (term.badRef) return `raise(${JSON.stringify(term.badRef)})`;
   if (term.value !== undefined) return JSON.stringify(term.value);
   throw new Error(`unknown term type ${JSON.stringify(term)}`);
 };
