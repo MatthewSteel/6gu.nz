@@ -215,6 +215,7 @@ const isNameChar = c => c.match(/^[0-9a-zA-Z_.]$/u);
 const lexName = (input, i) => {
   // TODO: We shouldn't do `.` parsing in the lexer, we should do it in the
   // parser...
+  // Actually, maybe just lex `.foo` as `{ lookupName: foo }`?
   let j;
   for (j = i; j < input.length && isNameChar(input.charAt(j)); ++j);
   return { matchEnd: j, token: { name: input.substring(i, j) } };
