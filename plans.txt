@@ -43,13 +43,117 @@ For the moment let's make all near references local. :-) :-(.
 I think we need to write a proper parser now :-(((.
 
 
+What do we know about the parser?
+  - Top-level cross links are "different" somehow? "Global lookups"?
+
+`=table.cell` is a special kind of reference.
+`=table.cell.key` is kinda the same.
+`=table.cell(k=v)` is too?
+`=cell` as well, I think.
+
+`=table(cell=v)` is different though, I think.
+`=table` is different again?
+
+What do we want?
+{ call: $ref, args: [...] } I guess.
+or
+{ lookup: key, ref: $expr }
+
+And references look like,
+
+{ ref: $cell, tableRef: $table? }
+or
+
+
+{ lookup: { lookup: { ref: $tableId }, key: $cellId }, key: $key }
+{ call: { ref: $tableId }, args: [] }
+{ call: { lookup: { ref: $tableId }, key: $cellId }, args: [] }
+
+So anything that's `=table` depends on the table, anything that's =table.cell depends on the cell, and
+
+`table.cell` is special -- normally `=a.b.c` depends on `a`, but if `a` is a table we depend on `b` instead.
+  Is that right?
+
+Oh, for the moment local links always have to be local. That's important. So really references are just cells?
+
+  replace { lookup: { ref: $tableId }, key: $cellId } with { ref: $cellId }.
+
+OK, I think that works.
+
+Then how do we evaluate this nonsense? Make a big damn expression? With helper functions on the outside? Build a function ourselves?
+
+Say we have an expression like `cell1=table1(c2 = table2.c3 + c4)
+  {
+    name: 'cell1',
+    formula: [{
+      call: { ref: table1 },
+      args: [
+        { assign: c2, expr: [{ ref: c3 }, { op: '+' }, { ref: c4 }] },
+      ],
+    }],
+  }
+First things first: references.
+ - table1, c3, c4. Do a tree-search recursively through the structure, through assign.exprs and call.args looking for refs.
+
+Do we build a function for every cell? Seems a bit much...
+
+We can get the template from further up if we want it.
+
+Still not over the moon about errors... Kinda just want to try/catch at the top level.
+  `iferror([table(foo=bar).cell], 0)`
+That's pretty bad for collaboration, though -- don't want to take down the whole document because someone messes up. Fine, just check for errors.
+
+  Except in functions, maybe?
+    Local refs are "fast", global refs are "slow"?
+    Naw, just make them all slow for now.
+
+Translate `{ ref: table }` into
+  { value: { ... }, function: f, template: table }
+maybe?
+
+
+OK, value is not just {k: v}, it's {k: {value: v}} etc. Got it.
+
+What else?
+
+Maybe we can pass an error into a function? I think we have to for `iferror`.
+
+What about passing table references around? I think a table is an object that has { value: { data: {k: {v: v}}, template: t } }
+
+(and that's the return value of a function call)
+
+We build that thing for each one as we go.
 
 
 
+function(data, globals, f) {
+  try {
+    data['cellId0'] = data['cellId0'] || { value: ${expand(expr)} };
+  } catch(e) {
+    data['cellId0'] = { error: e.toString() };
+  }
+  // ..
+
+  return { data, template: 'literal', f };
+}
+
+What does ${expr} look like? Just what we have now?
 
 
 
-What else do we need?
+When we "scan" a cell, we add its value to globals, and we
+
+Oh shit, we have a problem with dynamic names.
+  How bad is it?
+  I think we actually literally want to store names in formulas :-(.
+    - How do renames work? They don't :(.
+    - OK, then we use names for function calls and stored objects, and we use ids at the top level. I think we can live with that.
+  - We can "smarten up" the function calls later if we want.
+
+
+Still not great about the errors -- we're catching them too high. Oh well.
+  We probably want to just do what Excel etc do, but for now let's not have any errors, just blank values :-)
+
 
 Sub-table stuff:
  - Internal scrolling?
