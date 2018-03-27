@@ -1,4 +1,5 @@
 import { createSelector } from 'reselect';
+import store from '../../redux/store';
 
 const getCells = state => state.cells;
 const getTables = state => state.tables;
@@ -64,28 +65,46 @@ export const getTablesByName = createSelector(
   },
 );
 
-const getCellFormulaGraph = createSelector(
+const getFormulaGraphs = createSelector(
   getCells,
-  (cells) => {
-    const graph = {};
+  getTables,
+  (cells, tables) => {
+    const forwardsGraph = {};
+    const backwardsGraph = {};
+    [...cells, ...tables].forEach(({ id }) => {
+      forwardsGraph[id] = [];
+      backwardsGraph[id] = [];
+    });
     cells.forEach(({ id, formula }) => {
-      graph[id] = [];
-      formula.forEach((term) => {
-        if (term.ref) graph[id].push(term.ref);
+      const refs = getRefsForExpr(formula);
+      refs.forEach((term) => {
+        if (term.ref) {
+          forwardsGraph[id].push(term.ref);
+          backwardsGraph[term.ref].push(id);
+        }
       });
     });
-    return graph;
+    tables.forEach(({ id }) => {
+      const tableCells = getCellsByTableId(store.getState(), id);
+      tableCells.forEach((cell) => {
+        forwardsGraph[id].push(cell.id);
+        backwardsGraph[cell.id].push(id);
+      });
+    });
+    return { forwardsGraph, backwardsGraph };
   },
 );
 
 
-export const getTopoSortedCellIds = createSelector(
-  getCellFormulaGraph,
-  (graph) => {
+export const getTopoSortedRefIds = createSelector(
+  getFormulaGraphs,
+  ({ backwardsGraph }) => {
     // Count numInArcs
     const numInArcsByCellId = {};
-    Object.keys(graph).forEach((id) => { numInArcsByCellId[id] = 0; });
-    Object.values(graph).forEach((jIds) => {
+    Object.keys(backwardsGraph).forEach((id) => {
+      numInArcsByCellId[id] = 0;
+    });
+    Object.values(backwardsGraph).forEach((jIds) => {
       jIds.forEach((jId) => { numInArcsByCellId[jId] += 1; });
     });
 
@@ -96,14 +115,14 @@ export const getTopoSortedCellIds = createSelector(
 
     // Append anything only feeds leaf formulas
     for (let i = 0; i < ret.length; ++i) {
-      graph[ret[i]].forEach((jId) => {
+      backwardsGraph[ret[i]].forEach((jId) => {
         numInArcsByCellId[jId] -= 1;
         if (numInArcsByCellId[jId] === 0) {
           ret.push(jId);
         }
       });
     }
-    return ret.reverse();
+    return ret;
   },
 );
 
@@ -156,36 +175,62 @@ const expandTerm = (term, cell, cellsById, inFunction) => {
 };
 
 
-const getBadRefsForTerm = (term) => {
-  if (term.ref) return [];
+const getRefsForTerm = (term) => {
   if (term.call) {
     return [].concat(
-      ...getBadRefsForTerm(term.call),
+      ...getRefsForTerm(term.call),
       // FIXME: proper args too?
       // eslint-disable-next-line no-use-before-define
-      ...[].concat(...term.args.map(({ value }) => getBadRefsForExpr(value))),
-      ...[].concat(...term.args.map(({ ref }) => getBadRefsForTerm(ref))),
+      ...[].concat(...term.args.map(({ value }) => getRefsForExpr(value))),
+      ...[].concat(...term.args.map(({ ref }) => getRefsForTerm(ref))),
     );
   }
   if (term.op) return [];
   if (term.value !== undefined) return [];
   if (term.name) return [term];
+  if (term.ref) return [term];
   throw new Error(`unknown term type ${JSON.stringify(term)}`);
 };
 
 
-const getBadRefsForExpr = expr =>
-  [].concat(...expr.map(getBadRefsForTerm));
+const getRefsForExpr = expr =>
+  [].concat(...expr.map(getRefsForTerm));
+
+
+const tableValue = (tableId, globals) => {
+  const tableCells = getCellsByTableId(store.getState(), tableId);
+  const ret = {
+    byId: {},
+    byName: {},
+    template: tableId,
+  };
+  tableCells.forEach(({ id, name }) => {
+    const { value } = globals[id];
+    ret.byId[id] = value;
+    ret.byName[name] = value;
+  });
+  return ret;
+};
 
 
 export const getCellValuesById = createSelector(
+  getCells,
+  getTables,
   getCellsById,
-  getTopoSortedCellIds,
-  (cellsById, sortedCellIds) => {
+  getTopoSortedRefIds,
+  (allCells, allTables, cellsById, sortedRefIds) => {
     const globals = {};
+    [...allCells, ...allTables].forEach(({ id }) => {
+      globals[id] = { error: 'Circular ref' };
+    });
 
-    sortedCellIds.forEach((id) => {
+
+    sortedRefIds.forEach((id) => {
       const cell = cellsById[id];
+      if (!cell) {
+        globals[id] = tableValue(id, globals);
+        return;
+      }
       const { formula } = cell;
       const invalidRefs = formula
         .map(({ ref }) => ref).filter(Boolean)
@@ -193,9 +238,11 @@ export const getCellValuesById = createSelector(
 
       if (invalidRefs.length > 0) {
         // Depends on a circular reference cell :-(
+        globals[id] = { error: 'Circular ref' };
         return;
       }
-      const badRefs = getBadRefsForExpr(cell.formula);
+      const refs = getRefsForExpr(cell.formula);
+      const badRefs = refs.filter(({ ref }) => !ref);
       if (badRefs.length > 0) {
         globals[id] = { error: badRefs[0].name };
         return;
@@ -212,3 +259,32 @@ export const getCellValuesById = createSelector(
     return globals;
   },
 );
+
+// eslint-disable-next-line no-unused-vars
+const transitiveClosure = (ids, graph) => {
+  let frontier = ids;
+  const closure = new Set(...frontier);
+  while (frontier.length > 0) {
+    const newFrontier = [];
+    frontier = newFrontier;
+    frontier.forEach((id) => {
+      const nextNodes = graph[id] || [];
+      nextNodes.forEach((nextNode) => {
+        if (!closure.has(nextNode)) {
+          closure.add(nextNode);
+          newFrontier.push(nextNode);
+        }
+      });
+    });
+  }
+  return closure;
+};
+
+// eslint-disable-next-line no-unused-vars
+const setIntersection = (setA, setB) => {
+  const intersection = new Set();
+  setA.forEach((value) => {
+    if (setB.has(value)) intersection.add(value);
+  });
+  return intersection;
+};

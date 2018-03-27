@@ -53,7 +53,7 @@ const initialState = {
     id: 'cell3',
     tableId: 'table0',
     name: 'Tui',
-    formula: [{ ref: 'cell2' }, { op: '+' }, { value: 'quux' }],
+    formula: [{ ref: 'cell2', name: 'Wiremu' }, { op: '+' }, { value: 'quux' }],
     x: 1,
     y: 1,
     width: 3,
