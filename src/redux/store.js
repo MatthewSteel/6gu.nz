@@ -3,9 +3,12 @@ import uuidv4 from 'uuid-v4';
 import {
   getCellsById,
   getTablesById,
+} from '../selectors/formulas/selectors';
+import {
   parseFormula,
   unparseTerm,
-} from '../selectors/formulas/formulas';
+} from '../selectors/formulas/parser';
+
 
 const initialState = {
   tables: [{

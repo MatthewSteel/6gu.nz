@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { stringFormula } from '../../selectors/formulas/formulas';
+import { stringFormula } from '../../selectors/formulas/parser';
 
 
 class FormulaComponent extends Component {

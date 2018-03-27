@@ -4,7 +4,7 @@ import {
   getCellsByTableId,
   getCellValuesById,
   getTablesById,
-} from '../../selectors/formulas/formulas';
+} from '../../selectors/formulas/selectors';
 import CellComponent from '../CellComponent/CellComponent';
 import FormulaComponent from '../FormulaComponent/FormulaComponent';
 import { deleteCell, setFormula } from '../../redux/store';
