@@ -107,65 +107,74 @@ export const getTopoSortedRefIds = createSelector(
     });
 
     // Get all the "leaf" formulas
-    const ret = Object.entries(numInArcsByCellId)
+    const ordering = Object.entries(numInArcsByCellId)
       .map(([id, numInArcs]) => numInArcs === 0 && id)
       .filter(Boolean);
 
     // Append anything only feeds leaf formulas
-    for (let i = 0; i < ret.length; ++i) {
-      backwardsGraph[ret[i]].forEach((jId) => {
+    for (let i = 0; i < ordering.length; ++i) {
+      backwardsGraph[ordering[i]].forEach((jId) => {
         numInArcsByCellId[jId] -= 1;
         if (numInArcsByCellId[jId] === 0) {
-          ret.push(jId);
+          ordering.push(jId);
         }
       });
     }
+    return ordering;
+  },
+);
+
+const getTopoLocationById = createSelector(
+  getTopoSortedRefIds,
+  (ordering) => {
+    const ret = {};
+    ordering.forEach((id, index) => { ret[id] = index; });
     return ret;
   },
 );
 
+const callSignature = (callTerm) => {
+  if (!callTerm.call.ref) {
+    throw new Error('Can only call refs');
+  }
+  const argRefs = callTerm.args.map(({ ref }) => ref);
+  const joinedRefs = argRefs.join(',');
+  return `${callTerm.call.ref}(${joinedRefs})`;
+};
+
+const expandSetItem = (k, expr) =>
+  `try {
+    globals[${JSON.stringify(k)}] = { value: ${expr} };
+  } catch (e) {
+    globals[${JSON.stringify(k)}] = { error: e.toString() };
+  }`;
 
 // eslint-disable-next-line no-unused-vars
-const getCell = (id, things) => things[id].value;
+const expandCall = (callTerm, cell) => {
+  const signature = callSignature(callTerm);
+  const customArgs = callTerm.args.map(({ expr }) =>
+    expandExpr(expr, cell));
+  const allArgs = ['globals', ...customArgs].join(', ');
+  return `globals[${JSON.stringify(signature)}](${allArgs})`;
+};
 
-
-const expandExpr = (formula, cell, cellsById, inFunction) => {
-  const expandedTerms = formula.map(term =>
-    // eslint-disable-next-line no-use-before-define
-    expandTerm(term, cell, cellsById, inFunction));
+const expandExpr = (expr) => {
+  const expandedTerms = expr.map(term =>
+    expandTerm(term));
   return expandedTerms.join(' ');
 };
 
-// NOTE: We are ok with "undefined is not a function", but would rather not
-// leak "cannot read property 'f' of undefined"
-// TODO: Will probably become a problem if it is not an object...
-// Probably just call it `evaluate` or `call` and leak it?
-// eslint-disable-next-line no-unused-vars
-const call = (value = {}, args, globals) => value.f(args, globals, value.f);
+const expandRef = term => `globals[${JSON.stringify(term.ref)}].value`;
 
-// NOTE: We are ok with "cannot read property '`key`' of undefined" but would
-// rather not leak "cannot read property 'data' of undefined"
-// TODO: Will probably become a problem if it is not an object...
-// Probably just call it `contents` and leak it?
-// eslint-disable-next-line no-unused-vars
-const lookup = (value = {}, key) => value.data[key];
-
-
-const expandTerm = (term, cell, cellsById, inFunction) => {
+const expandTerm = (term) => {
   if (term.ref) {
-    const refTable = cellsById[term.ref].tableId;
-    const isLocalRef = inFunction && cell.tableId === refTable;
-    const tableName = isLocalRef ? 'data' : 'globals';
-    const lookupValue = isLocalRef ? cellsById[term.ref].name : term.ref;
-    return `getCell(${JSON.stringify(lookupValue)}, ${tableName})`;
+    // TODO: more lookups
+    // FIXME: I guess our lookups might be "backwards"?
+    // Should look into that.
+    return expandRef(term);
   }
   if (term.call) {
-    const expandedCallee = expandTerm(term.call, cell, cellsById, inFunction);
-    // TODO: actually assignments. JSON.stringify(name): expr.
-    const expandedArgs = term.args.map(argExpr =>
-      expandExpr(argExpr, cell, cellsById, inFunction));
-    const joinedArgs = `{${expandedArgs.join(', ')}}`;
-    return `call(${expandedCallee}, ${joinedArgs}, globals)`;
+    return expandCall(term);
   }
   if (term.op) return term.op;
   if (term.value !== undefined) return JSON.stringify(term.value);
@@ -177,9 +186,7 @@ const flattenTerm = (term) => {
   if (term.call) {
     return [].concat(
       ...flattenTerm(term.call),
-      // FIXME: proper args too?
-      // eslint-disable-next-line no-use-before-define
-      ...[].concat(...term.args.map(({ value }) => flattenExpr(value))),
+      ...[].concat(...term.args.map(({ expr }) => flattenExpr(expr))),
       ...[].concat(...term.args.map(({ ref }) => flattenTerm(ref))),
     );
   }
@@ -194,6 +201,7 @@ const flattenExpr = expr =>
   [].concat(...expr.map(flattenTerm));
 
 
+// eslint-disable-next-line no-unused-vars
 const tableValue = (tableId, globals) => {
   const tableCells = getCellsByTableId(store.getState(), tableId);
   const ret = {
@@ -209,6 +217,8 @@ const tableValue = (tableId, globals) => {
   return ret;
 };
 
+// eslint-disable-next-line no-unused-vars
+const pleaseThrow = (s) => { throw new Error(s); };
 
 export const getCellValuesById = createSelector(
   getCells,
@@ -221,42 +231,32 @@ export const getCellValuesById = createSelector(
       globals[id] = { error: 'Circular ref' };
     });
 
-    sortedRefIds.forEach((id) => {
-      const cell = cellsById[id];
-      if (!cell) {
-        globals[id] = tableValue(id, globals);
-        return;
-      }
-      const { formula } = cell;
-      const invalidRefs = formula
-        .map(({ ref }) => ref).filter(Boolean)
-        .filter(ref => !(ref in globals));
-
-      if (invalidRefs.length > 0) {
-        // Depends on a circular reference cell :-(
-        globals[id] = { error: 'Circular ref' };
-        return;
-      }
+    const refExpressions = {};
+    allCells.forEach((cell) => {
       const allTerms = flattenExpr(cell.formula);
       const badRefs = allTerms.filter(({ name, ref }) => name && !ref);
       if (badRefs.length > 0) {
-        globals[id] = { error: badRefs[0].name };
-        return;
+        refExpressions[cell.id] = `pleaseThrow(${JSON.stringify(badRefs[0].name)})`;
+      } else {
+        refExpressions[cell.id] = expandExpr(cell.formula);
       }
+    });
 
-      const expandedExpr = expandExpr(formula, cell, cellsById, false);
-      try {
-        // eslint-disable-next-line no-eval
-        globals[id] = { value: eval(expandedExpr) };
-      } catch (e) {
-        globals[id] = { error: e.toString() };
-      }
+    allTables.forEach(({ id }) => {
+      refExpressions[id] = `tableValue(${JSON.stringify(id)}, globals)`;
+    });
+
+    sortedRefIds.forEach((id) => {
+      // eslint-disable-next-line no-eval
+      eval(expandSetItem(id, refExpressions[id]));
     });
     return globals;
   },
 );
 
 // eslint-disable-next-line no-unused-vars
+const expandPopItems = () => '';
+
 const transitiveClosure = (ids, graph) => {
   let frontier = ids;
   const closure = new Set(...frontier);
@@ -276,11 +276,26 @@ const transitiveClosure = (ids, graph) => {
   return closure;
 };
 
-// eslint-disable-next-line no-unused-vars
 const setIntersection = (setA, setB) => {
   const intersection = new Set();
   setA.forEach((value) => {
     if (setB.has(value)) intersection.add(value);
   });
   return intersection;
+};
+
+// eslint-disable-next-line no-unused-vars
+const functionCellsInOrder = (call) => {
+  const {
+    forwardsGraph,
+    backwardsGraph,
+  } = getFormulaGraphs(store.getState);
+  const argRefs = call.args.map(({ ref }) => ref.ref);
+  const dependOnArgs = transitiveClosure(argRefs, backwardsGraph);
+  const leadsToValue = transitiveClosure(call.call, forwardsGraph);
+  const cellsToEvaluate = setIntersection(dependOnArgs, leadsToValue);
+
+  const topoLocationsById = getTopoLocationById(store.getState());
+  return [...cellsToEvaluate].sort((id1, id2) =>
+    topoLocationsById[id1] - topoLocationsById[id2]);
 };
