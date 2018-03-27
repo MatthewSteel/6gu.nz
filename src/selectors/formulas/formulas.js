@@ -144,7 +144,7 @@ const expandTerm = (term, cell, cellsById, inFunction) => {
     return `getCell(${JSON.stringify(lookupValue)}, ${tableName})`;
   }
   if (term.call) {
-    const expandedCallee = expandTerm(term.call);
+    const expandedCallee = expandTerm(term.call, cell, cellsById, inFunction);
     // TODO: actually assignments. JSON.stringify(name): expr.
     const expandedArgs = term.args.map(argExpr =>
       expandExpr(argExpr, cell, cellsById, inFunction));
@@ -162,13 +162,15 @@ const getBadRefsForTerm = (term) => {
   if (term.call) {
     return [].concat(
       ...getBadRefsForTerm(term.call),
+      // FIXME: proper args too?
       // eslint-disable-next-line no-use-before-define
-      ...[].concat(...term.args.map(getBadRefsForExpr)),
+      ...[].concat(...term.args.map(({ value }) => getBadRefsForExpr(value))),
+      ...[].concat(...term.args.map(({ ref }) => getBadRefsForTerm(ref))),
     );
   }
   if (term.op) return [];
   if (term.value !== undefined) return [];
-  if (term.badRef) return [term];
+  if (term.name) return [term];
   throw new Error(`unknown term type ${JSON.stringify(term)}`);
 };
 
@@ -196,7 +198,7 @@ export const getCellValuesById = createSelector(
       }
       const badRefs = getBadRefsForExpr(cell.formula);
       if (badRefs.length > 0) {
-        globals[id] = { error: badRefs[0].badRef };
+        globals[id] = { error: badRefs[0].name };
         return;
       }
 
@@ -214,24 +216,12 @@ export const getCellValuesById = createSelector(
 
 
 const canStartName = c => c.match(/^[a-zA-Z_]$/u);
-// TODO: We shouldn't do `.` parsing in the lexer, we should do it in the
-// parser...
-const isNameChar = c => c.match(/^[0-9a-zA-Z_.]$/u);
+const isNameChar = c => c.match(/^[0-9a-zA-Z_]$/u);
 
 const lexName = (input, i) => {
   let j;
   for (j = i; j < input.length && isNameChar(input.charAt(j)); ++j);
   return { matchEnd: j, token: { name: input.substring(i, j) } };
-};
-
-const lexLookup = (input, i) => {
-  let j;
-  for (j = i + 1; j < input.length && isNameChar(input.charAt(j)); ++j);
-  if (j === i + 1) {
-    throw new Error('No valid name after "." character');
-  }
-  // Keep `lookup` vs `lookupName` so we can `unparse` appropriately
-  return { matchEnd: j, token: { lookupName: input.substring(i + 1, j) } };
 };
 
 const lexNumber = (input, i) => {
@@ -268,15 +258,18 @@ const chompWhitespace = (input, i) => {
 
 const lexOne = (input, i) => {
   const next = input.charAt(i);
-  if (next.match(/^[()[\]{}+\-*/%,]$/)) {
+  if (next.match(/^[+\-*/%]$/)) {
     return { matchEnd: i + 1, token: { op: next } };
   }
+  if (next === '(') return { matchEnd: i + 1, token: { open: '(' } };
+  if (next === ')') return { matchEnd: i + 1, token: { close: ')' } };
   if (canStartName(next)) return lexName(input, i);
-  if (next.match(/^[.0-9]$/)) return lexNumber(input, i);
+  if (next.match(/^[0-9]$/)) return lexNumber(input, i);
   if (next === '"') return lexString(input, i);
   if (next.match(/^\s$/)) return chompWhitespace(input, i);
   if (next === '=') return { matchEnd: i + 1, token: { assignment: next } };
-  if (next === '.') return lexLookup(input, i);
+  if (next === '.') return { matchEnd: i + 1, token: { lookup: next } };
+  if (next === ',') return { matchEnd: i + 1, token: { comma: next } };
   throw new Error(`don't know what to do with '${next}'`);
 };
 
@@ -291,53 +284,266 @@ const lexFormula = (input) => {
   return ret;
 };
 
-const parseExpression = (tokens) => {
-  if (tokens.length === 0) return [{ value: 0 }];
-  // TODO: proper parsing and error-handling.
-  return tokens;
+const parseOperators = (tokens, i) => {
+  if (!tokens[i].op || !tokens[i].op.match(/^[+\-*/%,]$/)) {
+    throw new Error('Expected a binary operator somewhere');
+  }
+  let j;
+  for ( // any number of unary pluses and minuses after first binary op
+    j = i + 1;
+    j < tokens.length && tokens[j].op && '+-'.includes(tokens[j].op);
+    ++j
+  );
+  return tokens.slice(i, j);
 };
+
+
+const parseLookups = (tokens, i) => {
+  const ret = { ...tokens[i] };
+  let lastToken = ret;
+  let j;
+  for (j = i + 1; j < tokens.length && tokens[j].lookup; j += 2) {
+    if (j + 1 === tokens.length || !tokens[j + 1].name) {
+      throw new Error('Expected name to be looked up');
+    }
+    lastToken.lookup = { ...tokens[j + 1] };
+    lastToken = tokens[j + 1];
+  }
+  return {
+    term: ret,
+    newIndex: j,
+  };
+};
+
+
+const parseArgsList = (tokens, i) => {
+  if (tokens[i].close) {
+    return {
+      term: [],
+      newIndex: i + 1,
+    };
+  }
+  const argsList = [];
+  for (let j = i; j < tokens.length; ++j) {
+    if (!tokens[j].name) {
+      throw new Error('Expected name at start of argument');
+    }
+    const {
+      term: lookups,
+      newIndex: eqIndex,
+    } = parseLookups(tokens, i);
+    if (eqIndex === tokens.length || !tokens[eqIndex].assignment) {
+      throw new Error('Expected assignment in argument');
+    }
+    if (eqIndex + 1 === tokens.length) {
+      throw new Error('Expected expression after equals in argument');
+    }
+    const {
+      term: expression,
+      newIndex: expressionIndex,
+    } = parseExpression(tokens, i);
+    argsList.push({
+      ref: lookups,
+      value: expression,
+    });
+    if (expressionIndex === tokens.length) {
+      throw new Error('Expected more after experssion in args list');
+    }
+
+    if (tokens[expressionIndex].close) {
+      return {
+        term: argsList,
+        newIndex: expressionIndex + 1,
+      };
+    }
+    if (!tokens[expressionIndex].comma) {
+      throw new Error('Expected comma or bracket in args list');
+    }
+    j = expressionIndex + 1;
+  }
+  throw new Error('Expected more in args list');
+};
+
+
+const parseTermFromName = (tokens, i) => {
+  const { term, newIndex } = parseLookups(tokens, i);
+  if (newIndex === tokens.length || tokens[newIndex].op) {
+    return {
+      term,
+      newIndex,
+    };
+  }
+  if (tokens[i].open) {
+    if (newIndex + 1 === tokens.length) {
+      throw new Error("Formula can't end with the start of a call");
+    }
+    const argsData = parseArgsList(tokens, newIndex + 1);
+    return {
+      term: {
+        call: term,
+        args: argsData.term,
+      },
+      newIndex: argsData.newIndex,
+    };
+  }
+  throw new Error('Unexpected token after name.');
+};
+
+const parseTerm = (tokens, i) => {
+  if (tokens[i].open) {
+    const { term, newIndex } = parseExpression(tokens, i + 1);
+    if (!tokens[newIndex] || !tokens[newIndex].close) {
+      throw new Error('Expected closing bracket');
+    }
+    return {
+      term: { expression: term },
+      newIndex: newIndex + 2,
+    };
+  }
+  if (tokens[i].value) {
+    return {
+      term: tokens[i],
+      newIndex: i + 1,
+    };
+  }
+  if (tokens[i].name) {
+    return parseTermFromName(tokens, i);
+  }
+  throw new Error('Unexpected term token');
+};
+
+const parseExpression = (tokens, i) => {
+  const elements = [];
+  for (let j = i; j < tokens.length; ++j) {
+    // Precondition: We should be looking at the start of a term.
+    const { term, newIndex } = parseTerm(tokens, j);
+    elements.push(term);
+    j = newIndex;
+    if (j === tokens.length || tokens[j].op === ')') {
+      return {
+        term: { expression: elements },
+        newIndex: j,
+      };
+    }
+    parseOperators(tokens, j).forEach((op) => {
+      elements.push(op);
+    });
+  }
+  throw new Error('Unexpected end of expression');
+};
+
 
 const parseTokens = (tokens) => {
   // There are two legal forms for formulas
   //  1. name? = expression?
   //  2. expression
+  const doParse = (start) => {
+    if (start === tokens.length) return { expression: [{ value: 0 }] };
+    const { term, newIndex } = parseExpression(tokens, start);
+    if (newIndex !== tokens.length) {
+      throw new Error('Unchomped tokens at end of forumla');
+    }
+    return term;
+  };
+
   if (tokens[0] && tokens[0].assignment) {
-    return { formula: parseExpression(tokens.slice(1)) };
+    return { formula: doParse(1) };
   }
-  if (tokens[1] && tokens[1].assignment && tokens[0].name) {
+  if (tokens[1] && tokens[1].assignment) {
     return {
       name: tokens[0].name,
-      formula: parseExpression(tokens.slice(2)),
+      formula: doParse(2),
     };
   }
-  return { formula: parseExpression(tokens) };
+  return { formula: doParse(0) };
 };
+
+const subNamesForRefsInName = (term, tableId, tablesByName) => {
+  // A few cases:
+  // 1. It's the name of a cell in our table. Make a straight ref.
+  // 2. It's the name of a cell in anot
+  const myTableCellsByName = getCellsByNameForTableId(
+    store.getState(),
+    tableId,
+  );
+
+  const maybeMyCell = myTableCellsByName[term.name];
+  if (maybeMyCell) {
+    return {
+      ...term,
+      ref: maybeMyCell.id,
+    };
+  }
+
+  const thatTable = tablesByName[term.name];
+  if (thatTable) {
+    if (!term.lookup) {
+      return {
+        ...term,
+        ref: thatTable.id,
+      };
+    }
+    const thatTableCellsByName = getCellsByNameForTableId(
+      store.getState(),
+      thatTable.id,
+    );
+    const thatCell = thatTableCellsByName[term.lookup.name];
+    if (thatCell) {
+      return {
+        ...term.lookup.name,
+        name: `${thatTable.name}.${thatCell.name}`,
+        ref: thatCell.id,
+      };
+    }
+  }
+
+  // Not a direct cell reference, not a straight table reference,
+  // not a table.cell reference. No idea.
+  // Returned value has a name but no ref.
+  return term;
+};
+
+const subNamesForCellRef = (term, tableId, tablesByName) => {
+  const cellRef = subNamesForRefsInName(term, tableId, tablesByName);
+  if (cellRef.lookup) {
+    throw new Error('Got a field ref when we just want a cell ref.');
+  }
+  return cellRef;
+};
+
+const subNamesForRefsInCall = (term, tableId, tablesByName) => {
+  const translatedArgs = term.args.map(({ name, expr }) => ({
+    ref: subNamesForCellRef(name, tableId, tablesByName),
+    expr: subNamesForRefsInExpr(expr, tableId, tablesByName),
+  }));
+  return {
+    call: subNamesForCellRef(term, tableId, tablesByName),
+    args: translatedArgs,
+  };
+};
+
+const subNamesForRefsInTerm = (term, tableId, tablesByName) => {
+  if (term.name) {
+    return subNamesForRefsInName(term, tableId, tablesByName);
+  }
+  if (term.call) {
+    return subNamesForRefsInCall(term, tableId, tablesByName);
+  }
+  if (term.expression) {
+    return subNamesForRefsInExpr(term, tableId, tablesByName);
+  }
+  if (term.value || term.op) {
+    return term;
+  }
+  throw new Error('Unknown term type');
+};
+
+const subNamesForRefsInExpr = (expr, tableId, tablesByName) =>
+  expr.map(term => subNamesForRefsInTerm(term, tableId, tablesByName));
 
 const subNamesForRefs = (nameFormula, tableId) => {
   const tablesByName = getTablesByName(store.getState());
-  return nameFormula.map((term) => {
-    if (term.name) {
-      const parts = term.name.split('.');
-      if (parts.length > 2) return { badRef: term.name };
-      const refCellName = parts.pop();
-      const refTableName = parts.pop();
-      const refTableId = refTableName ? tablesByName[refTableName].id : tableId;
-      if (!refTableId) return { badRef: term.name };
-
-      const tableCellsByName = getCellsByNameForTableId(
-        store.getState(),
-        refTableId,
-      );
-      const cell = tableCellsByName[refCellName];
-      if (!cell) return { badRef: term.name };
-
-      if (refTableName) {
-        return { ref: cell.id, tableRef: refTableId };
-      }
-      return { ref: cell.id };
-    }
-    return term;
-  });
+  return subNamesForRefsInExpr(nameFormula.expression, tableId, tablesByName);
 };
 
 export const parseFormula = (s, tableId) => {
@@ -350,15 +556,28 @@ export const parseFormula = (s, tableId) => {
 };
 
 export const unparseTerm = (term, cellsById, tablesById) => {
-  if (term.value !== undefined) return JSON.stringify(term.value);
-  if (term.op) return term.op;
-  if (term.ref) {
-    if (term.tableRef) {
-      return `${tablesById[term.tableRef].name}.${cellsById[term.ref].name}`;
-    }
-    return cellsById[term.ref].name;
+  if (term.call) {
+    const callee = unparseTerm(term.call, cellsById, tablesById);
+    const argsText = term.args.map(({ ref, value }) => {
+      const refText = unparseTerm(ref, cellsById, tablesById);
+      const valueText = unparseTerm(value, cellsById, tablesById);
+      return `${refText}=${valueText}`;
+    }).join(', ');
+    return `${callee}(${argsText})`;
   }
-  if (term.badRef) return term.badRef;
+  if (term.expression) {
+    return term.expression.map(child =>
+      unparseTerm(child, cellsById, tablesById)).join(' ');
+  }
+  if (term.op) return term.op;
+  if (term.name) { // ref or bad-ref
+    let fullName = '';
+    for (let termIt = term; termIt; termIt = termIt.lookup) {
+      fullName += termIt.name;
+    }
+    return fullName;
+  }
+  if (term.value !== undefined) return JSON.stringify(term.value);
   throw new Error('Unknown term type');
 };
 

@@ -11,6 +11,18 @@ The long list:
 
 
 
+
+Plans have changed yet again.
+We're doing "what-if" formulas now:
+ "What would the value of this cell be if these cells had those values?"
+
+
+
+
+
+
+
+
 Very short term:
  - Catch parsing errors in the action creator,
  - Parse lookups and calls,
