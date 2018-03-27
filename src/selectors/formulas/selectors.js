@@ -76,12 +76,10 @@ const getFormulaGraphs = createSelector(
       backwardsGraph[id] = [];
     });
     cells.forEach(({ id, formula }) => {
-      const refs = getRefsForExpr(formula);
+      const refs = flattenExpr(formula).filter(({ ref }) => ref);
       refs.forEach((term) => {
-        if (term.ref) {
-          forwardsGraph[id].push(term.ref);
-          backwardsGraph[term.ref].push(id);
-        }
+        forwardsGraph[id].push(term.ref);
+        backwardsGraph[term.ref].push(id);
       });
     });
     tables.forEach(({ id }) => {
@@ -175,26 +173,25 @@ const expandTerm = (term, cell, cellsById, inFunction) => {
 };
 
 
-const getRefsForTerm = (term) => {
+const flattenTerm = (term) => {
   if (term.call) {
     return [].concat(
-      ...getRefsForTerm(term.call),
+      ...flattenTerm(term.call),
       // FIXME: proper args too?
       // eslint-disable-next-line no-use-before-define
-      ...[].concat(...term.args.map(({ value }) => getRefsForExpr(value))),
-      ...[].concat(...term.args.map(({ ref }) => getRefsForTerm(ref))),
+      ...[].concat(...term.args.map(({ value }) => flattenExpr(value))),
+      ...[].concat(...term.args.map(({ ref }) => flattenTerm(ref))),
     );
   }
-  if (term.op) return [];
-  if (term.value !== undefined) return [];
-  if (term.name) return [term];
-  if (term.ref) return [term];
+  if (term.op || term.value !== undefined || term.name || term.ref) {
+    return [term];
+  }
   throw new Error(`unknown term type ${JSON.stringify(term)}`);
 };
 
 
-const getRefsForExpr = expr =>
-  [].concat(...expr.map(getRefsForTerm));
+const flattenExpr = expr =>
+  [].concat(...expr.map(flattenTerm));
 
 
 const tableValue = (tableId, globals) => {
@@ -224,7 +221,6 @@ export const getCellValuesById = createSelector(
       globals[id] = { error: 'Circular ref' };
     });
 
-
     sortedRefIds.forEach((id) => {
       const cell = cellsById[id];
       if (!cell) {
@@ -241,8 +237,8 @@ export const getCellValuesById = createSelector(
         globals[id] = { error: 'Circular ref' };
         return;
       }
-      const refs = getRefsForExpr(cell.formula);
-      const badRefs = refs.filter(({ ref }) => !ref);
+      const allTerms = flattenExpr(cell.formula);
+      const badRefs = allTerms.filter(({ name, ref }) => name && !ref);
       if (badRefs.length > 0) {
         globals[id] = { error: badRefs[0].name };
         return;
