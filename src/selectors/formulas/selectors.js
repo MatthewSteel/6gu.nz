@@ -299,3 +299,13 @@ const functionCellsInOrder = (call) => {
   return [...cellsToEvaluate].sort((id1, id2) =>
     topoLocationsById[id1] - topoLocationsById[id2]);
 };
+
+// eslint-disable-next-line no-unused-vars
+const createFunction = (callTerm) => {
+  // const functionCells = functionCellsInOrder(callTerm);
+
+  const definition = 'return 0;'; // TODO
+  const argNames = callTerm.args.map((arg, i) => `v${i}`);
+  // eslint-disable-next-line no-new-func
+  return Function(...argNames, definition);
+};
