@@ -126,9 +126,10 @@ const rootReducer = (state, action) => {
         if (cell === existingCell) return undefined;
         return {
           ...cell,
+          // FIXME: doesn't work deep enough.
           formula: cell.formula.map((term) => {
             if (term.ref && term.ref === cellId) {
-              return { badRef: unparseTerm(term, cellsById, tablesById) };
+              return { name: unparseTerm(term, cellsById, tablesById) };
             }
             return term;
           }),

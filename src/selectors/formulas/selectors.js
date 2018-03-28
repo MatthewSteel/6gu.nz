@@ -2,7 +2,7 @@ import { createSelector } from 'reselect';
 import store from '../../redux/store';
 
 const getCells = state => state.cells;
-const getTables = state => state.tables;
+export const getTables = state => state.tables;
 
 export const getCellsById = createSelector(
   getCells,
@@ -13,7 +13,7 @@ export const getCellsById = createSelector(
   },
 );
 
-const getCellsByTableIdHelper = createSelector(
+export const getCellsByTableIdHelper = createSelector(
   getCells,
   (cells) => {
     const ret = {};
@@ -137,16 +137,16 @@ const callSignature = (callTerm) => {
   if (!callTerm.call.ref) {
     throw new Error('Can only call refs');
   }
-  const argRefs = callTerm.args.map(({ ref }) => ref);
+  const argRefs = callTerm.args.map(({ ref }) => ref.ref);
   const joinedRefs = argRefs.join(',');
   return `${callTerm.call.ref}(${joinedRefs})`;
 };
 
 const expandSetItem = (k, expr) =>
   `try {
-    globals[${JSON.stringify(k)}] = { value: ${expr} };
+    globals[${JSON.stringify(k)}].push({ value: ${expr} });
   } catch (e) {
-    globals[${JSON.stringify(k)}] = { error: e.toString() };
+    globals[${JSON.stringify(k)}].push({ error: e.toString() });
   }`;
 
 // eslint-disable-next-line no-unused-vars
@@ -164,7 +164,13 @@ const expandExpr = (expr) => {
   return expandedTerms.join(' ');
 };
 
-const expandRef = term => `globals[${JSON.stringify(term.ref)}].value`;
+// eslint-disable-next-line no-unused-vars
+const getRef = (globals, ref) => {
+  const values = globals[ref];
+  return values[values.length - 1];
+};
+
+const expandRef = term => `getRef(globals, ${JSON.stringify(term.ref)}).value`;
 
 const expandTerm = (term) => {
   if (term.ref) {
@@ -215,15 +221,37 @@ const tableValue = (tableId, globals) => {
     template: tableId,
   };
   tableCells.forEach(({ id, name }) => {
-    const { value } = globals[id];
-    ret.byId[id] = value;
-    ret.byName[name] = value;
+    const cellContents = getRef(globals, id);
+    ret.byId[id] = cellContents;
+    ret.byName[name] = cellContents.value;
   });
   return ret;
 };
 
 // eslint-disable-next-line no-unused-vars
 const pleaseThrow = (s) => { throw new Error(s); };
+
+const cellExpressions = (cells) => {
+  const ret = {};
+  cells.forEach((cell) => {
+    const allTerms = flattenExpr(cell.formula);
+    const badRefs = allTerms.filter(({ name, ref }) => name && !ref);
+    if (badRefs.length > 0) {
+      ret[cell.id] = `pleaseThrow(${JSON.stringify(badRefs[0].name)})`;
+    } else {
+      ret[cell.id] = expandExpr(cell.formula);
+    }
+  });
+  return ret;
+};
+
+const tableExpressions = (tables) => {
+  const ret = {};
+  tables.forEach(({ id }) => {
+    ret[id] = `tableValue(${JSON.stringify(id)}, globals)`;
+  });
+  return ret;
+};
 
 export const getCellValuesById = createSelector(
   getCells,
@@ -235,33 +263,21 @@ export const getCellValuesById = createSelector(
 
     // Initialize circular refs and things that depend on them.
     [...allCells, ...allTables].forEach(({ id }) => {
-      globals[id] = { error: 'Circular ref' };
+      globals[id] = [{ error: 'Circular ref' }];
     });
 
     // All expressions for cells and tables
-    const refExpressions = {};
-    // Cell expressions
-    allCells.forEach((cell) => {
-      const allTerms = flattenExpr(cell.formula);
-      const badRefs = allTerms.filter(({ name, ref }) => name && !ref);
-      if (badRefs.length > 0) {
-        refExpressions[cell.id] = `pleaseThrow(${JSON.stringify(badRefs[0].name)})`;
-      } else {
-        refExpressions[cell.id] = expandExpr(cell.formula);
-      }
-    });
-
-    // Table expressions
-    allTables.forEach(({ id }) => {
-      refExpressions[id] = `tableValue(${JSON.stringify(id)}, globals)`;
-    });
+    const refExpressions = {
+      ...cellExpressions(allCells),
+      ...tableExpressions(allTables),
+    };
 
     // Write all functions
     const allFormulas = allCells.map(({ formula }) => formula);
     const allTerms = [].concat(...allFormulas.map(flattenExpr));
     const allCalls = allTerms.filter(({ call }) => !!call);
     allCalls.forEach((callTerm) => {
-      globals[callSignature(callTerm)] = createFunction(callTerm);
+      globals[callSignature(callTerm)] = createFunction(callTerm, refExpressions);
     });
 
     // Evaluate every cell.
@@ -269,9 +285,18 @@ export const getCellValuesById = createSelector(
       // eslint-disable-next-line no-eval
       eval(expandSetItem(id, refExpressions[id]));
     });
-    return globals;
+    return getGlobalValues(globals, allCells, allTables);
   },
 );
+
+const getGlobalValues = (globals, allCells, allTables) => {
+  const ret = {};
+  allCells.forEach(({ id }) => { ret[id] = getRef(globals, id); });
+  // A bit of a hack: we should try to re-insert tables that contain
+  // circular-ref cells into the topological order, probably.
+  allTables.forEach(({ id }) => { ret[id] = tableValue(id, globals); });
+  return ret;
+};
 
 // eslint-disable-next-line no-unused-vars
 const expandPopItems = () => '';
@@ -319,8 +344,7 @@ const functionCellsInOrder = (call) => {
     topoLocationsById[id1] - topoLocationsById[id2]);
 };
 
-// eslint-disable-next-line no-unused-vars
-const createFunction = (callTerm) => {
+const createFunction = (callTerm /* , refExpressions */) => {
   // const functionCells = functionCellsInOrder(callTerm);
 
   const definition = 'return 0;'; // TODO

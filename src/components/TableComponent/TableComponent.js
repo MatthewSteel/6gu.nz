@@ -1,29 +1,7 @@
 import React, { Component } from 'react';
-import { connect } from 'react-redux';
-import {
-  getCellsByTableId,
-  getCellValuesById,
-  getTablesById,
-} from '../../selectors/formulas/selectors';
 import CellComponent from '../CellComponent/CellComponent';
 import FormulaComponent from '../FormulaComponent/FormulaComponent';
-import { deleteCell, setFormula } from '../../redux/store';
 import './TableComponent.css';
-
-const mapStateToProps = (state, ownProps) => {
-  const { tableId } = ownProps;
-  const ret = {
-    cellValuesById: getCellValuesById(state),
-    table: getTablesById(state)[tableId],
-    cells: getCellsByTableId(state, tableId),
-  };
-  return ret;
-};
-
-const mapDispatchToProps = dispatch => ({
-  deleteCellProp: cellId => dispatch(deleteCell(cellId)),
-  setCellFormula: (tableId, cellId, formula) => dispatch(setFormula(tableId, cellId, formula)),
-});
 
 const isWithin = (selY, selX, cell) => {
   const { x, y, width, height } = cell;
@@ -68,12 +46,12 @@ class TableComponent extends Component {
   }
 
   setFormula(stringFormula) {
-    const { deleteCellProp, tableId, setCellFormula } = this.props;
+    const { deleteCell, table, setCellFormula } = this.props;
     const { selection } = this.state;
     if (stringFormula === '') {
-      deleteCellProp(selection);
+      deleteCell(selection);
     } else {
-      setCellFormula(tableId, selection, stringFormula);
+      setCellFormula(table.id, selection, stringFormula);
     }
     this.setState({ selection: null });
   }
@@ -169,4 +147,4 @@ class TableComponent extends Component {
   }
 }
 
-export default connect(mapStateToProps, mapDispatchToProps)(TableComponent);
+export default TableComponent;

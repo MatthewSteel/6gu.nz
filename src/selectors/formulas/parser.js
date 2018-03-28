@@ -124,7 +124,7 @@ const parseTerm = (tokens, i) => {
       newIndex: newIndex + 1,
     };
   }
-  if (tokens[i].value) {
+  if (tokens[i].value !== undefined) {
     return {
       term: tokens[i],
       newIndex: i + 1,
@@ -258,7 +258,7 @@ const subNamesForRefsInTerm = (term, tableId, tablesByName) => {
       expression: subNamesForRefsInExpr(term.expression, tableId, tablesByName),
     };
   }
-  if (term.value || term.op) {
+  if (term.value !== undefined || term.op) {
     return term;
   }
   throw new Error('Unknown term type');
@@ -297,11 +297,11 @@ export const unparseTerm = (term, cellsById, tablesById) => {
   }
   if (term.op) return term.op;
   if (term.name) { // ref or bad-ref
-    let fullName = '';
+    const names = [];
     for (let termIt = term; termIt; termIt = termIt.lookup) {
-      fullName += termIt.name;
+      names.push(termIt.name);
     }
-    return fullName;
+    return names.join('.');
   }
   if (term.value !== undefined) return JSON.stringify(term.value);
   throw new Error('Unknown term type');
