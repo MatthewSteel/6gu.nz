@@ -13,6 +13,14 @@ const isWithin = (selY, selX, cell) => {
 
 const defaultFormatter = (value) => {
   if (typeof value === 'string') return value;
+  if (typeof value === 'object' && value.constructor === Array) {
+    if (value.length === 0) return '[]';
+    return '[..]';
+  }
+  if (typeof value === 'object' && value.constructor === Object) {
+    if (Object.keys(value).length === 0) return '{}';
+    return '{..}';
+  }
   return JSON.stringify(value);
 };
 
