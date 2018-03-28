@@ -178,6 +178,7 @@ const expandTerm = (term) => {
   }
   if (term.op) return term.op;
   if (term.value !== undefined) return JSON.stringify(term.value);
+  if (term.expression) return `(${expandExpr(term.expression)})`;
   throw new Error(`unknown term type ${JSON.stringify(term)}`);
 };
 
@@ -185,6 +186,7 @@ const expandTerm = (term) => {
 const flattenTerm = (term) => {
   if (term.call) {
     return [].concat(
+      term,
       ...flattenTerm(term.call),
       ...[].concat(...term.args.map(({ expr }) => flattenExpr(expr))),
       ...[].concat(...term.args.map(({ ref }) => flattenTerm(ref))),
@@ -192,6 +194,9 @@ const flattenTerm = (term) => {
   }
   if (term.op || term.value !== undefined || term.name || term.ref) {
     return [term];
+  }
+  if (term.expression) {
+    return flattenExpr(term.expression);
   }
   throw new Error(`unknown term type ${JSON.stringify(term)}`);
 };
@@ -227,11 +232,15 @@ export const getCellValuesById = createSelector(
   getTopoSortedRefIds,
   (allCells, allTables, cellsById, sortedRefIds) => {
     const globals = {};
+
+    // Initialize circular refs and things that depend on them.
     [...allCells, ...allTables].forEach(({ id }) => {
       globals[id] = { error: 'Circular ref' };
     });
 
+    // All expressions for cells and tables
     const refExpressions = {};
+    // Cell expressions
     allCells.forEach((cell) => {
       const allTerms = flattenExpr(cell.formula);
       const badRefs = allTerms.filter(({ name, ref }) => name && !ref);
@@ -242,10 +251,20 @@ export const getCellValuesById = createSelector(
       }
     });
 
+    // Table expressions
     allTables.forEach(({ id }) => {
       refExpressions[id] = `tableValue(${JSON.stringify(id)}, globals)`;
     });
 
+    // Write all functions
+    const allFormulas = allCells.map(({ formula }) => formula);
+    const allTerms = [].concat(...allFormulas.map(flattenExpr));
+    const allCalls = allTerms.filter(({ call }) => !!call);
+    allCalls.forEach((callTerm) => {
+      globals[callSignature(callTerm)] = createFunction(callTerm);
+    });
+
+    // Evaluate every cell.
     sortedRefIds.forEach((id) => {
       // eslint-disable-next-line no-eval
       eval(expandSetItem(id, refExpressions[id]));

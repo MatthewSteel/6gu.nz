@@ -64,10 +64,10 @@ const parseArgsList = (tokens, i) => {
     const {
       term: expression,
       newIndex: expressionIndex,
-    } = parseExpression(tokens, i);
+    } = parseExpression(tokens, eqIndex + 1);
     argsList.push({
-      ref: lookups,
-      value: expression,
+      name: lookups,
+      expr: expression,
     });
     if (expressionIndex === tokens.length) {
       throw new Error('Expected more after experssion in args list');
@@ -90,13 +90,14 @@ const parseArgsList = (tokens, i) => {
 
 const parseTermFromName = (tokens, i) => {
   const { term, newIndex } = parseLookups(tokens, i);
-  if (newIndex === tokens.length || tokens[newIndex].op) {
+  const nextToken = tokens[newIndex];
+  if (nextToken === undefined || nextToken.op) {
     return {
       term,
       newIndex,
     };
   }
-  if (tokens[i].open) {
+  if (nextToken.open) {
     if (newIndex + 1 === tokens.length) {
       throw new Error("Formula can't end with the start of a call");
     }
@@ -120,7 +121,7 @@ const parseTerm = (tokens, i) => {
     }
     return {
       term: { expression: term },
-      newIndex: newIndex + 2,
+      newIndex: newIndex + 1,
     };
   }
   if (tokens[i].value) {
@@ -142,9 +143,9 @@ const parseExpression = (tokens, i) => {
     const { term, newIndex } = parseTerm(tokens, j);
     elements.push(term);
     j = newIndex;
-    if (j === tokens.length || tokens[j].op === ')') {
+    if (j === tokens.length || tokens[j].close) {
       return {
-        term: { expression: elements },
+        term: elements,
         newIndex: j,
       };
     }
@@ -161,7 +162,7 @@ const parseTokens = (tokens) => {
   //  1. name? = expression?
   //  2. expression
   const doParse = (start) => {
-    if (start === tokens.length) return { expression: [{ value: 0 }] };
+    if (start === tokens.length) return [{ value: 0 }];
     const { term, newIndex } = parseExpression(tokens, start);
     if (newIndex !== tokens.length) {
       throw new Error('Unchomped tokens at end of forumla');
@@ -240,7 +241,7 @@ const subNamesForRefsInCall = (term, tableId, tablesByName) => {
     expr: subNamesForRefsInExpr(expr, tableId, tablesByName),
   }));
   return {
-    call: subNamesForCellRef(term, tableId, tablesByName),
+    call: subNamesForCellRef(term.call, tableId, tablesByName),
     args: translatedArgs,
   };
 };
@@ -253,7 +254,9 @@ const subNamesForRefsInTerm = (term, tableId, tablesByName) => {
     return subNamesForRefsInCall(term, tableId, tablesByName);
   }
   if (term.expression) {
-    return subNamesForRefsInExpr(term, tableId, tablesByName);
+    return {
+      expression: subNamesForRefsInExpr(term.expression, tableId, tablesByName),
+    };
   }
   if (term.value || term.op) {
     return term;
@@ -266,7 +269,7 @@ const subNamesForRefsInExpr = (expr, tableId, tablesByName) =>
 
 const subNamesForRefs = (nameFormula, tableId) => {
   const tablesByName = getTablesByName(store.getState());
-  return subNamesForRefsInExpr(nameFormula.expression, tableId, tablesByName);
+  return subNamesForRefsInExpr(nameFormula, tableId, tablesByName);
 };
 
 export const parseFormula = (s, tableId) => {
@@ -281,16 +284,16 @@ export const parseFormula = (s, tableId) => {
 export const unparseTerm = (term, cellsById, tablesById) => {
   if (term.call) {
     const callee = unparseTerm(term.call, cellsById, tablesById);
-    const argsText = term.args.map(({ ref, value }) => {
+    const argsText = term.args.map(({ ref, expr }) => {
       const refText = unparseTerm(ref, cellsById, tablesById);
-      const valueText = unparseTerm(value, cellsById, tablesById);
-      return `${refText}=${valueText}`;
+      const exprText = unparseExpr(expr, cellsById, tablesById);
+      return `${refText}=${exprText}`;
     }).join(', ');
     return `${callee}(${argsText})`;
   }
   if (term.expression) {
-    return term.expression.map(child =>
-      unparseTerm(child, cellsById, tablesById)).join(' ');
+    const expr = unparseExpr(term.expression, cellsById, tablesById);
+    return `(${expr})`;
   }
   if (term.op) return term.op;
   if (term.name) { // ref or bad-ref
@@ -303,6 +306,9 @@ export const unparseTerm = (term, cellsById, tablesById) => {
   if (term.value !== undefined) return JSON.stringify(term.value);
   throw new Error('Unknown term type');
 };
+
+const unparseExpr = (expr, cellsById, tablesById) => expr.map(child =>
+  unparseTerm(child, cellsById, tablesById)).join(' ');
 
 export const stringFormula = (cellId) => {
   const cellsById = getCellsById(store.getState());
