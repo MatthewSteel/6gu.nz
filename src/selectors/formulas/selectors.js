@@ -67,8 +67,9 @@ export const getTablesByName = createSelector(
 
 const getFormulaGraphs = createSelector(
   getCells,
+  getCellsById,
   getTables,
-  (cells, tables) => {
+  (cells, cellsById, tables) => {
     const forwardsGraph = {};
     const backwardsGraph = {};
     [...cells, ...tables].forEach(({ id }) => {
@@ -76,7 +77,7 @@ const getFormulaGraphs = createSelector(
       backwardsGraph[id] = [];
     });
     cells.forEach(({ id, formula }) => {
-      const refs = flattenExpr(formula).filter(({ ref }) => ref);
+      const refs = flattenExpr(formula).filter(({ ref }) => cellsById[ref]);
       refs.forEach((term) => {
         forwardsGraph[id].push(term.ref);
         backwardsGraph[term.ref].push(id);
@@ -155,7 +156,13 @@ const expandCall = (callTerm) => {
   const signature = callSignature(callTerm);
   const customArgs = callTerm.args.map(({ expr }) =>
     expandExpr(expr));
-  const allArgs = ['globals', 'getRef', 'pleaseThrow', ...customArgs].join(', ');
+  const allArgs = [
+    'globals',
+    'getRef',
+    'pleaseThrow',
+    'tableValue',
+    ...customArgs,
+  ].join(', ');
   return `globals[${JSON.stringify(signature)}](${allArgs})`;
 };
 
@@ -230,11 +237,12 @@ const tableValue = (tableId, globals) => {
 // eslint-disable-next-line no-unused-vars
 const pleaseThrow = (s) => { throw new Error(s); };
 
-const cellExpressions = (cells) => {
+const cellExpressions = (cells, cellsById) => {
   const ret = {};
   cells.forEach((cell) => {
     const allTerms = flattenExpr(cell.formula);
-    const badRefs = allTerms.filter(({ name, ref }) => name && !ref);
+    const badRefs = allTerms.filter(({ name, ref }) =>
+      name && !cellsById[ref]);
     if (badRefs.length > 0) {
       ret[cell.id] = `pleaseThrow(${JSON.stringify(badRefs[0].name)})`;
     } else {
@@ -267,7 +275,7 @@ export const getCellValuesById = createSelector(
 
     // All expressions for cells and tables
     const refExpressions = {
-      ...cellExpressions(allCells),
+      ...cellExpressions(allCells, cellsById),
       ...tableExpressions(allTables),
     };
 
@@ -374,5 +382,12 @@ const createFunction = (callTerm, refExpressions) => {
   const definition = functionBits.join('\n');
   const argNames = callTerm.args.map((arg, i) => `v${i}`);
   // eslint-disable-next-line no-new-func
-  return Function('globals', 'getRef', 'pleaseThrow', ...argNames, definition);
+  return Function(
+    'globals',
+    'getRef',
+    'pleaseThrow',
+    'tableValue',
+    ...argNames,
+    definition,
+  );
 };

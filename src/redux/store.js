@@ -1,13 +1,7 @@
 import { createStore } from 'redux';
 import uuidv4 from 'uuid-v4';
-import {
-  getCellsById,
-  getTablesById,
-} from '../selectors/formulas/selectors';
-import {
-  parseFormula,
-  unparseTerm,
-} from '../selectors/formulas/parser';
+import { getCellsById } from '../selectors/formulas/selectors';
+import { parseFormula } from '../selectors/formulas/parser';
 
 
 const initialState = {
@@ -63,7 +57,7 @@ const initialState = {
 
 export const setFormula = (tableId, cellId, formula) => ({
   type: 'SET_CELL_FORMULA',
-  payload: { tableId, cellId, stringFormula: formula },
+  payload: { tableId, cellId, formulaStr: formula },
 });
 
 export const deleteCell = cellId => ({
@@ -87,12 +81,12 @@ const defaultCellForLocation = (tableId, cellId) => {
 
 const rootReducer = (state, action) => {
   if (action.type === 'SET_CELL_FORMULA') {
-    const { cellId, stringFormula, tableId } = action.payload;
+    const { cellId, formulaStr, tableId } = action.payload;
 
     const existingCell = state.cells.find(({ id }) => id === cellId);
 
     const cell = existingCell || defaultCellForLocation(tableId, cellId);
-    const newFormula = parseFormula(stringFormula, cell.tableId);
+    const newFormula = parseFormula(formulaStr, cell.tableId);
 
     return {
       ...state,
@@ -113,28 +107,12 @@ const rootReducer = (state, action) => {
     // I think "in the future" we will have a lot of state to keep track
     // of :-/
     const { cellId } = action.payload;
-    const existingCell = state.cells.find(({ id }) => id === cellId);
-
+    const existingCell = getCellsById(state)[cellId];
     if (!existingCell) return state;
-
-    const cellsById = getCellsById(state);
-    const tablesById = getTablesById(state);
 
     return {
       ...state,
-      cells: state.cells.map((cell) => {
-        if (cell === existingCell) return undefined;
-        return {
-          ...cell,
-          // FIXME: doesn't work deep enough.
-          formula: cell.formula.map((term) => {
-            if (term.ref && term.ref === cellId) {
-              return { name: unparseTerm(term, cellsById, tablesById) };
-            }
-            return term;
-          }),
-        };
-      }).filter(Boolean),
+      cells: state.cells.filter(({ id }) => id !== cellId),
     };
   }
 
