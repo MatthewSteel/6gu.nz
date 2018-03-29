@@ -2,6 +2,7 @@ import { createStore } from 'redux';
 import uuidv4 from 'uuid-v4';
 import { getCellsById } from '../selectors/formulas/selectors';
 import { parseFormula } from '../selectors/formulas/parser';
+import defaultCellName from '../selectors/formulas/defaultCellName';
 
 
 const initialState = {
@@ -66,14 +67,14 @@ export const deleteCell = cellId => ({
 });
 
 const defaultCellForLocation = (tableId, cellId) => {
-  const [, y, x] = cellId.split('_').map(Number);
+  const [y, x] = cellId.split(',').map(Number);
   return {
     tableId,
     id: uuidv4(),
-    name: cellId,
+    name: defaultCellName(y, x),
     formula: [],
-    x: x - 1,
-    y: y - 1,
+    x,
+    y,
     width: 1,
     height: 1,
   };

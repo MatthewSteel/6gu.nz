@@ -70,7 +70,7 @@ class TableComponent extends Component {
     const selectedCell = cells.find(cell => isWithin(selY, selX, cell));
     return selectedCell ?
       selectedCell.id :
-      `_${selY + 1}_${selX + 1}`;
+      `${selY},${selX}`;
   }
 
   updateSelection() {
@@ -91,9 +91,9 @@ class TableComponent extends Component {
     const filledCells = cells.map((cell) => {
       const { id, x, y, width, height, name } = cell;
 
-      for (let dy = 1; dy <= height; ++dy) {
-        for (let dx = 1; dx <= width; ++dx) {
-          drawnCells.add(`_${y + dy}_${x + dx}`);
+      for (let dy = 0; dy < height; ++dy) {
+        for (let dx = 0; dx < width; ++dx) {
+          drawnCells.add(`${y + dy},${x + dx}`);
         }
       }
       const selected = selection === cell.id;
@@ -101,9 +101,9 @@ class TableComponent extends Component {
         <CellComponent
           key={id}
           id={id}
-          x={x + 1}
+          x={x}
           width={width}
-          y={y + 1}
+          y={y}
           height={height}
           name={name}
           value={cellValuesById[id]}
@@ -115,9 +115,9 @@ class TableComponent extends Component {
     });
 
     const emptyCells = [];
-    for (let cy = 1; cy <= table.height; ++cy) {
-      for (let cx = 1; cx <= table.width; ++cx) {
-        const place = `_${cy}_${cx}`;
+    for (let cy = 0; cy < table.height; ++cy) {
+      for (let cx = 0; cx < table.width; ++cx) {
+        const place = `${cy},${cx}`;
         if (drawnCells.has(place)) continue;
         const cellSelected = place === selection;
         emptyCells.push((
