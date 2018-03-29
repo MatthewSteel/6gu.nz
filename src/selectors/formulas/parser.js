@@ -158,7 +158,7 @@ const parseExpression = (tokens, i) => {
 };
 
 
-const parseTokens = (tokens) => {
+export const parseTokens = (tokens) => {
   // There are two legal forms for formulas
   //  1. name? = expression?
   //  2. expression
