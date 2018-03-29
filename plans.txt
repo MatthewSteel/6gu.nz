@@ -2,7 +2,6 @@ The long list:
  - better keyboard nav,
  - better formula display/input,
  - complex data structures :-(
- - compiled functions and calls
  - storage
  - js interop,
  - collaboration,
@@ -16,12 +15,24 @@ Short-term:
 
 Possible next projects:
  - Browsing through data?
+ - Making new sheets,
+ - Drop-down boxes on top-level sheets to select them,
 
 
-What to test?
-  No tests on evaluation at the moment...
-  Topological sorting, transitive closure...
+Some simple keyboard nav would do wonders.
+ - One table is selected,
+ - Arrow keys move the selection around when the box isn't focussed,
+ - Enter selects the formula box,
+ - Enter submits, escape cancels (and resets),
+ - Do something reasonable with clicks.
 
+
+
+Do we want a special "sheet" literal function to make structs?
+
+
+Names in formulas are a bit screwy, aren't they?
+  Yeah, names have stopped updating :-(((
 
 
 Names in call args should be looked up on the target cell's sheet?
@@ -35,13 +46,6 @@ Tables should probably always find their way into the order? "If they're not pre
 
 
 
-
-Very short term:
- - Catch parsing errors in the action creator,
- - Display errors.
-
-Then:
- - Browse the tree. That's an "easy" but frigging awesome feature.
 
 Then:
  - Complex data types? That's hard, man...
