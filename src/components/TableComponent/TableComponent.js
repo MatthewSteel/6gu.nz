@@ -21,6 +21,7 @@ const defaultFormatter = (value) => {
     if (Object.keys(value).length === 0) return '{}';
     return '{..}';
   }
+  if (typeof value === 'number') return value.toString();
   return JSON.stringify(value);
 };
 
