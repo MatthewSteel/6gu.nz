@@ -44,7 +44,7 @@ const initialState = {
     id: 'cell2',
     tableId: 'table0',
     name: 'Wiremu',
-    formula: [{ value: 'baz' }],
+    formula: [{ ref: 'cell0', name: 'Fred' }],
     x: 0,
     y: 1,
     width: 1,

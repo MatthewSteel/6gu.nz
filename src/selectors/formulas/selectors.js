@@ -149,12 +149,13 @@ const expandSetItem = (k, expr) =>
     globals[${JSON.stringify(k)}].push({ error: e.toString() });
   }`;
 
-// eslint-disable-next-line no-unused-vars
-const expandCall = (callTerm, cell) => {
+const expandPopItem = k => `globals[${JSON.stringify(k)}].pop();`;
+
+const expandCall = (callTerm) => {
   const signature = callSignature(callTerm);
   const customArgs = callTerm.args.map(({ expr }) =>
-    expandExpr(expr, cell));
-  const allArgs = ['globals', ...customArgs].join(', ');
+    expandExpr(expr));
+  const allArgs = ['globals', 'getRef', 'pleaseThrow', ...customArgs].join(', ');
   return `globals[${JSON.stringify(signature)}](${allArgs})`;
 };
 
@@ -164,7 +165,6 @@ const expandExpr = (expr) => {
   return expandedTerms.join(' ');
 };
 
-// eslint-disable-next-line no-unused-vars
 const getRef = (globals, ref) => {
   const values = globals[ref];
   return values[values.length - 1];
@@ -212,7 +212,6 @@ const flattenExpr = expr =>
   [].concat(...expr.map(flattenTerm));
 
 
-// eslint-disable-next-line no-unused-vars
 const tableValue = (tableId, globals) => {
   const tableCells = getCellsByTableId(store.getState(), tableId);
   const ret = {
@@ -298,15 +297,11 @@ const getGlobalValues = (globals, allCells, allTables) => {
   return ret;
 };
 
-// eslint-disable-next-line no-unused-vars
-const expandPopItems = () => '';
-
 const transitiveClosure = (ids, graph) => {
   let frontier = ids;
-  const closure = new Set(...frontier);
+  const closure = new Set(frontier);
   while (frontier.length > 0) {
     const newFrontier = [];
-    frontier = newFrontier;
     frontier.forEach((id) => {
       const nextNodes = graph[id] || [];
       nextNodes.forEach((nextNode) => {
@@ -316,7 +311,11 @@ const transitiveClosure = (ids, graph) => {
         }
       });
     });
+    frontier = newFrontier;
   }
+  // Do not include source nodes in transitive closure, we usually want to
+  // treat them specially.
+  ids.forEach((id) => { closure.delete(id); });
   return closure;
 };
 
@@ -328,15 +327,14 @@ const setIntersection = (setA, setB) => {
   return intersection;
 };
 
-// eslint-disable-next-line no-unused-vars
 const functionCellsInOrder = (call) => {
   const {
     forwardsGraph,
     backwardsGraph,
-  } = getFormulaGraphs(store.getState);
+  } = getFormulaGraphs(store.getState());
   const argRefs = call.args.map(({ ref }) => ref.ref);
   const dependOnArgs = transitiveClosure(argRefs, backwardsGraph);
-  const leadsToValue = transitiveClosure(call.call, forwardsGraph);
+  const leadsToValue = transitiveClosure([call.call.ref], forwardsGraph);
   const cellsToEvaluate = setIntersection(dependOnArgs, leadsToValue);
 
   const topoLocationsById = getTopoLocationById(store.getState());
@@ -344,11 +342,37 @@ const functionCellsInOrder = (call) => {
     topoLocationsById[id1] - topoLocationsById[id2]);
 };
 
-const createFunction = (callTerm /* , refExpressions */) => {
-  // const functionCells = functionCellsInOrder(callTerm);
+const createFunction = (callTerm, refExpressions) => {
+  const functionBits = [];
 
-  const definition = 'return 0;'; // TODO
+  // Code for adding the args to the global state
+  callTerm.args.forEach(({ ref }, i) => {
+    functionBits.push(expandSetItem(ref.ref, `v${i}`));
+  });
+
+  // Code for running the function
+  const functionCells = functionCellsInOrder(callTerm);
+  functionCells.forEach((id) => {
+    functionBits.push(expandSetItem(id, refExpressions[id]));
+  });
+
+  // Prepare return value
+  functionBits.push(`const ret = ${refExpressions[callTerm.call.ref]};`);
+
+  // Pop all intermediate values from global state
+  callTerm.args.forEach(({ ref }) => {
+    functionBits.push(expandPopItem(ref.ref));
+  });
+  functionCells.forEach((id) => {
+    functionBits.push(expandPopItem(id));
+  });
+
+  // return.
+  functionBits.push('return ret;');
+
+  // Construct the function
+  const definition = functionBits.join('\n');
   const argNames = callTerm.args.map((arg, i) => `v${i}`);
   // eslint-disable-next-line no-new-func
-  return Function(...argNames, definition);
+  return Function('globals', 'getRef', 'pleaseThrow', ...argNames, definition);
 };

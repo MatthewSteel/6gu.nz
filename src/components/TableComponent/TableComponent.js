@@ -13,7 +13,7 @@ const isWithin = (selY, selX, cell) => {
 
 const defaultFormatter = (value) => {
   if (typeof value === 'string') return value;
-  if (typeof value === 'object' && value.constructor === Array) {
+  if (value instanceof Array) {
     if (value.length === 0) return '[]';
     return '[..]';
   }

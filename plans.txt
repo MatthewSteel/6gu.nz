@@ -10,24 +10,31 @@ The long list:
  - custom cell formatting incl charts.
 
 
+Short-term:
+ - Lookups,
+ - Formula error-handling,
+ - Cell error display
+ - Bad ref replacement in more detail.
+    - Is there an abstraction here? Maybe not, we kinda want a deep replacement...
+    - Oh, just unparse and re-parse. Of course.
+
+Possible next projects:
+ - Testing,
+ - Browsing through data?
 
 
-Plans have changed yet again.
-We're doing "what-if" formulas now:
- "What would the value of this cell be if these cells had those values?"
 
+I think lookups are backwards
+Bad-ref replacement doesn't look deep into calls/exprs etc.
 
-
-
+Tables should probably always find their way into the order? "If they're not present, sever their links to their broken children and re-run"?
+  Not quite that simple, I think. We're good for now, though.
 
 
 
 
 Very short term:
  - Catch parsing errors in the action creator,
- - Parse lookups and calls,
- - Validate parens and ops,
- - Compile functions and run them,
  - Display errors.
 
 Then:
@@ -37,64 +44,16 @@ Then:
  - Complex data types? That's hard, man...
 
 
-OK, tech design for tables :-).
-  - At first we can have n global "templates". All templates are global.
-  - Extend parser to allow `func(param=expr, ...)`. Recursive?
-
-Hmm, there's some annoying stuff around default args, between-sheet references, functions and circular references. In v0 I'm going to have no recursion, function calls happen when they seem to happen, dots being dots, etc.
-
 
 What do things look like from top-level?
 
 Compile sheets to functions ahead of time and store them in an object. That's easy enough.
 What I'm most worried about is top-level stuff -- can we compile it and reuse it? Kinda -- if terms are removed, the tsort stays intact. If terms are inserted, the ordering need only change between the two points (and we can run things from that point on.) We can chunk the computation and it can be JITted just fine.
 
-The global state is basically just a function? But `data` and `globals` are the same object, is all. And we use ids instead of names.
-
-Sounds like a decent plan.
-
-Steps:
-  1. Tsort globally and by table, incl. "table" nodes.
-  2. Compile functions (up-front), incl. "global" function.
-  3. Run the global function.
-
 Boy a lot of stuff is going to get rewritten when we need to make this fast...
 (For future partial recompute: When an edge is added, we're lucky -- we can do with a linear scan and just put it "as late as possible" into the computation DAG.)
 
-I think we need to write a proper parser now :-(((.
-
-Important: `table.cell` compiles to `{ ref: cellId }`. Otherwise lots of `{ lookup }`.
-
-Errors are going to be "fast and shit" for the moment -- top level try/catch, lots of `undefined` values rather than Excel-style errors.
-
-
-
-function(data, globals, f) {
-  try {
-    data['cellId0'] = data['cellId0'] || { value: ${expand(expr)} };
-  } catch(e) {
-    data['cellId0'] = { error: e.toString() };
-  }
-  // ..
-
-  return { data, tableId: 'literal', f };
-}
-
-
-tableData[tableId] = { data: {defaults by id}, template: tableId, f: func }
-
-Why? So we can refer to it from places. Only put it in when it's done, though.
-
-When we "scan" a cell, we add its value to globals, and we add it to the intermediate table, and when we "scan" the table we add its value to the globals.
-
-Dynamic names.
-  I think we actually literally want to store names in formulas :-(.
-    - How do renames work? They don't :(.
-    - OK, then we use names for function calls and stored objects, and we use ids at the top level. I think we can live with that.
-  - We can "smarten up" the function calls later if we want.
-
-
-
+Struct lookup is by name, I think.
 
 
 

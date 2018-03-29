@@ -91,7 +91,7 @@ const parseArgsList = (tokens, i) => {
 const parseTermFromName = (tokens, i) => {
   const { term, newIndex } = parseLookups(tokens, i);
   const nextToken = tokens[newIndex];
-  if (nextToken === undefined || nextToken.op) {
+  if (nextToken === undefined || nextToken.op || nextToken.close) {
     return {
       term,
       newIndex,
