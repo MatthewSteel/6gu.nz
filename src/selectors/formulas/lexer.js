@@ -39,11 +39,20 @@ const chompWhitespace = (input, i) => {
   return { matchEnd: j };
 };
 
+const lexOp = (input, i) => {
+  const twoCharOps = new Set('**', '>=', '<=', '>>', '<<');
+  if (i + 1 !== input.length) {
+    const maybeOp = input.charAt(i) + input.charAt(i + 1);
+    if (twoCharOps.has(maybeOp)) {
+      return { matchEnd: i + 2, token: { op: maybeOp } };
+    }
+  }
+  return { matchEnd: i + 1, token: { op: input.charAt(i) } };
+};
+
 const lexOne = (input, i) => {
   const next = input.charAt(i);
-  if (next.match(/^[+\-*/%]$/)) {
-    return { matchEnd: i + 1, token: { op: next } };
-  }
+  if (next.match(/^[<>+\-*/%]$/)) return lexOp(input, i);
   if (next === '(') return { matchEnd: i + 1, token: { open: '(' } };
   if (next === ')') return { matchEnd: i + 1, token: { close: ')' } };
   if (canStartName(next)) return lexName(input, i);

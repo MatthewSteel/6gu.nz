@@ -8,7 +8,7 @@ import {
 } from './selectors';
 
 const parseOperators = (tokens, i) => {
-  if (!tokens[i].op || !tokens[i].op.match(/^[+\-*/%,]$/)) {
+  if (!tokens[i].op) {
     throw new Error('Expected a binary operator somewhere');
   }
   let j;
