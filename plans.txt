@@ -11,17 +11,20 @@ The long list:
 
 
 Short-term:
- - Lookups,
  - Formula error-handling,
  - Cell error display
- - Bad ref replacement in more detail.
-    - Is there an abstraction here? Maybe not, we kinda want a deep replacement...
-    - Oh, just unparse and re-parse. Of course.
 
 Possible next projects:
- - Testing,
  - Browsing through data?
 
+
+What to test?
+  No tests on evaluation at the moment...
+  Topological sorting, transitive closure...
+
+
+
+Names in call args should be looked up on the target cell's sheet?
 
 
 I think lookups are backwards
