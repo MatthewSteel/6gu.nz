@@ -69,7 +69,8 @@ const getFormulaGraphs = createSelector(
   getCells,
   getCellsById,
   getTables,
-  (cells, cellsById, tables) => {
+  getTablesById,
+  (cells, cellsById, tables, tablesById) => {
     const forwardsGraph = {};
     const backwardsGraph = {};
     [...cells, ...tables].forEach(({ id }) => {
@@ -77,7 +78,8 @@ const getFormulaGraphs = createSelector(
       backwardsGraph[id] = [];
     });
     cells.forEach(({ id, formula }) => {
-      const refs = flattenExpr(formula).filter(({ ref }) => cellsById[ref]);
+      const refs = flattenExpr(formula).filter(({ ref }) =>
+        cellsById[ref] || tablesById[ref]);
       refs.forEach((term) => {
         forwardsGraph[id].push(term.ref);
         backwardsGraph[term.ref].push(id);
@@ -237,12 +239,12 @@ const tableValue = (tableId, globals) => {
 // eslint-disable-next-line no-unused-vars
 const pleaseThrow = (s) => { throw new Error(s); };
 
-const cellExpressions = (cells, cellsById) => {
+const cellExpressions = (cells, cellsById, tablesById) => {
   const ret = {};
   cells.forEach((cell) => {
     const allTerms = flattenExpr(cell.formula);
     const badRefs = allTerms.filter(({ name, ref }) =>
-      name && !cellsById[ref]);
+      name && !(cellsById[ref] || tablesById[ref]));
     if (badRefs.length > 0) {
       ret[cell.id] = `pleaseThrow(${JSON.stringify(badRefs[0].name)})`;
     } else {
@@ -263,9 +265,10 @@ const tableExpressions = (tables) => {
 export const getCellValuesById = createSelector(
   getCells,
   getTables,
+  getTablesById,
   getCellsById,
   getTopoSortedRefIds,
-  (allCells, allTables, cellsById, sortedRefIds) => {
+  (allCells, allTables, tablesById, cellsById, sortedRefIds) => {
     const globals = {};
 
     // Initialize circular refs and things that depend on them.
@@ -275,7 +278,7 @@ export const getCellValuesById = createSelector(
 
     // All expressions for cells and tables
     const refExpressions = {
-      ...cellExpressions(allCells, cellsById),
+      ...cellExpressions(allCells, cellsById, tablesById),
       ...tableExpressions(allTables),
     };
 

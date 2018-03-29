@@ -29,7 +29,6 @@ class BookComponent extends PureComponent {
       deleteCellProp,
     } = this.props;
 
-
     const tableComponents = tables.map((table) => {
       const tableCells = cellsByTableId[table.id] || [];
       return (

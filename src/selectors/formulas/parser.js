@@ -21,8 +21,8 @@ const parseOperators = (tokens, i) => {
   return tokens.slice(i, j);
 };
 
-const parseLookups = (tokens, i) => {
-  const ret = { ...tokens[i] };
+const parseLookups = (tokens, i, lookupObj) => {
+  const ret = { ...lookupObj };
   let lastToken = ret;
   let j;
   for (j = i + 1; j < tokens.length && tokens[j].lookup; j += 2) {
@@ -54,7 +54,7 @@ const parseArgsList = (tokens, i) => {
     const {
       term: lookups,
       newIndex: eqIndex,
-    } = parseLookups(tokens, j);
+    } = parseLookups(tokens, j, tokens[j]);
     if (eqIndex === tokens.length || !tokens[eqIndex].assignment) {
       throw new Error('Expected assignment in argument');
     }
@@ -89,7 +89,7 @@ const parseArgsList = (tokens, i) => {
 
 
 const parseTermFromName = (tokens, i) => {
-  const { term, newIndex } = parseLookups(tokens, i);
+  const { term, newIndex } = parseLookups(tokens, i, tokens[i]);
   const nextToken = tokens[newIndex];
   if (nextToken === undefined || nextToken.op || nextToken.close || nextToken.comma) {
     return {
@@ -102,12 +102,14 @@ const parseTermFromName = (tokens, i) => {
       throw new Error("Formula can't end with the start of a call");
     }
     const argsData = parseArgsList(tokens, newIndex + 1);
+    const callTerm = {
+      call: term,
+      args: argsData.term,
+    };
+    const finalExpr = parseLookups(tokens, argsData.newIndex - 1, callTerm);
     return {
-      term: {
-        call: term,
-        args: argsData.term,
-      },
-      newIndex: argsData.newIndex,
+      term: finalExpr.term,
+      newIndex: finalExpr.newIndex,
     };
   }
   throw new Error('Unexpected token after name.');
