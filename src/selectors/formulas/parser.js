@@ -54,7 +54,7 @@ const parseArgsList = (tokens, i) => {
     const {
       term: lookups,
       newIndex: eqIndex,
-    } = parseLookups(tokens, i);
+    } = parseLookups(tokens, j);
     if (eqIndex === tokens.length || !tokens[eqIndex].assignment) {
       throw new Error('Expected assignment in argument');
     }
@@ -82,7 +82,7 @@ const parseArgsList = (tokens, i) => {
     if (!tokens[expressionIndex].comma) {
       throw new Error('Expected comma or bracket in args list');
     }
-    j = expressionIndex + 1;
+    j = expressionIndex;
   }
   throw new Error('Expected more in args list');
 };
@@ -91,7 +91,7 @@ const parseArgsList = (tokens, i) => {
 const parseTermFromName = (tokens, i) => {
   const { term, newIndex } = parseLookups(tokens, i);
   const nextToken = tokens[newIndex];
-  if (nextToken === undefined || nextToken.op || nextToken.close) {
+  if (nextToken === undefined || nextToken.op || nextToken.close || nextToken.comma) {
     return {
       term,
       newIndex,
@@ -143,7 +143,7 @@ const parseExpression = (tokens, i) => {
     const { term, newIndex } = parseTerm(tokens, j);
     elements.push(term);
     j = newIndex;
-    if (j === tokens.length || tokens[j].close) {
+    if (j === tokens.length || tokens[j].close || tokens[j].comma) {
       return {
         term: elements,
         newIndex: j,
