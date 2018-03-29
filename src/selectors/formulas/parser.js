@@ -4,7 +4,6 @@ import { lexFormula } from './lexer';
 import {
   getCellsById,
   getCellsByNameForTableId,
-  getTablesById,
   getTablesByName,
 } from './selectors';
 
@@ -284,24 +283,24 @@ export const parseFormula = (s, tableId) => {
   };
 };
 
-export const unparseTerm = (term, cellsById, tablesById) => {
+export const unparseTerm = (term) => {
   if (term.lookup) {
     const termWithoutLookup = { ...term, lookup: undefined };
-    const pre = unparseTerm(termWithoutLookup, cellsById, tablesById);
-    const post = unparseTerm(term.lookup, cellsById, tablesById);
+    const pre = unparseTerm(termWithoutLookup);
+    const post = unparseTerm(term.lookup);
     return `${pre}.${post}`;
   }
   if (term.call) {
-    const callee = unparseTerm(term.call, cellsById, tablesById);
+    const callee = unparseTerm(term.call);
     const argsText = term.args.map(({ ref, expr }) => {
-      const refText = unparseTerm(ref, cellsById, tablesById);
-      const exprText = unparseExpr(expr, cellsById, tablesById);
+      const refText = unparseTerm(ref);
+      const exprText = unparseExpr(expr);
       return `${refText}=${exprText}`;
     }).join(', ');
     return `${callee}(${argsText})`;
   }
   if (term.expression) {
-    const expr = unparseExpr(term.expression, cellsById, tablesById);
+    const expr = unparseExpr(term.expression);
     return `(${expr})`;
   }
   if (term.op) return term.op;
@@ -310,12 +309,10 @@ export const unparseTerm = (term, cellsById, tablesById) => {
   throw new Error('Unknown term type');
 };
 
-const unparseExpr = (expr, cellsById, tablesById) => expr.map(child =>
-  unparseTerm(child, cellsById, tablesById)).join(' ');
+const unparseExpr = expr => expr.map(unparseTerm).join(' ');
 
 export const stringFormula = (cellId) => {
   const cellsById = getCellsById(store.getState());
-  const tablesById = getTablesById(store.getState());
   const cell = cellsById[cellId];
   if (!cell) return '';
 
@@ -325,7 +322,7 @@ export const stringFormula = (cellId) => {
   }
   retToJoin.push('=');
   cell.formula.forEach((term) => {
-    retToJoin.push(unparseTerm(term, cellsById, tablesById));
+    retToJoin.push(unparseTerm(term));
   });
   return retToJoin.join(' ');
 };
