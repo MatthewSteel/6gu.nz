@@ -158,29 +158,29 @@ const parseExpression = (tokens, i) => {
 };
 
 
-export const parseTokens = (tokens) => {
+export const parseTokens = (tokens, start) => {
   // There are two legal forms for formulas
   //  1. name? = expression?
   //  2. expression
-  const doParse = (start) => {
-    if (start === tokens.length) return [{ value: 0 }];
-    const { term, newIndex } = parseExpression(tokens, start);
-    if (newIndex !== tokens.length) {
-      throw new Error('Unchomped tokens at end of forumla');
-    }
-    return term;
-  };
+  if (start === tokens.length) return undefined;
+  const { term, newIndex } = parseExpression(tokens, start);
+  if (newIndex !== tokens.length) {
+    throw new Error('Unchomped tokens at end of forumla');
+  }
+  return term;
+};
 
+const getNameFromTokens = (tokens) => {
   if (tokens[0] && tokens[0].assignment) {
-    return { formula: doParse(1) };
+    return { formulaStart: 1, formulaName: {} };
   }
   if (tokens[1] && tokens[1].assignment) {
-    return {
-      name: tokens[0].name,
-      formula: doParse(2),
-    };
+    if (!tokens[0].name) {
+      throw new Error('Can only assign to a name');
+    }
+    return { formulaStart: 2, formulaName: { name: tokens[0].name } };
   }
-  return { formula: doParse(0) };
+  return { formulaStart: 0, formulaName: {} };
 };
 
 const subNamesForRefsInName = (term, tableId, tablesByName) => {
@@ -270,17 +270,27 @@ const subNamesForRefsInExpr = (expr, tableId, tablesByName) =>
   expr.map(term => subNamesForRefsInTerm(term, tableId, tablesByName));
 
 const subNamesForRefs = (nameFormula, tableId) => {
+  if (!nameFormula) return {};
   const tablesByName = getTablesByName(store.getState());
-  return subNamesForRefsInExpr(nameFormula, tableId, tablesByName);
+  return { formula: subNamesForRefsInExpr(nameFormula, tableId, tablesByName) };
 };
 
 export const parseFormula = (s, tableId) => {
-  const nameFormula = parseTokens(lexFormula(s));
-  if (!nameFormula.formula) return nameFormula; // maybe just a name?
-  return {
-    ...nameFormula,
-    formula: subNamesForRefs(nameFormula.formula, tableId),
-  };
+  const tokens = lexFormula(s);
+  const { formulaStart, formulaName } = getNameFromTokens(tokens);
+  try {
+    return {
+      ...formulaName,
+      ...subNamesForRefs(parseTokens(tokens, formulaStart), tableId),
+    };
+  } catch (e) {
+    return {
+      ...formulaName,
+      formula: [{
+        badFormula: s,
+      }],
+    };
+  }
 };
 
 export const unparseTerm = (term) => {
@@ -303,6 +313,7 @@ export const unparseTerm = (term) => {
     const expr = unparseExpr(term.expression);
     return `(${expr})`;
   }
+  if (term.badFormula) return term.badFormula;
   if (term.op) return term.op;
   if (term.name) return term.name; // ref or bad-ref
   if (term.value !== undefined) return JSON.stringify(term.value);

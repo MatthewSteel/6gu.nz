@@ -4,7 +4,7 @@ import './CellComponent.css';
 
 const getCellContents = (value, fmt) => {
   if (!value || value.error) {
-    return { error: true, formattedValue: '\u00A0' }; // nbsp
+    return { error: true };
   }
   return { formattedValue: fmt(value.value) };
 };
@@ -51,6 +51,7 @@ class CellComponent extends Component {
               { CellError: error },
             )}
           >
+            &nbsp;
             {formattedValue}
           </div>
         )}

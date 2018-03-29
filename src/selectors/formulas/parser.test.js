@@ -1,7 +1,7 @@
 import { lexFormula } from './lexer';
-import { parseTokens, unparseTerm } from './parser';
+import { parseFormula, parseTokens, unparseTerm } from './parser';
 
-describe('unparseTerm', () => {
+describe('parser', () => {
   it('unparses a complicated call', () => {
     const term = {
       call: { name: 'called_cell' },
@@ -45,21 +45,32 @@ describe('unparseTerm', () => {
       { lookup: '.' },
       { name: 'field' },
     ];
-    const expectedOutput = {
-      formula: [{
-        args: [{
-          name: { name: 'foo' },
-          expr: [{ lookup: { name: 'baz' }, name: 'bar' }],
-        }, {
-          name: { name: 'quux' },
-          expr: [{ value: 1 }, { op: '+' }, { value: 'hi' }],
-        }],
-        call: { lookup: { name: 'b' }, name: 'a' },
-        lookup: { name: 'field' },
+    const expectedOutput = [{
+      call: { lookup: { name: 'b' }, name: 'a' },
+      args: [{
+        name: { name: 'foo' },
+        expr: [{ lookup: { name: 'baz' }, name: 'bar' }],
+      }, {
+        name: { name: 'quux' },
+        expr: [{ value: 1 }, { op: '+' }, { value: 'hi' }],
       }],
-    };
+      lookup: { name: 'field' },
+    }];
 
     expect(lexFormula(formula)).toEqual(tokens); // Just in case...
-    expect(parseTokens(tokens)).toEqual(expectedOutput);
+    expect(parseTokens(tokens, 0)).toEqual(expectedOutput);
+  });
+
+  it('parses strings appropriately', () => {
+    expect(parseFormula('=')).toEqual({});
+    expect(parseFormula('foo =')).toEqual({ name: 'foo' });
+    expect(parseFormula('foo = bar')).toEqual({
+      name: 'foo',
+      formula: [{ name: 'bar' }],
+    });
+    expect(parseFormula('foo = bar +')).toEqual({
+      name: 'foo',
+      formula: [{ badFormula: 'foo = bar +' }],
+    });
   });
 });

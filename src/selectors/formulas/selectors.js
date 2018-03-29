@@ -247,10 +247,15 @@ const cellExpressions = (cells, cellsById, tablesById) => {
   const ret = {};
   cells.forEach((cell) => {
     const allTerms = flattenExpr(cell.formula);
-    const badRefs = allTerms.filter(({ name, ref }) =>
-      name && !(cellsById[ref] || tablesById[ref]));
-    if (badRefs.length > 0) {
-      ret[cell.id] = `pleaseThrow(${JSON.stringify(badRefs[0].name)})`;
+    const termErrors = allTerms.filter((term) => {
+      if (term.name && !(cellsById[term.ref] || tablesById[term.ref])) {
+        return term.name;
+      }
+      if (term.badFormula) return term.badFormula;
+      return false;
+    }).filter(Boolean);
+    if (termErrors.length > 0) {
+      ret[cell.id] = `pleaseThrow(${JSON.stringify(termErrors[0])})`;
     } else {
       ret[cell.id] = expandExpr(cell.formula);
     }

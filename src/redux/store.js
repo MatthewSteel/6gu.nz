@@ -72,7 +72,7 @@ const defaultCellForLocation = (tableId, cellId) => {
     tableId,
     id: uuidv4(),
     name: defaultCellName(y, x),
-    formula: [],
+    formula: [{ value: 0 }],
     x,
     y,
     width: 1,
@@ -87,6 +87,8 @@ const rootReducer = (state, action) => {
     const existingCell = state.cells.find(({ id }) => id === cellId);
 
     const cell = existingCell || defaultCellForLocation(tableId, cellId);
+
+    // Includes maybe name and maybe formula.
     const newFormula = parseFormula(formulaStr, cell.tableId);
 
     return {
