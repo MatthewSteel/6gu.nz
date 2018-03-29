@@ -245,6 +245,7 @@ const subNamesForRefsInCall = (term, tableId, tablesByName) => {
   return {
     call: subNamesForCellRef(term.call, tableId, tablesByName),
     args: translatedArgs,
+    lookup: term.lookup,
   };
 };
 
@@ -284,6 +285,12 @@ export const parseFormula = (s, tableId) => {
 };
 
 export const unparseTerm = (term, cellsById, tablesById) => {
+  if (term.lookup) {
+    const termWithoutLookup = { ...term, lookup: undefined };
+    const pre = unparseTerm(termWithoutLookup, cellsById, tablesById);
+    const post = unparseTerm(term.lookup, cellsById, tablesById);
+    return `${pre}.${post}`;
+  }
   if (term.call) {
     const callee = unparseTerm(term.call, cellsById, tablesById);
     const argsText = term.args.map(({ ref, expr }) => {
@@ -298,13 +305,7 @@ export const unparseTerm = (term, cellsById, tablesById) => {
     return `(${expr})`;
   }
   if (term.op) return term.op;
-  if (term.name) { // ref or bad-ref
-    const names = [];
-    for (let termIt = term; termIt; termIt = termIt.lookup) {
-      names.push(termIt.name);
-    }
-    return names.join('.');
-  }
+  if (term.name) return term.name; // ref or bad-ref
   if (term.value !== undefined) return JSON.stringify(term.value);
   throw new Error('Unknown term type');
 };

@@ -181,16 +181,20 @@ const getRef = (globals, ref) => {
 
 const expandRef = term => `getRef(globals, ${JSON.stringify(term.ref)}).value`;
 
+const expandLookup = (term) => {
+  const termWithoutLookup = { ...term, lookup: undefined };
+  const pre = expandTerm(termWithoutLookup);
+  const lookupStrings = [];
+  for (let l = term.lookup; l; l = l.lookup) {
+    lookupStrings.push(`.byName[${JSON.stringify(l.name)}]`);
+  }
+  return `${pre}${lookupStrings.join('')}`;
+};
+
 const expandTerm = (term) => {
-  if (term.ref) {
-    // TODO: more lookups
-    // FIXME: I guess our lookups might be "backwards"?
-    // Should look into that.
-    return expandRef(term);
-  }
-  if (term.call) {
-    return expandCall(term);
-  }
+  if (term.lookup) return expandLookup(term);
+  if (term.ref) return expandRef(term);
+  if (term.call) return expandCall(term);
   if (term.op) return term.op;
   if (term.value !== undefined) return JSON.stringify(term.value);
   if (term.expression) return `(${expandExpr(term.expression)})`;
