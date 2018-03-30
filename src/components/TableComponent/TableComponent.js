@@ -134,6 +134,7 @@ class TableComponent extends Component {
       const { selection } = this.state;
       const { deleteCell } = this.props;
       deleteCell(selection);
+      this.setState({ selection: null });
       this.formulaRef.resetValue();
       ev.preventDefault();
     }

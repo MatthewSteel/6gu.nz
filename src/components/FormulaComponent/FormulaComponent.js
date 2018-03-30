@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import { stringFormula } from '../../selectors/formulas/parser';
+import './FormulaComponent.css';
 
 
 class FormulaComponent extends Component {
@@ -75,20 +76,18 @@ class FormulaComponent extends Component {
     return (
       <form
         id="myform"
+        className="FormulaForm"
         onSubmit={this.handleSubmit}
         autoComplete="off"
       >
         <input
           type="text"
+          className="FormulaInput"
           value={this.state.value}
           onChange={this.handleChange}
           onBlur={this.handleOnBlur}
           onFocus={this.handleOnFocus}
           ref={this.setRef}
-        />
-        <input
-          type="submit"
-          value="OK"
         />
       </form>
     );

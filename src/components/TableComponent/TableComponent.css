@@ -8,6 +8,8 @@
   font-weight: 700;
   color: #55C;
   background-color: #EDEDFF;
+  font: helvetica;
+  min-height: 20px;
 }
 
 .Table {
