@@ -10,8 +10,8 @@ The long list:
 
 
 Short-term:
- - Formula error-handling,
- - Cell error display
+ - Cell error display.
+ - Fix name translation.
 
 Possible next projects:
  - Browsing through data?
@@ -27,19 +27,13 @@ Some simple keyboard nav would do wonders.
  - Do something reasonable with clicks.
 
 
-
 Do we want a special "sheet" literal function to make structs?
 
 
-Names in formulas are a bit screwy, aren't they?
-  Yeah, names have stopped updating :-(((
 
 
 Names in call args should be looked up on the target cell's sheet?
 
-
-I think lookups are backwards
-Bad-ref replacement doesn't look deep into calls/exprs etc.
 
 Tables should probably always find their way into the order? "If they're not present, sever their links to their broken children and re-run"?
   Not quite that simple, I think. We're good for now, though.
@@ -74,8 +68,6 @@ Sub-table stuff:
 
 What about interop?
  - Later. "Compat import/export" etc.
-What about ever collecting garbage?
- - Later. "Mark variables as in/out."
 What about closures?
  - Will require special support. Doable though.
 
@@ -84,5 +76,5 @@ What about closures?
 What's next after that? Ideas:
  - A proper formula box,
  - Thinking about laziness and/or conditional evaluation.
-    - Maybe `if(n < 2, #[1], #[fib(n=n-1) + fib(n=n-2)]).value`
+    - Maybe `fib=if(n < 2, #[1], #[fib(n=n-1) + fib(n=n-2)]).value`
     - Might be too confusing. Want to see how it plays with tsort too.
