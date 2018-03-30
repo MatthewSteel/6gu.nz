@@ -5,8 +5,13 @@ import {
   getCellValuesById,
   getTables,
 } from '../../selectors/formulas/selectors';
-import { deleteCell, setFormula } from '../../redux/store';
+import {
+  deleteCell,
+  loadFile,
+  setFormula,
+} from '../../redux/store';
 import TableComponent from '../TableComponent/TableComponent';
+import FileComponent from '../FileComponent/FileComponent';
 
 const mapStateToProps = state => ({
   cellValuesById: getCellValuesById(state),
@@ -17,6 +22,7 @@ const mapStateToProps = state => ({
 const mapDispatchToProps = dispatch => ({
   deleteCellProp: cellId => dispatch(deleteCell(cellId)),
   setCellFormula: (tableId, cellId, formula) => dispatch(setFormula(tableId, cellId, formula)),
+  loadFileProp: () => dispatch(loadFile()),
 });
 
 class BookComponent extends PureComponent {
@@ -37,6 +43,7 @@ class BookComponent extends PureComponent {
       tables,
       setCellFormula,
       deleteCellProp,
+      loadFileProp,
     } = this.props;
     const { selectedTableId } = this.state;
 
@@ -59,6 +66,9 @@ class BookComponent extends PureComponent {
     return (
       <div>
         {tableComponents}
+        <FileComponent
+          loadFile={loadFileProp}
+        />
       </div>
     );
   }

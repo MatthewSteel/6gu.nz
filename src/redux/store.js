@@ -66,6 +66,8 @@ export const deleteCell = cellId => ({
   payload: { cellId },
 });
 
+export const loadFile = () => ({ type: 'LOAD_FILE' });
+
 const defaultCellForLocation = (tableId, cellId) => {
   const [y, x] = cellId.split(',').map(Number);
   return {
@@ -78,6 +80,19 @@ const defaultCellForLocation = (tableId, cellId) => {
     width: 1,
     height: 1,
   };
+};
+
+const scheduleSave = () => {
+  const updateId = uuidv4();
+
+  setTimeout(() => {
+    const state = store.getState();
+    if (store.getState().updateId === updateId) {
+      localStorage.setItem('onlyFile', JSON.stringify(state));
+    }
+  }, 1000);
+
+  return updateId;
 };
 
 const rootReducer = (state, action) => {
@@ -100,6 +115,7 @@ const rootReducer = (state, action) => {
           ...newFormula,
         },
       ],
+      updateId: scheduleSave(),
     };
   }
 
@@ -116,7 +132,12 @@ const rootReducer = (state, action) => {
     return {
       ...state,
       cells: state.cells.filter(({ id }) => id !== cellId),
+      updateId: scheduleSave(),
     };
+  }
+
+  if (action.type === 'LOAD_FILE') {
+    return JSON.parse(localStorage.getItem('onlyFile'));
   }
 
   return state;
