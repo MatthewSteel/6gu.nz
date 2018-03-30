@@ -12,12 +12,13 @@ class FormulaComponent extends Component {
     this.handleOnBlur = this.handleOnBlur.bind(this);
     this.handleOnFocus = this.handleOnFocus.bind(this);
     this.handleSubmit = this.handleSubmit.bind(this);
+    this.resetValue = this.resetValue.bind(this);
     this.setRef = this.setRef.bind(this);
   }
 
   componentWillReceiveProps(nextProps) {
     if (nextProps.selection !== this.props.selection) {
-      this.setState({ value: stringFormula(nextProps.selection) });
+      this.resetValue(nextProps.selection);
     }
   }
 
@@ -25,11 +26,27 @@ class FormulaComponent extends Component {
     this.inputRef = ref;
   }
 
+  resetValue(selection) {
+    this.setState({ value: stringFormula(selection) });
+  }
+
+  blur() {
+    this.resetValue(this.props.selection);
+    this.inputRef.blur();
+  }
+
   focus() {
     // Called by TableComponent only
     this.inputRef.focus();
-    const { length } = this.inputRef.value;
+    const { length } = this.state.value;
     this.inputRef.setSelectionRange(length, length);
+  }
+
+  sendKey(key) {
+    // Called by TableComponent only
+    this.setState({ value: key });
+    this.inputRef.setSelectionRange(1, 1);
+    this.inputRef.focus();
   }
 
   handleChange(ev) {

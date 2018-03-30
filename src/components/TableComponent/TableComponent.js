@@ -29,6 +29,7 @@ const defaultFormatter = (value) => {
 class TableComponent extends Component {
   constructor(props) {
     super(props);
+    this.blurFormulaOnEsc = this.blurFormulaOnEsc.bind(this);
     this.handleKey = this.handleKey.bind(this);
     this.getFocus = this.getFocus.bind(this);
     this.move = this.move.bind(this);
@@ -121,11 +122,26 @@ class TableComponent extends Component {
       ArrowDown: [1, 0],
     };
     if (moves[ev.key]) {
+      // Cursor key nav
       this.move(...moves[ev.key]);
       ev.preventDefault();
     }
     if (ev.key === 'Enter' && this.formulaRef) {
+      // Enter selects the formula box
       this.formulaRef.focus();
+      ev.preventDefault();
+    }
+    if (ev.key.length === 1) {
+      // User just starts typing :-)
+      this.formulaRef.sendKey(ev.key);
+      ev.preventDefault();
+    }
+  }
+
+  blurFormulaOnEsc(ev) {
+    if (ev.key === 'Escape' && this.formulaRef) {
+      // Enter selects the formula box
+      this.formulaRef.blur();
       ev.preventDefault();
     }
   }
@@ -208,6 +224,11 @@ class TableComponent extends Component {
         {selected && !formulaHasFocus &&
           <KeyboardListenerComponent
             callback={this.handleKey}
+          />
+        }
+        {selected && formulaHasFocus &&
+          <KeyboardListenerComponent
+            callback={this.blurFormulaOnEsc}
           />
         }
       </div>
