@@ -171,7 +171,7 @@ class TableComponent extends Component {
           drawnCells.add(`${y + dy},${x + dx}`);
         }
       }
-      const cellSelected = selection === cell.id;
+      const cellSelected = selected && selection === cell.id;
       return (
         <CellComponent
           key={id}
@@ -194,7 +194,7 @@ class TableComponent extends Component {
       for (let cx = 0; cx < table.width; ++cx) {
         const place = `${cy},${cx}`;
         if (drawnCells.has(place)) continue;
-        const cellSelected = place === selection;
+        const cellSelected = selected && place === selection;
         emptyCells.push((
           <CellComponent
             key={place}
