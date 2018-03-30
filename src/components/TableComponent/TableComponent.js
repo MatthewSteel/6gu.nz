@@ -1,6 +1,7 @@
 import React, { Component } from 'react';
 import CellComponent from '../CellComponent/CellComponent';
 import FormulaComponent from '../FormulaComponent/FormulaComponent';
+import KeyboardListenerComponent from '../KeyboardListenerComponent/KeyboardListenerComponent';
 import './TableComponent.css';
 
 const isWithin = (selY, selX, cell) => {
@@ -28,12 +29,19 @@ const defaultFormatter = (value) => {
 class TableComponent extends Component {
   constructor(props) {
     super(props);
+    this.handleKey = this.handleKey.bind(this);
+    this.getFocus = this.getFocus.bind(this);
+    this.move = this.move.bind(this);
     this.selectedCellId = this.selectedCellId.bind(this);
     this.setSelection = this.setSelection.bind(this);
     this.setFormula = this.setFormula.bind(this);
+    this.setFormulaFocus = this.setFormulaFocus.bind(this);
+    this.setFormulaRef = this.setFormulaRef.bind(this);
     this.updateSelection = this.updateSelection.bind(this);
 
+    this.formulaRef = null;
     this.state = {
+      formulaHasFocus: false,
       selY: 0,
       selX: 0,
       selection: this.selectedCellId(0, 0),
@@ -46,12 +54,30 @@ class TableComponent extends Component {
     }
   }
 
+  getFocus() {
+    const { setTableSelection, table } = this.props;
+    setTableSelection(table.id);
+  }
+
+  setFormulaRef(ref) {
+    this.formulaRef = ref;
+  }
+
   setSelection(selY, selX) {
     this.setState({
       selY,
       selX,
       selection: this.selectedCellId(selY, selX),
     });
+    this.getFocus();
+  }
+
+  setFormulaFocus(formulaHasFocus) {
+    // callback used by formula component
+    this.setState({ formulaHasFocus });
+    if (formulaHasFocus) {
+      this.getFocus();
+    }
   }
 
   setFormula(stringFormula) {
@@ -63,6 +89,7 @@ class TableComponent extends Component {
       setCellFormula(table.id, selection, stringFormula);
     }
     this.setState({ selection: null });
+    this.getFocus();
   }
 
   selectedCellId(selY, selX) {
@@ -78,9 +105,34 @@ class TableComponent extends Component {
     this.setState({ selection: this.selectedCellId(selY, selX) });
   }
 
+  move(dy, dx) {
+    const { selY, selX } = this.state;
+    const { width, height } = this.props.table;
+    const newSelY = Math.min(height - 1, Math.max(0, selY + dy));
+    const newSelX = Math.min(width - 1, Math.max(0, selX + dx));
+    this.setSelection(newSelY, newSelX);
+  }
+
+  handleKey(ev) {
+    const moves = {
+      ArrowLeft: [0, -1],
+      ArrowRight: [0, 1],
+      ArrowUp: [-1, 0],
+      ArrowDown: [1, 0],
+    };
+    if (moves[ev.key]) {
+      this.move(...moves[ev.key]);
+      ev.preventDefault();
+    }
+    if (ev.key === 'Enter' && this.formulaRef) {
+      this.formulaRef.focus();
+      ev.preventDefault();
+    }
+  }
+
   render() {
-    const { cells, cellValuesById, table } = this.props;
-    const { selection } = this.state;
+    const { cells, cellValuesById, selected, table } = this.props;
+    const { formulaHasFocus, selection } = this.state;
     const style = {
       gridTemplateColumns: 'auto '.repeat(table.width).trim(),
       gridTemplateRows: 'auto '.repeat(table.height).trim(),
@@ -96,7 +148,7 @@ class TableComponent extends Component {
           drawnCells.add(`${y + dy},${x + dx}`);
         }
       }
-      const selected = selection === cell.id;
+      const cellSelected = selection === cell.id;
       return (
         <CellComponent
           key={id}
@@ -108,7 +160,7 @@ class TableComponent extends Component {
           name={name}
           value={cellValuesById[id]}
           fmt={defaultFormatter}
-          selected={selected}
+          selected={cellSelected}
           setSelection={this.setSelection}
         />
       );
@@ -148,9 +200,16 @@ class TableComponent extends Component {
           {emptyCells}
         </div>
         <FormulaComponent
+          ref={this.setFormulaRef}
           selection={selection}
           setFormula={this.setFormula}
+          setFormulaHasFocus={this.setFormulaFocus}
         />
+        {selected && !formulaHasFocus &&
+          <KeyboardListenerComponent
+            callback={this.handleKey}
+          />
+        }
       </div>
     );
   }

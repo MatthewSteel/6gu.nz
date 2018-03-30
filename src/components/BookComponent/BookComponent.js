@@ -20,6 +20,16 @@ const mapDispatchToProps = dispatch => ({
 });
 
 class BookComponent extends PureComponent {
+  constructor(props) {
+    super(props);
+    this.setTableSelection = this.setTableSelection.bind(this);
+    this.state = { selectedTableId: props.tables[0].id };
+  }
+
+  setTableSelection(tableId) {
+    this.setState({ selectedTableId: tableId });
+  }
+
   render() {
     const {
       cellsByTableId,
@@ -28,6 +38,7 @@ class BookComponent extends PureComponent {
       setCellFormula,
       deleteCellProp,
     } = this.props;
+    const { selectedTableId } = this.state;
 
     const tableComponents = tables.map((table) => {
       const tableCells = cellsByTableId[table.id] || [];
@@ -37,8 +48,10 @@ class BookComponent extends PureComponent {
           table={table}
           cells={tableCells}
           cellValuesById={cellValuesById[table.id].byId}
+          selected={selectedTableId === table.id}
           deleteCell={deleteCellProp}
           setCellFormula={setCellFormula}
+          setTableSelection={this.setTableSelection}
         />
       );
     });
