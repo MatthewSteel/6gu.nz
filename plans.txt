@@ -1,17 +1,23 @@
 The long list:
- - better keyboard nav,
+ - built-in functions,
+ - displaying, entering complex data structures :-(
+ - "native" map/for etc,
+ - dynamic sheet creation etc.
  - better formula display/input,
- - complex data structures :-(
- - storage
+ - "actions" (xhr etc),
+   - mutation story,
+   - conditional evaluation,
  - js interop,
  - collaboration,
- - dynamic sheet creation etc.
  - custom cell formatting incl charts.
+ - closures and first-class functions. (Ordered args?)
 
 
-Short-term:
+
+Short-term must-haves:
  - Cell error display.
  - Fix name translation.
+ - Consistent cell-sizing and overflow?
 
 Possible next projects:
  - Browsing through data?
@@ -19,43 +25,26 @@ Possible next projects:
  - Drop-down boxes on top-level sheets to select them,
 
 
-Some simple keyboard nav would do wonders.
- - One table is selected,
- - Arrow keys move the selection around when the box isn't focussed,
- - Enter selects the formula box,
- - Enter submits, escape cancels (and resets),
- - Do something reasonable with clicks.
+
+
+
+If we show multiple tables on the screen at once, we probably want to be able to manage selections separately.
+  - Maybe an instantiated table component has an id, then. Fine.
 
 
 Do we want a special "sheet" literal function to make structs?
-
+  `=row(id="asdf", name="Fred")`?
+  `=table(row(id="asdf", name="Fred"), row(id="qwer", name="Sally"))`?
 
 
 
 Names in call args should be looked up on the target cell's sheet?
 
 
-Tables should probably always find their way into the order? "If they're not present, sever their links to their broken children and re-run"?
-  Not quite that simple, I think. We're good for now, though.
-
-
-
-
-Then:
- - Complex data types? That's hard, man...
 
 
 
 What do things look like from top-level?
-
-Compile sheets to functions ahead of time and store them in an object. That's easy enough.
-What I'm most worried about is top-level stuff -- can we compile it and reuse it? Kinda -- if terms are removed, the tsort stays intact. If terms are inserted, the ordering need only change between the two points (and we can run things from that point on.) We can chunk the computation and it can be JITted just fine.
-
-Boy a lot of stuff is going to get rewritten when we need to make this fast...
-(For future partial recompute: When an edge is added, we're lucky -- we can do with a linear scan and just put it "as late as possible" into the computation DAG.)
-
-Struct lookup is by name, I think.
-
 
 
 Sub-table stuff:
