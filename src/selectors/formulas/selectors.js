@@ -217,6 +217,7 @@ const flattenTerm = (term) => {
   if (term.expression) {
     return flattenExpr(term.expression);
   }
+  if (term.badFormula) return [term];
   throw new Error(`unknown term type ${JSON.stringify(term)}`);
 };
 
@@ -248,10 +249,10 @@ const cellExpressions = (cells, cellsById, tablesById) => {
   cells.forEach((cell) => {
     const allTerms = flattenExpr(cell.formula);
     const termErrors = allTerms.filter((term) => {
+      if (term.badFormula) return term.badFormula;
       if (term.name && !(cellsById[term.ref] || tablesById[term.ref])) {
         return term.name;
       }
-      if (term.badFormula) return term.badFormula;
       return false;
     }).filter(Boolean);
     if (termErrors.length > 0) {
