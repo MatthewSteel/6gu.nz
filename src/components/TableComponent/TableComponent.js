@@ -115,6 +115,7 @@ class TableComponent extends Component {
   }
 
   handleKey(ev) {
+    if (ev.altKey || ev.ctrlKey || ev.metaKey) return;
     const moves = {
       ArrowLeft: [0, -1],
       ArrowRight: [0, 1],
@@ -129,6 +130,12 @@ class TableComponent extends Component {
     if (ev.key === 'Enter' && this.formulaRef) {
       // Enter selects the formula box
       this.formulaRef.focus();
+      ev.preventDefault();
+    }
+    if (ev.key === 'Backspace' || ev.key === 'Delete') {
+      const { selection } = this.state;
+      const { deleteCell } = this.props;
+      deleteCell(selection);
       ev.preventDefault();
     }
     if (ev.key.length === 1) {
