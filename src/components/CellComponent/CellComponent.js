@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, { PureComponent } from 'react';
 import classNames from 'classnames';
 import './CellComponent.css';
 
@@ -9,10 +9,9 @@ const getCellContents = (value, fmt) => {
   return { formattedValue: fmt(value.value) };
 };
 
-class CellComponent extends Component {
+class CellComponent extends PureComponent {
   constructor(props) {
     super(props);
-    this.state = {};
     this.onClick = this.onClick.bind(this);
   }
 

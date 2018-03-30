@@ -15,12 +15,10 @@ const isWithin = (selY, selX, cell) => {
 const defaultFormatter = (value) => {
   if (typeof value === 'string') return value;
   if (value instanceof Array) {
-    if (value.length === 0) return '[]';
-    return '[..]';
+    return `[${value.length}]`;
   }
   if (typeof value === 'object' && value.constructor === Object) {
-    if (Object.keys(value).length === 0) return '{}';
-    return '{..}';
+    return `{${Object.keys(value.byName).length}}`;
   }
   if (typeof value === 'number') return value.toString();
   return JSON.stringify(value);
@@ -136,6 +134,7 @@ class TableComponent extends Component {
       const { selection } = this.state;
       const { deleteCell } = this.props;
       deleteCell(selection);
+      this.formulaRef.resetValue();
       ev.preventDefault();
     }
     if (ev.key.length === 1) {
