@@ -74,7 +74,7 @@ const defaultCellForLocation = (tableId, cellId) => {
     tableId,
     id: uuidv4(),
     name: defaultCellName(y, x),
-    formula: [{ value: 0 }],
+    formula: [{ value: '' }],
     x,
     y,
     width: 1,
@@ -98,13 +98,21 @@ const scheduleSave = () => {
 const rootReducer = (state, action) => {
   if (action.type === 'SET_CELL_FORMULA') {
     const { cellId, formulaStr, tableId } = action.payload;
+    const newFormula = parseFormula(formulaStr, tableId);
+
+    if (!newFormula.name && !newFormula.formula) {
+      // Formula is like `name=formula`.
+      // When one is blank and we have an existing cell, we use the
+      // existing value.
+      // When both are blank (i.e., the formula is `=`) we should leave
+      // the cell alone.
+      // When one is blank but there's no cell there, we can use a default
+      // value. Don't put a default cell for the `=` formula though.
+      return state;
+    }
 
     const existingCell = state.cells.find(({ id }) => id === cellId);
-
     const cell = existingCell || defaultCellForLocation(tableId, cellId);
-
-    // Includes maybe name and maybe formula.
-    const newFormula = parseFormula(formulaStr, cell.tableId);
 
     return {
       ...state,
