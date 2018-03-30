@@ -10,12 +10,12 @@ const initialState = {
     id: 'table0',
     name: 'table0',
     width: 6,
-    height: 6,
+    height: 5,
   }, {
     id: 'table1',
     name: 'table1',
     width: 6,
-    height: 6,
+    height: 5,
   }],
   cells: [{
     id: 'cell0',
@@ -52,7 +52,7 @@ const initialState = {
     x: 1,
     y: 1,
     width: 3,
-    height: 4,
+    height: 2,
   }],
 };
 
