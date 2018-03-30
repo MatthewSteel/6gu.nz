@@ -1,16 +1,16 @@
 const translateCol = (c) => {
-  const A = 65;
-  if (c < 26) return String.fromCharCode(A + c);
+  const a = 97;
+  if (c < 26) return String.fromCharCode(a + c);
 
   const chars = [];
   let col = c + 1;
   while (col > 0) {
     const remainder = col % 26;
     if (remainder === 0) {
-      chars.push('Z');
+      chars.push('z');
       col = Math.trunc(col / 26) - 1;
     } else {
-      chars.push(String.fromCharCode(A + (remainder - 1)));
+      chars.push(String.fromCharCode(a + (remainder - 1)));
       col = Math.trunc(col / 26);
     }
   }
