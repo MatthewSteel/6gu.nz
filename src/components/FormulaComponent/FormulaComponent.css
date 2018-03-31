@@ -1,8 +1,5 @@
-.FormulaForm {
-  align-self: stretch;
-}
-
 .FormulaInput {
+  align-self: stretch;
   width: 100%;
   box-sizing: border-box;
 }

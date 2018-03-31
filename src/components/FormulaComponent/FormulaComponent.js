@@ -12,7 +12,7 @@ class FormulaComponent extends Component {
     this.handleChange = this.handleChange.bind(this);
     this.handleOnBlur = this.handleOnBlur.bind(this);
     this.handleOnFocus = this.handleOnFocus.bind(this);
-    this.handleSubmit = this.handleSubmit.bind(this);
+    this.submit = this.submit.bind(this);
     this.resetValue = this.resetValue.bind(this);
     this.setRef = this.setRef.bind(this);
   }
@@ -54,14 +54,11 @@ class FormulaComponent extends Component {
     this.setState({ value: ev.target.value });
   }
 
-  handleSubmit(ev) {
-    ev.preventDefault();
+  submit() {
     const { selection, setFormula } = this.props;
     if (!selection) return;
     setFormula(this.state.value);
-    if (this.inputRef) {
-      this.inputRef.blur();
-    }
+    this.inputRef.blur();
   }
 
   handleOnBlur() {
@@ -74,22 +71,15 @@ class FormulaComponent extends Component {
 
   render() {
     return (
-      <form
-        id="myform"
-        className="FormulaForm"
-        onSubmit={this.handleSubmit}
-        autoComplete="off"
-      >
-        <input
-          type="text"
-          className="FormulaInput"
-          value={this.state.value}
-          onChange={this.handleChange}
-          onBlur={this.handleOnBlur}
-          onFocus={this.handleOnFocus}
-          ref={this.setRef}
-        />
-      </form>
+      <input
+        type="text"
+        className="FormulaInput"
+        value={this.state.value}
+        onChange={this.handleChange}
+        onBlur={this.handleOnBlur}
+        onFocus={this.handleOnFocus}
+        ref={this.setRef}
+      />
     );
   }
 }

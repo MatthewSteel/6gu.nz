@@ -24,10 +24,9 @@ Possible next projects:
  - Making new sheets,
  - Drop-down boxes on top-level sheets to select them,
 
-More motion:
- - Tab and shift-tab,
- - Shift-enter,
- - Go down a cell when you enter a formula. (Half-speed!)
+
+- Logical and bitwise operators
+  - Oh shoot, && and || short-circuit. Greeat! `a && b || c`! Hooray!
 
 Complex data:
  - `...=` maybe makes a list?

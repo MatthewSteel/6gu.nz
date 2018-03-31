@@ -27,8 +27,8 @@ const defaultFormatter = (value) => {
 class TableComponent extends Component {
   constructor(props) {
     super(props);
-    this.blurFormulaOnEsc = this.blurFormulaOnEsc.bind(this);
-    this.handleKey = this.handleKey.bind(this);
+    this.cellKeys = this.cellKeys.bind(this);
+    this.formulaKeys = this.formulaKeys.bind(this);
     this.getFocus = this.getFocus.bind(this);
     this.move = this.move.bind(this);
     this.selectedCellId = this.selectedCellId.bind(this);
@@ -112,7 +112,7 @@ class TableComponent extends Component {
     this.setSelection(newSelY, newSelX);
   }
 
-  handleKey(ev) {
+  cellKeys(ev) {
     if (ev.altKey || ev.ctrlKey || ev.metaKey) return;
     const moves = {
       ArrowLeft: [0, -1],
@@ -125,9 +125,20 @@ class TableComponent extends Component {
       this.move(...moves[ev.key]);
       ev.preventDefault();
     }
-    if (ev.key === 'Enter' && this.formulaRef) {
+    if (ev.key === 'Enter') {
+      if (ev.shiftKey) {
+        this.move(-1, 0);
+        ev.preventDefault();
+      } else {
+        // Enter selects the formula box
+        this.formulaRef.focus();
+        ev.preventDefault();
+      }
+    }
+    if (ev.key === 'Tab') {
       // Enter selects the formula box
-      this.formulaRef.focus();
+      const xMove = ev.shiftKey ? -1 : 1;
+      this.move(0, xMove);
       ev.preventDefault();
     }
     if (ev.key === 'Backspace' || ev.key === 'Delete') {
@@ -145,10 +156,22 @@ class TableComponent extends Component {
     }
   }
 
-  blurFormulaOnEsc(ev) {
-    if (ev.key === 'Escape' && this.formulaRef) {
+  formulaKeys(ev) {
+    if (ev.key === 'Escape') {
       // Enter selects the formula box
       this.formulaRef.blur();
+      ev.preventDefault();
+    }
+    if (ev.key === 'Enter') {
+      this.formulaRef.submit(ev);
+      const yMove = ev.shiftKey ? -1 : 1;
+      this.move(yMove, 0);
+      ev.preventDefault();
+    }
+    if (ev.key === 'Tab') {
+      this.formulaRef.submit(ev);
+      const xMove = ev.shiftKey ? -1 : 1;
+      this.move(0, xMove);
       ev.preventDefault();
     }
   }
@@ -230,12 +253,12 @@ class TableComponent extends Component {
         />
         {selected && !formulaHasFocus &&
           <KeyboardListenerComponent
-            callback={this.handleKey}
+            callback={this.cellKeys}
           />
         }
         {selected && formulaHasFocus &&
           <KeyboardListenerComponent
-            callback={this.blurFormulaOnEsc}
+            callback={this.formulaKeys}
           />
         }
       </div>
