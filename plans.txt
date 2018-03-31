@@ -25,9 +25,6 @@ Possible next projects:
  - Drop-down boxes on top-level sheets to select them,
 
 
-- Logical and bitwise operators
-  - Oh shoot, && and || short-circuit. Greeat! `a && b || c`! Hooray!
-
 Complex data:
  - `...=` maybe makes a list?
  - Don't care about structs maybe, because the whole sheet is a struct?
