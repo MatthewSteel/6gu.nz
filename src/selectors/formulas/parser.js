@@ -237,6 +237,7 @@ const subNamesForCellRef = (term, tableId, tablesByName) => {
 };
 
 const subNamesForRefsInCall = (term, tableId, tablesByName) => {
+  // TODO: use the call cell's table for arg refs.
   const translatedArgs = term.args.map(({ name, expr }) => ({
     ref: subNamesForCellRef(name, tableId, tablesByName),
     expr: subNamesForRefsInExpr(expr, tableId, tablesByName),

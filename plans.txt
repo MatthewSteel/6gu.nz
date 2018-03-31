@@ -19,6 +19,10 @@ Short-term must-haves:
  - Fix name translation.
  - Consistent cell-sizing and overflow?
 
+Nice to have:
+ - Call arg refs are local to the call cell table.
+    - just in subNames and in unparse, I think.
+
 Possible next projects:
  - Browsing through data?
  - Making new sheets,
@@ -33,6 +37,12 @@ Complex data:
     - "Cross"?
  - Functions: function(out, in1, in2)? Kinda magical if it's a macro...
     - Simple, though... And we can _use_ it!
+
+ - Maybe `if` can be a macro too?
+
+Hmm, maybe continue a list with `... ? expr` or something.
+ - If there isn't enough room, make room.
+
 
 
 If we show multiple tables on the screen at once, we probably want to be able to manage selections separately.

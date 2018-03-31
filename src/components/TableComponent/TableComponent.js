@@ -162,6 +162,9 @@ class TableComponent extends Component {
       this.formulaRef.blur();
       ev.preventDefault();
     }
+    // I'm not over the moon about intercepting shift-enter and tab --
+    // they could be useful for entering multiline, rich text etc...
+    // Maybe if/when we do that, that entry can suppress this behaviour?
     if (ev.key === 'Enter') {
       this.formulaRef.submit(ev);
       const yMove = ev.shiftKey ? -1 : 1;
