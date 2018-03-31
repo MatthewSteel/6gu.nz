@@ -24,8 +24,19 @@ Possible next projects:
  - Making new sheets,
  - Drop-down boxes on top-level sheets to select them,
 
+More motion:
+ - Tab and shift-tab,
+ - Shift-enter,
+ - Go down a cell when you enter a formula. (Half-speed!)
 
-
+Complex data:
+ - `...=` maybe makes a list?
+ - Don't care about structs maybe, because the whole sheet is a struct?
+ - _Do_ care about tables, though.
+ - Maybe want a "matrix" type too -- one function, two inputs, or data.
+    - "Cross"?
+ - Functions: function(out, in1, in2)? Kinda magical if it's a macro...
+    - Simple, though... And we can _use_ it!
 
 
 If we show multiple tables on the screen at once, we probably want to be able to manage selections separately.
