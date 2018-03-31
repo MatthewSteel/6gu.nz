@@ -277,18 +277,32 @@ const subNamesForRefs = (nameFormula, tableId) => {
 };
 
 export const parseFormula = (s, tableId) => {
-  const tokens = lexFormula(s);
-  const { formulaStart, formulaName } = getNameFromTokens(tokens);
   try {
+    const tokens = lexFormula(s);
+    const { formulaStart, formulaName } = getNameFromTokens(tokens);
     return {
       ...formulaName,
+      ...parseFormulaExpr(tokens, formulaStart, tableId, s),
+    };
+  } catch (e) {
+    // Really bad -- can't lex or get a name... Formula is totally
+    // broken.
+    return { formula: [{ badFormula: s }] };
+  }
+};
+
+const parseFormulaExpr = (tokens, formulaStart, tableId, s) => {
+  try {
+    return {
       ...subNamesForRefs(parseTokens(tokens, formulaStart), tableId),
     };
   } catch (e) {
+    // Bad formula, but we might at least have a name. Stick everything
+    // after the `=` symbol (if one exists) into the badFormula attr.
+    const formulaStr = (formulaStart === 0) ? s : s.slice(s.indexOf('=') + 1);
     return {
-      ...formulaName,
       formula: [{
-        badFormula: s,
+        badFormula: formulaStr,
       }],
     };
   }

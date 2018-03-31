@@ -70,7 +70,10 @@ describe('parser', () => {
     });
     expect(parseFormula('foo = bar +')).toEqual({
       name: 'foo',
-      formula: [{ badFormula: 'foo = bar +' }],
+      formula: [{ badFormula: ' bar +' }],
+    });
+    expect(parseFormula('foo := bar +')).toEqual({
+      formula: [{ badFormula: 'foo := bar +' }],
     });
   });
 });
