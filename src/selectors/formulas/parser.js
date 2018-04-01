@@ -4,7 +4,6 @@ import { lexFormula } from './lexer';
 import {
   getCellsById,
   getCellsByNameForTableId,
-  getTableIdForRef,
   getTablesById,
   getTablesByName,
   translateExpr,
@@ -301,19 +300,12 @@ export const unparseTerm = (term, tableId) => {
     return `${pre}.${post}`;
   }
   if (term.call) {
-    const callee = unparseTerm(term.call, tableId);
-    const callTableId = getTableIdForRef(term.call.ref, tableId);
-    const argsText = term.args.map(({ ref, expr }) => {
-      const refText = unparseTerm(ref, callTableId);
-      const exprText = unparseExpr(expr, tableId);
-      return `${refText}=${exprText}`;
-    }).join(', ');
-    return `${callee}(${argsText})`;
+    const argsText = term.args
+      .map(({ ref, expr }) => `${ref}=${expr.join(' ')}`)
+      .join(', ');
+    return `${term.call}(${argsText})`;
   }
-  if (term.expression) {
-    const expr = unparseExpr(term.expression, tableId);
-    return `(${expr})`;
-  }
+  if (term.expression) return `(${term.expression.join(' ')})`;
   if (term.badFormula) return term.badFormula;
   if (term.op) return term.op;
   if (term.ref) return unparseRef(term.ref, tableId);
@@ -321,8 +313,6 @@ export const unparseTerm = (term, tableId) => {
   if (term.value !== undefined) return JSON.stringify(term.value);
   throw new Error('Unknown term type');
 };
-
-const unparseExpr = (expr, tableId) => expr.map(term => unparseTerm(term, tableId)).join(' ');
 
 export const stringFormula = (cellId) => {
   const cellsById = getCellsById(store.getState());
@@ -334,8 +324,6 @@ export const stringFormula = (cellId) => {
     retToJoin.push(cell.name);
   }
   retToJoin.push('=');
-  cell.formula.forEach((term) => {
-    retToJoin.push(unparseTerm(term, cell.tableId));
-  });
-  return retToJoin.join(' ');
+  const terms = translateExpr(cell.formula, cell.tableId, unparseTerm);
+  return [...retToJoin, ...terms].join(' ');
 };

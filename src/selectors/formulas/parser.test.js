@@ -1,5 +1,6 @@
 import { lexFormula } from './lexer';
 import { parseFormula, parseTokens, unparseTerm } from './parser';
+import { translateTerm } from './selectors';
 
 describe('parser', () => {
   it('unparses a complicated call', () => {
@@ -20,7 +21,7 @@ describe('parser', () => {
       }],
       lookup: { name: 'field2' },
     };
-    expect(unparseTerm(term)).toEqual('called_cell(t.c=other_cell.field * 5).field2');
+    expect(translateTerm(term, null, unparseTerm)).toEqual('called_cell(t.c=other_cell.field * 5).field2');
   });
 
   it('parses a complicated call', () => {
@@ -48,10 +49,10 @@ describe('parser', () => {
     const expectedOutput = [{
       call: { lookup: { name: 'b' }, name: 'a' },
       args: [{
-        name: { name: 'foo' },
+        ref: { name: 'foo' },
         expr: [{ lookup: { name: 'baz' }, name: 'bar' }],
       }, {
-        name: { name: 'quux' },
+        ref: { name: 'quux' },
         expr: [{ value: 1 }, { op: '+' }, { value: 'hi' }],
       }],
       lookup: { name: 'field' },
@@ -70,7 +71,7 @@ describe('parser', () => {
     });
     expect(parseFormula('foo = bar +')).toEqual({
       name: 'foo',
-      formula: [{ badFormula: ' bar +' }],
+      formula: [{ badFormula: 'bar +' }],
     });
     expect(parseFormula('foo := bar +')).toEqual({
       formula: [{ badFormula: 'foo := bar +' }],

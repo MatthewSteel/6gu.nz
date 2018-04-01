@@ -78,7 +78,10 @@ export const getTableIdForRef = (ref, defaultTableId) => {
 
 const translateCall = (term, tableId, f) => {
   const call = f(term.call, tableId);
-  const callTableId = getTableIdForRef(call.ref, tableId);
+  // Sometimes we're translating names -> refs, sometimes we are
+  // translating refs -> printable strings etc :-(.
+  const callRef = call.ref || term.call.ref;
+  const callTableId = getTableIdForRef(callRef, tableId);
   const translatedArgs = term.args.map(({ ref, expr }) => ({
     ref: f(ref, callTableId),
     expr: translateExpr(expr, tableId, f),
@@ -93,7 +96,7 @@ const translateCall = (term, tableId, f) => {
   );
 };
 
-const translateTerm = (term, tableId, f) => {
+export const translateTerm = (term, tableId, f) => {
   if (term.name || term.ref) return f(term, tableId);
   if (term.value !== undefined || term.op) return f(term, tableId);
   if (term.call) return translateCall(term, tableId, f);
