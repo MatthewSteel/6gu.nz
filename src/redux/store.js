@@ -149,6 +149,12 @@ const rootReducer = (state, action) => {
         ...cell,
         formula: translateExpr(cell.formula, cell.tableId, (term) => {
           if (term.ref !== cellId) return term;
+          if (cell.tableId !== existingCell.tableId) {
+            return {
+              ref: existingCell.tableId,
+              lookup: { name: existingCell.name },
+            };
+          }
           return { ...term, ref: existingCell.name };
         }),
       };

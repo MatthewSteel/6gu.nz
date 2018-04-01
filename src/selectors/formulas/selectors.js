@@ -293,10 +293,13 @@ const cellExpressions = (cells, cellsById, tablesById) => {
       if (term.ref && !(cellsById[term.ref] || tablesById[term.ref])) {
         return term.ref;
       }
+      if (term.ref && tablesById[term.ref] && term.lookup) {
+        return `${term.ref}.${term.lookup.name}`;
+      }
       return false;
     }).filter(Boolean);
     if (termErrors.length > 0) {
-      ret[cell.id] = `pleaseThrow('Referenced cell ' + ${JSON.stringify(termErrors[0])} + ' deleted.')`;
+      ret[cell.id] = `pleaseThrow(${JSON.stringify(termErrors[0])} + ' does not exist.')`;
     } else {
       ret[cell.id] = expandExpr(cell.formula);
     }
