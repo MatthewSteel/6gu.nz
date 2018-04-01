@@ -198,14 +198,6 @@ const getTopoLocationById = createSelector(
   },
 );
 
-const callSignature = (callTerm) => {
-  if (!callTerm.call.ref) {
-    throw new Error('Can only call refs');
-  }
-  const argRefs = callTerm.args.map(({ ref }) => ref.ref);
-  const joinedRefs = argRefs.join(',');
-  return `${callTerm.call.ref}(${joinedRefs})`;
-};
 
 const expandSetItem = (k, expr) =>
   `try {
@@ -236,11 +228,6 @@ const expandExpr = (expr) => {
   return expandedTerms.join(' ');
 };
 
-const getRef = (globals, ref) => {
-  const values = globals[ref];
-  return values[values.length - 1];
-};
-
 const expandRef = term => `getRef(globals, ${JSON.stringify(term.ref)}).value`;
 
 const expandLookup = (term) => {
@@ -263,6 +250,21 @@ const expandTerm = (term) => {
   throw new Error(`unknown term type ${JSON.stringify(term)}`);
 };
 
+
+const callSignature = (callTerm) => {
+  if (!callTerm.call.ref) {
+    throw new Error('Can only call refs');
+  }
+  const argRefs = callTerm.args.map(({ ref }) => ref.ref);
+  const joinedRefs = argRefs.join(',');
+  return `${callTerm.call.ref}(${joinedRefs})`;
+};
+
+
+const getRef = (globals, ref) => {
+  const values = globals[ref];
+  return values[values.length - 1];
+};
 
 const tableValue = (tableId, globals) => {
   const tableCells = getCellsByTableId(store.getState(), tableId);
