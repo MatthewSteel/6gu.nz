@@ -188,6 +188,7 @@ class TableComponent extends Component {
     };
 
     const drawnCells = new Set();
+    let err;
 
     const filledCells = cells.map((cell) => {
       const { id, x, y, width, height, name } = cell;
@@ -198,6 +199,7 @@ class TableComponent extends Component {
         }
       }
       const cellSelected = selected && selection === cell.id;
+      if (cellSelected) err = cellValuesById[id].error;
       return (
         <CellComponent
           key={id}
@@ -264,6 +266,7 @@ class TableComponent extends Component {
             callback={this.formulaKeys}
           />
         }
+        <span className="TableErrorText">{err}&nbsp;</span>
       </div>
     );
   }

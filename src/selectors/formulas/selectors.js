@@ -288,7 +288,7 @@ const cellExpressions = (cells, cellsById, tablesById) => {
   const ret = {};
   cells.forEach((cell) => {
     const allTerms = flattenExpr(cell.formula);
-    const termErrors = allTerms.filter((term) => {
+    const termErrors = allTerms.map((term) => {
       if (term.badFormula) return term.badFormula;
       if (term.ref && !(cellsById[term.ref] || tablesById[term.ref])) {
         return term.ref;
@@ -296,7 +296,7 @@ const cellExpressions = (cells, cellsById, tablesById) => {
       return false;
     }).filter(Boolean);
     if (termErrors.length > 0) {
-      ret[cell.id] = `pleaseThrow(${JSON.stringify(termErrors[0])})`;
+      ret[cell.id] = `pleaseThrow('Referenced cell ' + ${JSON.stringify(termErrors[0])} + ' deleted.')`;
     } else {
       ret[cell.id] = expandExpr(cell.formula);
     }
@@ -323,7 +323,7 @@ export const getCellValuesById = createSelector(
 
     // Initialize circular refs and things that depend on them.
     [...allCells, ...allTables].forEach(({ id }) => {
-      globals[id] = [{ error: 'Circular ref' }];
+      globals[id] = [{ error: 'Error: Circular reference (or depends on one)' }];
     });
 
     // All expressions for cells and tables
