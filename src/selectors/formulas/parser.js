@@ -283,7 +283,7 @@ const unparseRef = (id, tableId) => {
   if (maybeTable) {
     return maybeTable.name;
   }
-  const maybeCell = cellsById[id] || store.getState().deletedCells[id];
+  const maybeCell = cellsById[id];
   if (maybeCell) {
     if (maybeCell.tableId === tableId) return maybeCell.name;
     const cellTable = tablesById[maybeCell.tableId];

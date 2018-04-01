@@ -1,6 +1,10 @@
 import { createStore } from 'redux';
 import uuidv4 from 'uuid-v4';
-import { getCellsById } from '../selectors/formulas/selectors';
+import {
+  getCellsById,
+  flattenExpr,
+  translateExpr,
+} from '../selectors/formulas/selectors';
 import { parseFormula } from '../selectors/formulas/parser';
 import defaultCellName from '../selectors/formulas/defaultCellName';
 
@@ -54,7 +58,6 @@ const initialState = {
     width: 3,
     height: 2,
   }],
-  deletedCells: {},
 };
 
 export const setFormula = (tableId, cellId, formula) => ({
@@ -138,16 +141,22 @@ const rootReducer = (state, action) => {
     const existingCell = getCellsById(state)[cellId];
     if (!existingCell) return state;
 
+    const translateFormula = (cell) => {
+      if (!flattenExpr(cell.formula).some(({ ref }) => ref === cellId)) {
+        return cell;
+      }
+      return {
+        ...cell,
+        formula: translateExpr(cell.formula, cell.tableId, (term) => {
+          if (term.ref !== cellId) return term;
+          return { ...term, ref: existingCell.name };
+        }),
+      };
+    };
+
     return {
       ...state,
-      cells: state.cells.filter(({ id }) => id !== cellId),
-      deletedCells: {
-        ...state.deletedCells,
-        [cellId]: {
-          name: existingCell.name,
-          tableId: existingCell.tableId,
-        },
-      },
+      cells: state.cells.filter(({ id }) => id !== cellId).map(translateFormula),
       updateId: scheduleSave(),
     };
   }

@@ -115,7 +115,7 @@ export const translateExpr = (expr, tableId, f) =>
   expr.map(term => translateTerm(term, tableId, f));
 
 
-const flattenExpr = (expr) => {
+export const flattenExpr = (expr) => {
   const ret = [];
   translateExpr(expr, null, (term) => {
     if (term === undefined) {
