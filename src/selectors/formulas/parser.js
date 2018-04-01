@@ -184,7 +184,7 @@ const getNameFromTokens = (tokens) => {
   return { formulaStart: 0, formulaName: {} };
 };
 
-const subNamesForRefsInName = (term, tableId, tablesByName) => {
+const subNamesForRefsInName = (term, tableId) => {
   // Three cases:
   // 1. It's the name of a cell in our table. Make a straight ref.
   // 2. It's the name of another table. Make a straight ref.
@@ -195,9 +195,11 @@ const subNamesForRefsInName = (term, tableId, tablesByName) => {
     tableId,
   );
   const maybeMyCell = myTableCellsByName[term.name];
+
+  const tablesByName = getTablesByName(store.getState());
   const maybeThatTable = tablesByName[term.name];
 
-  let eventualRef = term.name; // Inevitably a bad reference
+  let eventualRef = term.name; // a bad reference if not replaced
   let eventualLookup = term.lookup;
   if (maybeMyCell) {
     eventualRef = maybeMyCell.id;
@@ -206,7 +208,7 @@ const subNamesForRefsInName = (term, tableId, tablesByName) => {
       // Just `=table`, not `=table.cell`
       eventualRef = maybeThatTable.id;
     } else {
-      // `=table.cell`
+      // `=table.cell`, we hope
       const thatTableCellsByName = getCellsByNameForTableId(
         store.getState(),
         maybeThatTable.id,
@@ -219,44 +221,53 @@ const subNamesForRefsInName = (term, tableId, tablesByName) => {
     }
   }
   return {
-    ...term,
     lookup: eventualLookup,
     ref: eventualRef,
-    name: undefined,
   };
 };
 
-const subNamesForCellRef = (term, tableId, tablesByName) => {
-  const cellRef = subNamesForRefsInName(term, tableId, tablesByName);
+const subNamesForCellRef = (term, tableId) => {
+  const cellRef = subNamesForRefsInName(term, tableId);
   if (cellRef.lookup) {
     throw new Error('Got a field ref when we just want a cell ref.');
   }
   return cellRef;
 };
 
-const subNamesForRefsInCall = (term, tableId, tablesByName) => {
+const getTableIdForRef = (ref, defaultTableId) => {
+  const tablesById = getTablesById(store.getState());
+  const cellsById = getCellsById(store.getState());
+  if (tablesById[ref]) return ref;
+  const maybeCell = cellsById[ref];
+  if (maybeCell) return maybeCell.tableId;
+  return defaultTableId;
+};
+
+const subNamesForRefsInCall = (term, tableId) => {
   // TODO: use the call cell's table for arg refs.
+  const call = subNamesForCellRef(term.call, tableId);
+  const callTableId = getTableIdForRef(call.ref, tableId);
   const translatedArgs = term.args.map(({ name, expr }) => ({
-    ref: subNamesForCellRef(name, tableId, tablesByName),
-    expr: subNamesForRefsInExpr(expr, tableId, tablesByName),
+    ref: subNamesForCellRef(name, callTableId),
+    expr: subNamesForRefsInExpr(expr, tableId),
   }));
   return {
-    call: subNamesForCellRef(term.call, tableId, tablesByName),
+    call,
     args: translatedArgs,
     lookup: term.lookup,
   };
 };
 
-const subNamesForRefsInTerm = (term, tableId, tablesByName) => {
+const subNamesForRefsInTerm = (term, tableId) => {
   if (term.name) {
-    return subNamesForRefsInName(term, tableId, tablesByName);
+    return subNamesForRefsInName(term, tableId);
   }
   if (term.call) {
-    return subNamesForRefsInCall(term, tableId, tablesByName);
+    return subNamesForRefsInCall(term, tableId);
   }
   if (term.expression) {
     return {
-      expression: subNamesForRefsInExpr(term.expression, tableId, tablesByName),
+      expression: subNamesForRefsInExpr(term.expression, tableId),
     };
   }
   if (term.value !== undefined || term.op) {
@@ -265,13 +276,12 @@ const subNamesForRefsInTerm = (term, tableId, tablesByName) => {
   throw new Error('Unknown term type');
 };
 
-const subNamesForRefsInExpr = (expr, tableId, tablesByName) =>
-  expr.map(term => subNamesForRefsInTerm(term, tableId, tablesByName));
+const subNamesForRefsInExpr = (expr, tableId) =>
+  expr.map(term => subNamesForRefsInTerm(term, tableId));
 
 const subNamesForRefs = (nameFormula, tableId) => {
   if (!nameFormula) return {};
-  const tablesByName = getTablesByName(store.getState());
-  return { formula: subNamesForRefsInExpr(nameFormula, tableId, tablesByName) };
+  return { formula: subNamesForRefsInExpr(nameFormula, tableId) };
 };
 
 export const parseFormula = (s, tableId) => {
@@ -331,15 +341,16 @@ export const unparseTerm = (term, tableId) => {
   }
   if (term.call) {
     const callee = unparseTerm(term.call, tableId);
+    const callTableId = getTableIdForRef(term.call.ref, tableId);
     const argsText = term.args.map(({ ref, expr }) => {
-      const refText = unparseTerm(ref, tableId);
-      const exprText = unparseExpr(expr);
+      const refText = unparseTerm(ref, callTableId);
+      const exprText = unparseExpr(expr, tableId);
       return `${refText}=${exprText}`;
     }).join(', ');
     return `${callee}(${argsText})`;
   }
   if (term.expression) {
-    const expr = unparseExpr(term.expression);
+    const expr = unparseExpr(term.expression, tableId);
     return `(${expr})`;
   }
   if (term.badFormula) return term.badFormula;

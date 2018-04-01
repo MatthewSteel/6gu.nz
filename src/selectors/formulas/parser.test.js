@@ -66,7 +66,7 @@ describe('parser', () => {
     expect(parseFormula('foo =')).toEqual({ name: 'foo' });
     expect(parseFormula('foo = bar')).toEqual({
       name: 'foo',
-      formula: [{ name: 'bar' }],
+      formula: [{ ref: 'bar', lookup: undefined }],
     });
     expect(parseFormula('foo = bar +')).toEqual({
       name: 'foo',

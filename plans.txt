@@ -16,12 +16,7 @@ The long list:
 
 Short-term must-haves:
  - Cell error display.
- - Fix name translation.
  - Consistent cell-sizing and overflow?
-
-Nice to have:
- - Call arg refs are local to the call cell table.
-    - just in subNames and in unparse, I think.
 
 Possible next projects:
  - Browsing through data?
