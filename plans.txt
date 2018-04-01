@@ -1,6 +1,6 @@
 The long list:
  - built-in functions,
- - displaying, entering complex data structures :-(
+ - displaying, entering complex data structures
  - "native" map/for etc,
  - dynamic sheet creation etc.
  - better formula display/input,
@@ -10,8 +10,9 @@ The long list:
  - js interop,
  - collaboration,
  - custom cell formatting incl charts.
+   - input modes for rich text?
  - closures and first-class functions. (Ordered args?)
-
+ - a website, some vids.
 
 
 Short-term must-haves:
@@ -24,24 +25,71 @@ Possible next projects:
  - Drop-down boxes on top-level sheets to select them,
 
 
+Tables:
+ - Clicking on the button sets our child relationship.
+ - Two props:
+    - open state,
+    - id/path. I think?
+
+  Gah, do this tomorrow, I think...
+    First make it work, then animate it.
+
+    openChild(cell) -> set child, unselect,
+      render the thing? Pass data as a prop because we have it.
+
+    Only offer to do this if it has a template id, I think.
+      We can connect this thing up, I think --
+        - Pass table id, cell values, make it selected at first (?), read-only somehow. (No deleteCell or setCellFormula?)
+        - Get cell info and table info from connect.
+        - Would be nice to have a selection, I think -- to read formulas.
+
+If we show multiple tables on the screen at once, we probably want to be able to manage selections separately.
+  - Maybe an instantiated table component has an id, then. Fine.
+  - And maybe it has a "display path"? table -> cell -> cell etc?
+
+
+
+
 Complex data:
- - `...=` maybe makes a list?
+ - `...=` maybe makes a list? Or just `.=`
  - Don't care about structs maybe, because the whole sheet is a struct?
  - _Do_ care about tables, though.
  - Maybe want a "matrix" type too -- one function, two inputs, or data.
     - "Cross"?
- - Functions: function(out, in1, in2)? Kinda magical if it's a macro...
-    - Simple, though... And we can _use_ it!
 
- - Maybe `if` can be a macro too?
-
-Hmm, maybe continue a list with `... ? expr` or something.
- - If there isn't enough room, make room.
+  Hmm, maybe continue a list with `... ? expr` or something.
+   - If there isn't enough room, make room.
 
 
+Functions: function(out, in1, in2)? Kinda magical if it's a macro...
+  - Simple, though... And we can _use_ it!
+  - Alternatives?
+    `fun(&out, &in1, &in2)`
+    `fun([out], [in1])`
+    `function = ?(in1=?, in2=?)
+      seems kinda redundant?
 
-If we show multiple tables on the screen at once, we probably want to be able to manage selections separately.
-  - Maybe an instantiated table component has an id, then. Fine.
+      I like function = ?(out, in1, in2). It's short, and because `?` is
+      "special" it doesn't look like a regular function.
+
+  We can use that for conditional evaluation too --
+    if(true, ?(out, in), ?(scary))().
+    fib = if(n < 2, ?(n), ?(fib(n - 1) + fib(n - 2)))() ??? No.
+
+    What's the difference?
+      #[] just delays the expression inside. Takes no arguments.
+      ?() makes a function given references.
+
+    mapped = arr.map(before => after)
+      Can we get away with arrow functions? Are they too hard?
+      .filter(x => x < 5)...
+      Maybe with some good editor support: filter([[value] => ["keep?"]])
+
+      I suspect we actually just want `.filter(value, keep?)`
+      Cut out the complexity -- don't use a function, we can do that.
+        "Advanced users" can do that. "Real functions" can take refs?
+
+
 
 
 Do we want a special "sheet" literal function to make structs?
@@ -49,14 +97,6 @@ Do we want a special "sheet" literal function to make structs?
   `=table(row(id="asdf", name="Fred"), row(id="qwer", name="Sally"))`?
 
 
-
-Names in call args should be looked up on the target cell's sheet?
-
-
-
-
-
-What do things look like from top-level?
 
 
 Sub-table stuff:
