@@ -284,21 +284,6 @@ const subNamesForRefs = (nameFormula, tableId) => {
   return { formula: subNamesForRefsInExpr(nameFormula, tableId) };
 };
 
-export const parseFormula = (s, tableId) => {
-  try {
-    const tokens = lexFormula(s);
-    const { formulaStart, formulaName } = getNameFromTokens(tokens);
-    return {
-      ...formulaName,
-      ...parseFormulaExpr(tokens, formulaStart, tableId, s),
-    };
-  } catch (e) {
-    // Really bad -- can't lex or get a name... Formula is totally
-    // broken.
-    return { formula: [{ badFormula: s }] };
-  }
-};
-
 const parseFormulaExpr = (tokens, formulaStart, tableId, s) => {
   try {
     return {
@@ -316,7 +301,23 @@ const parseFormulaExpr = (tokens, formulaStart, tableId, s) => {
   }
 };
 
-const translateRef = (id, tableId) => {
+export const parseFormula = (s, tableId) => {
+  try {
+    const tokens = lexFormula(s);
+    const { formulaStart, formulaName } = getNameFromTokens(tokens);
+    return {
+      ...formulaName,
+      ...parseFormulaExpr(tokens, formulaStart, tableId, s),
+    };
+  } catch (e) {
+    // Really bad -- can't lex or get a name... Formula is totally
+    // broken.
+    return { formula: [{ badFormula: s }] };
+  }
+};
+
+const unparseRef = (id, tableId) => {
+  // id -> table_name, local_cell_name, or table.distance_cell_name
   const tablesById = getTablesById(store.getState());
   const cellsById = getCellsById(store.getState());
   const maybeTable = tablesById[id];
@@ -355,7 +356,7 @@ export const unparseTerm = (term, tableId) => {
   }
   if (term.badFormula) return term.badFormula;
   if (term.op) return term.op;
-  if (term.ref) return translateRef(term.ref, tableId);
+  if (term.ref) return unparseRef(term.ref, tableId);
   if (term.name) return term.name;
   if (term.value !== undefined) return JSON.stringify(term.value);
   throw new Error('Unknown term type');

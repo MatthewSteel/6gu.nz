@@ -250,7 +250,7 @@ const cellExpressions = (cells, cellsById, tablesById) => {
     const allTerms = flattenExpr(cell.formula);
     const termErrors = allTerms.filter((term) => {
       if (term.badFormula) return term.badFormula;
-      if (term.name && !(cellsById[term.ref] || tablesById[term.ref])) {
+      if (term.ref && !(cellsById[term.ref] || tablesById[term.ref])) {
         return term.name;
       }
       return false;
