@@ -54,6 +54,7 @@ const initialState = {
     width: 3,
     height: 2,
   }],
+  deletedCells: {},
 };
 
 export const setFormula = (tableId, cellId, formula) => ({
@@ -140,6 +141,13 @@ const rootReducer = (state, action) => {
     return {
       ...state,
       cells: state.cells.filter(({ id }) => id !== cellId),
+      deletedCells: {
+        ...state.deletedCells,
+        [cellId]: {
+          name: existingCell.name,
+          tableId: existingCell.tableId,
+        },
+      },
       updateId: scheduleSave(),
     };
   }

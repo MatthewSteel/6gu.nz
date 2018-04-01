@@ -4,6 +4,7 @@ import { lexFormula } from './lexer';
 import {
   getCellsById,
   getCellsByNameForTableId,
+  getTablesById,
   getTablesByName,
 } from './selectors';
 
@@ -184,48 +185,45 @@ const getNameFromTokens = (tokens) => {
 };
 
 const subNamesForRefsInName = (term, tableId, tablesByName) => {
-  // A few cases:
+  // Three cases:
   // 1. It's the name of a cell in our table. Make a straight ref.
-  // 2. It's the name of a cell in anot
+  // 2. It's the name of another table. Make a straight ref.
+  // 3. It's a cell looked up on another table. Make a ref to it.
+  // Any further lookups are made by name -- no translations.
   const myTableCellsByName = getCellsByNameForTableId(
     store.getState(),
     tableId,
   );
-
   const maybeMyCell = myTableCellsByName[term.name];
+  const maybeThatTable = tablesByName[term.name];
+
+  let eventualRef = term.name; // Inevitably a bad reference
+  let eventualLookup = term.lookup;
   if (maybeMyCell) {
-    return {
-      ...term,
-      ref: maybeMyCell.id,
-    };
-  }
-
-  const thatTable = tablesByName[term.name];
-  if (thatTable) {
+    eventualRef = maybeMyCell.id;
+  } else if (maybeThatTable) {
     if (!term.lookup) {
-      return {
-        ...term,
-        ref: thatTable.id,
-      };
-    }
-    const thatTableCellsByName = getCellsByNameForTableId(
-      store.getState(),
-      thatTable.id,
-    );
-    const thatCell = thatTableCellsByName[term.lookup.name];
-    if (thatCell) {
-      return {
-        ...term.lookup.name,
-        name: `${thatTable.name}.${thatCell.name}`,
-        ref: thatCell.id,
-      };
+      // Just `=table`, not `=table.cell`
+      eventualRef = maybeThatTable.id;
+    } else {
+      // `=table.cell`
+      const thatTableCellsByName = getCellsByNameForTableId(
+        store.getState(),
+        maybeThatTable.id,
+      );
+      const thatCell = thatTableCellsByName[term.lookup.name];
+      if (thatCell) {
+        eventualRef = thatCell.id;
+        eventualLookup = thatCell.lookup;
+      }
     }
   }
-
-  // Not a direct cell reference, not a straight table reference,
-  // not a table.cell reference. No idea.
-  // Returned value has a name but no ref.
-  return term;
+  return {
+    ...term,
+    lookup: eventualLookup,
+    ref: eventualRef,
+    name: undefined,
+  };
 };
 
 const subNamesForCellRef = (term, tableId, tablesByName) => {
@@ -308,17 +306,33 @@ const parseFormulaExpr = (tokens, formulaStart, tableId, s) => {
   }
 };
 
-export const unparseTerm = (term) => {
+const translateRef = (id, tableId) => {
+  const tablesById = getTablesById(store.getState());
+  const cellsById = getCellsById(store.getState());
+  const maybeTable = tablesById[id];
+  if (maybeTable) {
+    return maybeTable.name;
+  }
+  const maybeCell = cellsById[id] || store.getState().deletedCells[id];
+  if (maybeCell) {
+    if (maybeCell.tableId === tableId) return maybeCell.name;
+    const cellTable = tablesById[maybeCell.tableId];
+    return `${cellTable.name}.${maybeCell.name}`;
+  }
+  return id; // bad ref from parser, probably
+};
+
+export const unparseTerm = (term, tableId) => {
   if (term.lookup) {
     const termWithoutLookup = { ...term, lookup: undefined };
-    const pre = unparseTerm(termWithoutLookup);
-    const post = unparseTerm(term.lookup);
+    const pre = unparseTerm(termWithoutLookup, tableId);
+    const post = unparseTerm(term.lookup, tableId);
     return `${pre}.${post}`;
   }
   if (term.call) {
-    const callee = unparseTerm(term.call);
+    const callee = unparseTerm(term.call, tableId);
     const argsText = term.args.map(({ ref, expr }) => {
-      const refText = unparseTerm(ref);
+      const refText = unparseTerm(ref, tableId);
       const exprText = unparseExpr(expr);
       return `${refText}=${exprText}`;
     }).join(', ');
@@ -330,12 +344,13 @@ export const unparseTerm = (term) => {
   }
   if (term.badFormula) return term.badFormula;
   if (term.op) return term.op;
-  if (term.name) return term.name; // ref or bad-ref
+  if (term.ref) return translateRef(term.ref, tableId);
+  if (term.name) return term.name;
   if (term.value !== undefined) return JSON.stringify(term.value);
   throw new Error('Unknown term type');
 };
 
-const unparseExpr = expr => expr.map(unparseTerm).join(' ');
+const unparseExpr = (expr, tableId) => expr.map(term => unparseTerm(term, tableId)).join(' ');
 
 export const stringFormula = (cellId) => {
   const cellsById = getCellsById(store.getState());
@@ -348,7 +363,7 @@ export const stringFormula = (cellId) => {
   }
   retToJoin.push('=');
   cell.formula.forEach((term) => {
-    retToJoin.push(unparseTerm(term));
+    retToJoin.push(unparseTerm(term, cell.tableId));
   });
   return retToJoin.join(' ');
 };
