@@ -65,6 +65,65 @@ export const getTablesByName = createSelector(
   },
 );
 
+
+export const getTableIdForRef = (ref, defaultTableId) => {
+  const tablesById = getTablesById(store.getState());
+  const cellsById = getCellsById(store.getState());
+  if (tablesById[ref]) return ref;
+  const maybeCell = cellsById[ref];
+  if (maybeCell) return maybeCell.tableId;
+  return defaultTableId;
+};
+
+
+const translateCall = (term, tableId, f) => {
+  const call = f(term.call, tableId);
+  const callTableId = getTableIdForRef(call.ref, tableId);
+  const translatedArgs = term.args.map(({ ref, expr }) => ({
+    ref: f(ref, callTableId),
+    expr: translateExpr(expr, tableId, f),
+  }));
+  return f(
+    {
+      call,
+      args: translatedArgs,
+      lookup: term.lookup,
+    },
+    tableId,
+  );
+};
+
+const translateTerm = (term, tableId, f) => {
+  if (term.name || term.ref) return f(term, tableId);
+  if (term.value !== undefined || term.op) return f(term, tableId);
+  if (term.call) return translateCall(term, tableId, f);
+  if (term.expression) {
+    return f(
+      { expression: translateExpr(term.expression, tableId, f) },
+      tableId,
+    );
+  }
+  if (term.badFormula) return f(term, tableId);
+  throw new Error('Unknown term type');
+};
+
+
+export const translateExpr = (expr, tableId, f) =>
+  expr.map(term => translateTerm(term, tableId, f));
+
+
+const flattenExpr = (expr) => {
+  const ret = [];
+  translateExpr(expr, null, (term) => {
+    if (term === undefined) {
+      throw new Error('ahoy!');
+    }
+    ret.push(term);
+    return term;
+  });
+  return ret;
+};
+
 const getFormulaGraphs = createSelector(
   getCells,
   getCellsById,
@@ -202,30 +261,6 @@ const expandTerm = (term) => {
 };
 
 
-const flattenTerm = (term) => {
-  if (term.call) {
-    return [].concat(
-      term,
-      ...flattenTerm(term.call),
-      ...[].concat(...term.args.map(({ expr }) => flattenExpr(expr))),
-      ...[].concat(...term.args.map(({ ref }) => flattenTerm(ref))),
-    );
-  }
-  if (term.op || term.value !== undefined || term.name || term.ref) {
-    return [term];
-  }
-  if (term.expression) {
-    return flattenExpr(term.expression);
-  }
-  if (term.badFormula) return [term];
-  throw new Error(`unknown term type ${JSON.stringify(term)}`);
-};
-
-
-const flattenExpr = expr =>
-  [].concat(...expr.map(flattenTerm));
-
-
 const tableValue = (tableId, globals) => {
   const tableCells = getCellsByTableId(store.getState(), tableId);
   const ret = {
@@ -251,7 +286,7 @@ const cellExpressions = (cells, cellsById, tablesById) => {
     const termErrors = allTerms.filter((term) => {
       if (term.badFormula) return term.badFormula;
       if (term.ref && !(cellsById[term.ref] || tablesById[term.ref])) {
-        return term.name;
+        return term.ref;
       }
       return false;
     }).filter(Boolean);

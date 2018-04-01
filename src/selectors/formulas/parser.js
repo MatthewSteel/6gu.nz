@@ -4,8 +4,10 @@ import { lexFormula } from './lexer';
 import {
   getCellsById,
   getCellsByNameForTableId,
+  getTableIdForRef,
   getTablesById,
   getTablesByName,
+  translateExpr,
 } from './selectors';
 
 const parseOperators = (tokens, i) => {
@@ -66,7 +68,7 @@ const parseArgsList = (tokens, i) => {
       newIndex: expressionIndex,
     } = parseExpression(tokens, eqIndex + 1);
     argsList.push({
-      name: lookups,
+      ref: lookups,
       expr: expression,
     });
     if (expressionIndex === tokens.length) {
@@ -226,62 +228,20 @@ const subNamesForRefsInName = (term, tableId) => {
   };
 };
 
-const subNamesForCellRef = (term, tableId) => {
-  const cellRef = subNamesForRefsInName(term, tableId);
-  if (cellRef.lookup) {
-    throw new Error('Got a field ref when we just want a cell ref.');
-  }
-  return cellRef;
-};
-
-const getTableIdForRef = (ref, defaultTableId) => {
-  const tablesById = getTablesById(store.getState());
-  const cellsById = getCellsById(store.getState());
-  if (tablesById[ref]) return ref;
-  const maybeCell = cellsById[ref];
-  if (maybeCell) return maybeCell.tableId;
-  return defaultTableId;
-};
-
-const subNamesForRefsInCall = (term, tableId) => {
-  // TODO: use the call cell's table for arg refs.
-  const call = subNamesForCellRef(term.call, tableId);
-  const callTableId = getTableIdForRef(call.ref, tableId);
-  const translatedArgs = term.args.map(({ name, expr }) => ({
-    ref: subNamesForCellRef(name, callTableId),
-    expr: subNamesForRefsInExpr(expr, tableId),
-  }));
-  return {
-    call,
-    args: translatedArgs,
-    lookup: term.lookup,
-  };
-};
-
 const subNamesForRefsInTerm = (term, tableId) => {
-  if (term.name) {
-    return subNamesForRefsInName(term, tableId);
-  }
+  if (term.name) return subNamesForRefsInName(term, tableId);
   if (term.call) {
-    return subNamesForRefsInCall(term, tableId);
+    const argRefs = term.args.map(({ ref }) => ref);
+    if ([term.call, ...argRefs].some(({ lookup }) => lookup)) {
+      throw new Error('Got a field ref when we just want a cell ref.');
+    }
   }
-  if (term.expression) {
-    return {
-      expression: subNamesForRefsInExpr(term.expression, tableId),
-    };
-  }
-  if (term.value !== undefined || term.op) {
-    return term;
-  }
-  throw new Error('Unknown term type');
+  return term;
 };
-
-const subNamesForRefsInExpr = (expr, tableId) =>
-  expr.map(term => subNamesForRefsInTerm(term, tableId));
 
 const subNamesForRefs = (nameFormula, tableId) => {
   if (!nameFormula) return {};
-  return { formula: subNamesForRefsInExpr(nameFormula, tableId) };
+  return { formula: translateExpr(nameFormula, tableId, subNamesForRefsInTerm) };
 };
 
 const parseFormulaExpr = (tokens, formulaStart, tableId, s) => {
@@ -295,7 +255,7 @@ const parseFormulaExpr = (tokens, formulaStart, tableId, s) => {
     const formulaStr = (formulaStart === 0) ? s : s.slice(s.indexOf('=') + 1);
     return {
       formula: [{
-        badFormula: formulaStr,
+        badFormula: formulaStr.trim(),
       }],
     };
   }
