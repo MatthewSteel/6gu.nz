@@ -1,28 +1,35 @@
 The long list:
+ - dynamic sheet creation etc.
  - built-in functions,
  - displaying, entering complex data structures
  - "native" map/for etc,
- - dynamic sheet creation etc.
  - better formula display/input,
  - "actions" (xhr etc),
    - mutation story,
-   - conditional evaluation,
+   - conditional evaluation, HOF or first-class cell references,
  - js interop,
  - collaboration,
  - custom cell formatting incl charts.
    - input modes for rich text?
  - closures and first-class functions. (Ordered args?)
  - a website, some vids.
+ - putting it online
 
 
-Short-term must-haves:
- - Cell error display.
+
+
+Short-term nice-to-have:
  - Consistent cell-sizing and overflow?
 
 Possible next projects:
  - Browsing through data?
  - Making new sheets,
  - Drop-down boxes on top-level sheets to select them,
+ - Table renaming.
+
+Once these features are done I will make a video.
+
+Then tables, maybe?
 
 
 Tables:
