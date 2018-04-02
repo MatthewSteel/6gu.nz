@@ -116,16 +116,50 @@ const rootReducer = (state, action) => {
     }
 
     const existingCell = state.cells.find(({ id }) => id === cellId);
-    const cell = existingCell || defaultCellForLocation(tableId, cellId);
+    const cell = {
+      ...(existingCell || defaultCellForLocation(tableId, cellId)),
+      ...newFormula,
+    };
+
+    const rewireBadRefs = (otherCell) => {
+      let somethingDifferent = false;
+      const translatedFormula = translateExpr(
+        otherCell.formula,
+        otherCell.tableId,
+        (term) => {
+          if (
+            cell.tableId !== otherCell.tableId &&
+            term.ref === cell.tableId &&
+            term.lookup &&
+            term.lookup.name === cell.name
+          ) {
+            somethingDifferent = true;
+            return {
+              ...term,
+              name: undefined,
+              lookup: undefined,
+              ref: cell.id,
+            };
+          }
+          if (
+            cell.tableId === otherCell.tableId &&
+            term.ref === cell.name
+          ) {
+            somethingDifferent = true;
+            return { ...term, name: undefined, ref: cell.id };
+          }
+          return term;
+        },
+      );
+      if (!somethingDifferent) return otherCell;
+      return { ...otherCell, formula: translatedFormula };
+    };
 
     return {
       ...state,
       cells: [
-        ...state.cells.filter(({ id }) => id !== cellId),
-        {
-          ...cell,
-          ...newFormula,
-        },
+        ...state.cells.filter(({ id }) => id !== cellId).map(rewireBadRefs),
+        cell,
       ],
       updateId: scheduleSave(),
     };
