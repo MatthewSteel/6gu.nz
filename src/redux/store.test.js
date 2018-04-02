@@ -1,5 +1,6 @@
 import store, { deleteCell, setFormula } from './store';
 import { getCells, getTables, getCellValuesById } from '../selectors/formulas/selectors';
+import { stringFormula } from '../selectors/formulas/parser';
 
 const getCellValue = cell => getCellValuesById(store.getState())[cell.id];
 
@@ -24,6 +25,7 @@ describe('actions/the store', () => {
       width: 1,
       height: 1,
     });
+    expect(stringFormula(cells[0].id)).toBe('x = 12');
 
     // test changing the name
     store.dispatch(setFormula(table.id, cells[0].id, 'y='));
@@ -35,10 +37,12 @@ describe('actions/the store', () => {
     expect(getCellValue(cells[0])).toEqual({
       value: 12,
     });
+    expect(stringFormula(cells[0].id)).toBe('y = 12');
 
-    store.dispatch(setFormula(table.id, '2,0', '=12'));
+    store.dispatch(setFormula(table.id, '2,0', '="hi"'));
     const newCell = getCells(store.getState()).find(({ y }) => y === 2);
     expect(newCell.name).toBe('a3');
+    expect(stringFormula(newCell.id)).toBe('a3 = "hi"');
   });
 
   it('handles cross-sheet formulas', () => {
@@ -52,6 +56,7 @@ describe('actions/the store', () => {
     expect(getCellValue(x2)).toEqual({
       value: 10,
     });
+    expect(stringFormula(x2.id)).toBe(`x = ${t1Name}.y(x=10)`);
   });
 
   it('handles deletions and re-wiring', () => {
@@ -68,6 +73,11 @@ describe('actions/the store', () => {
 
     const y1 = getCells(store.getState()).find(({ y }) => y === 2);
     const x2 = getCells(store.getState()).find(({ y }) => y === 3);
+
+    expect(stringFormula(y1.id)).toBe('y = x');
+    // This is annoying -- FIXME if possible.
+    expect(stringFormula(x2.id)).toBe(`x = ${t1Name}.y(${t1Name}.x=10)`);
+
     expect(getCellValue(y1)).toEqual({
       error: 'Error: x does not exist.',
     });
@@ -75,13 +85,17 @@ describe('actions/the store', () => {
       error: `Error: ${t1Name}.x does not exist.`,
     });
 
-    store.dispatch(setFormula(table1.id, '5,5', "x='hello'"));
+    store.dispatch(setFormula(table1.id, '5,5', 'x="hello"'));
     expect(getCellValue(y1)).toEqual({
       value: 'hello',
     });
     expect(getCellValue(x2)).toEqual({
       value: 10,
     });
+
+    expect(stringFormula(y1.id)).toBe('y = x');
+    // Back to normal, at least.
+    expect(stringFormula(x2.id)).toBe(`x = ${t1Name}.y(x=10)`);
   });
 });
 

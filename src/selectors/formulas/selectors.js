@@ -1,7 +1,7 @@
 import { createSelector } from 'reselect';
 import store from '../../redux/store';
 
-const getCells = state => state.cells;
+export const getCells = state => state.cells;
 export const getTables = state => state.tables;
 
 export const getCellsById = createSelector(
