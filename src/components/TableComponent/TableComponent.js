@@ -1,7 +1,16 @@
 import React, { Component } from 'react';
+import { connect } from 'react-redux';
+
 import CellComponent from '../CellComponent/CellComponent';
 import FormulaComponent from '../FormulaComponent/FormulaComponent';
 import KeyboardListenerComponent from '../KeyboardListenerComponent/KeyboardListenerComponent';
+
+import {
+  getCellsByTableId,
+  getTablesById,
+} from '../../selectors/formulas/selectors';
+import { deleteCell, setFormula } from '../../redux/store';
+
 import './TableComponent.css';
 
 const isWithin = (selY, selX, cell) => {
@@ -83,7 +92,7 @@ class TableComponent extends Component {
     const { deleteCell, table, setCellFormula } = this.props;
     const { selection } = this.state;
     if (stringFormula === '') {
-      deleteCell(selection);
+      deleteCellProp(selection);
     } else {
       setCellFormula(table.id, selection, stringFormula);
     }
@@ -143,8 +152,8 @@ class TableComponent extends Component {
     }
     if (ev.key === 'Backspace' || ev.key === 'Delete') {
       const { selection } = this.state;
-      const { deleteCell } = this.props;
-      deleteCell(selection);
+      const { deleteCellProp } = this.props;
+      deleteCellProp(selection);
       this.setState({ selection: null });
       this.formulaRef.resetValue();
       ev.preventDefault();
@@ -281,4 +290,14 @@ class TableComponent extends Component {
   }
 }
 
-export default TableComponent;
+const mapStateToProps = (state, ownProps) => ({
+  table: getTablesById(state)[ownProps.tableId],
+  cells: getCellsByTableId(state, ownProps.tableId),
+});
+
+const mapDispatchToProps = dispatch => ({
+  deleteCellProp: cellId => dispatch(deleteCell(cellId)),
+  setCellFormula: (tableId, cellId, formula) => dispatch(setFormula(tableId, cellId, formula)),
+});
+
+export default connect(mapStateToProps, mapDispatchToProps)(TableComponent);

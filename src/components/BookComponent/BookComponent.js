@@ -1,29 +1,19 @@
 import React, { PureComponent } from 'react';
 import { connect } from 'react-redux';
 import {
-  getCellsByTableIdHelper,
   getCellValuesById,
   getTables,
-  getTablesById,
 } from '../../selectors/formulas/selectors';
-import {
-  deleteCell,
-  loadFile,
-  setFormula,
-} from '../../redux/store';
+import { loadFile } from '../../redux/store';
 import TableComponent from '../TableComponent/TableComponent';
 import FileComponent from '../FileComponent/FileComponent';
 
 const mapStateToProps = state => ({
   cellValuesById: getCellValuesById(state),
-  tablesById: getTablesById(state),
   tables: getTables(state),
-  cellsByTableId: getCellsByTableIdHelper(state),
 });
 
 const mapDispatchToProps = dispatch => ({
-  deleteCellProp: cellId => dispatch(deleteCell(cellId)),
-  setCellFormula: (tableId, cellId, formula) => dispatch(setFormula(tableId, cellId, formula)),
   loadFileProp: () => dispatch(loadFile()),
 });
 
@@ -62,48 +52,38 @@ class BookComponent extends PureComponent {
 
   render() {
     const {
-      cellsByTableId,
       cellValuesById,
       tables,
-      tablesById,
-      setCellFormula,
-      deleteCellProp,
       loadFileProp,
     } = this.props;
     const { selectedViewId, views } = this.state;
 
-    const tableComponents = views.map(({ id, tableId }) => {
-      const tableCells = cellsByTableId[tableId] || [];
-      return (
-        <TableComponent
-          key={id}
-          viewId={id}
-          table={tablesById[tableId]}
-          cells={tableCells}
-          cellValuesById={cellValuesById[tableId].byId}
-          selected={selectedViewId === id}
-          deleteCell={deleteCellProp}
-          setCellFormula={setCellFormula}
-          setViewSelection={this.setViewSelection}
+    const tableComponents = views.map(({ id, tableId }) => (
+      <TableComponent
+        key={id}
+        viewId={id}
+        tableId={tableId}
+        cellValuesById={cellValuesById[tableId].byId}
+        selected={selectedViewId === id}
+        setViewSelection={this.setViewSelection}
+      >
+        <select
+          className="ViewSelect"
+          name={id}
+          value={tableId}
+          onChange={this.changeTableViewTable}
         >
-          <select
-            className="ViewSelect"
-            name={id}
-            value={tableId}
-            onChange={this.changeTableViewTable}
-          >
-            {tables.map(table => (
-              <option
-                key={table.id}
-                value={table.id}
-              >
-                {table.name}
-              </option>
-            ))}
-          </select>
-        </TableComponent>
-      );
-    });
+          {tables.map(table => (
+            <option
+              key={table.id}
+              value={table.id}
+            >
+              {table.name}
+            </option>
+          ))}
+        </select>
+      </TableComponent>
+    ));
 
     return (
       <div>
