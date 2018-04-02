@@ -3,6 +3,8 @@ import { connect } from 'react-redux';
 import {
   getCellValuesById,
   getTables,
+  getTablesById,
+  getCellsById,
 } from '../../selectors/formulas/selectors';
 import { loadFile } from '../../redux/store';
 import TableComponent from '../TableComponent/TableComponent';
@@ -10,6 +12,8 @@ import FileComponent from '../FileComponent/FileComponent';
 
 const mapStateToProps = state => ({
   cellValuesById: getCellValuesById(state),
+  cellsById: getCellsById(state),
+  tablesById: getTablesById(state),
   tables: getTables(state),
 });
 
@@ -30,7 +34,7 @@ class BookComponent extends PureComponent {
         tableId: props.tables[0].id,
       }, {
         id: '1',
-        stack: ['t0ref'],
+        stack: ['cell4'],
         tableId: props.tables[1].id,
       }],
     };
@@ -54,24 +58,32 @@ class BookComponent extends PureComponent {
 
   render() {
     const {
+      cellsById,
       cellValuesById,
       tables,
       loadFileProp,
+      tablesById,
     } = this.props;
     const { selectedViewId, views } = this.state;
 
     const tableComponents = views.map(({ id, stack, tableId }) => {
-      const tableName = tables.find(table => table.id === tableId).name;
+      const tableName = tablesById[tableId].name;
       const viewData = [{
         ...cellValuesById[tableId],
         path: tableName,
       }];
-      stack.forEach((name) => {
+      let pathStillValid = true;
+      stack.forEach((stackRef) => {
         const lastViewData = viewData[viewData.length - 1];
-        viewData.push({
-          ...lastViewData.byName[name],
-          path: `${lastViewData.path}.${name}`,
-        });
+        const newData = lastViewData.byId[stackRef].value;
+        const { name } = cellsById[stackRef];
+        pathStillValid = pathStillValid && newData;
+        if (pathStillValid) {
+          viewData.push({
+            ...newData,
+            path: `${lastViewData.path}.${name}`,
+          });
+        }
       });
 
       const tableViews = viewData.map(({ template, byId, path }, i) => (
