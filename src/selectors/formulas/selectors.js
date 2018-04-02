@@ -140,8 +140,8 @@ const getFormulaGraphs = createSelector(
       backwardsGraph[id] = [];
     });
     cells.forEach(({ id, formula }) => {
-      const refs = flattenExpr(formula).filter(({ ref }) =>
-        cellsById[ref] || tablesById[ref]);
+      const refs = flattenExpr(formula).filter(term =>
+        term.ref && !refError(term, tablesById, cellsById));
       refs.forEach((term) => {
         forwardsGraph[id].push(term.ref);
         backwardsGraph[term.ref].push(id);
@@ -284,20 +284,24 @@ const tableValue = (tableId, globals) => {
 // eslint-disable-next-line no-unused-vars
 const pleaseThrow = (s) => { throw new Error(s); };
 
+const refError = (term, tablesById, cellsById) => {
+  if (term.badFormula) return term.badFormula;
+  if (term.ref && !(cellsById[term.ref] || tablesById[term.ref])) {
+    return term.ref;
+  }
+  if (term.ref && tablesById[term.ref] && term.lookup) {
+    return `${term.ref}.${term.lookup.name}`;
+  }
+  return false;
+};
+
 const cellExpressions = (cells, cellsById, tablesById) => {
   const ret = {};
   cells.forEach((cell) => {
     const allTerms = flattenExpr(cell.formula);
-    const termErrors = allTerms.map((term) => {
-      if (term.badFormula) return term.badFormula;
-      if (term.ref && !(cellsById[term.ref] || tablesById[term.ref])) {
-        return term.ref;
-      }
-      if (term.ref && tablesById[term.ref] && term.lookup) {
-        return `${term.ref}.${term.lookup.name}`;
-      }
-      return false;
-    }).filter(Boolean);
+    const termErrors = allTerms
+      .map(term => refError(term, tablesById, cellsById))
+      .filter(Boolean);
     if (termErrors.length > 0) {
       ret[cell.id] = `pleaseThrow(${JSON.stringify(termErrors[0])} + ' does not exist.')`;
     } else {
