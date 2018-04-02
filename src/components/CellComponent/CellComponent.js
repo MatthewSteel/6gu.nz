@@ -54,7 +54,6 @@ class CellComponent extends PureComponent {
             {formattedValue}
           </div>
         )}
-        {!name && (<div className="EmptyCell" />)}
       </div>
     );
   }

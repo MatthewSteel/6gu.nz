@@ -89,15 +89,16 @@ class TableComponent extends Component {
   }
 
   setFormula(stringFormula) {
-    const { deleteCell, table, setCellFormula } = this.props;
+    this.getFocus();
+    const { deleteCellProp, table, setCellFormula, readOnly } = this.props;
     const { selection } = this.state;
+    if (readOnly) return;
     if (stringFormula === '') {
       deleteCellProp(selection);
     } else {
       setCellFormula(table.id, selection, stringFormula);
     }
     this.setState({ selection: null });
-    this.getFocus();
   }
 
   selectedCellId(selY, selX) {
@@ -129,6 +130,8 @@ class TableComponent extends Component {
       ArrowUp: [-1, 0],
       ArrowDown: [1, 0],
     };
+
+    // Movement actions
     if (moves[ev.key]) {
       // Cursor key nav
       this.move(...moves[ev.key]);
@@ -139,8 +142,12 @@ class TableComponent extends Component {
         this.move(-1, 0);
         ev.preventDefault();
       } else {
-        // Enter selects the formula box
-        this.formulaRef.focus();
+        if (this.props.readOnly) {
+          this.move(1, 0);
+        } else {
+          // Enter selects the formula box
+          this.formulaRef.focus();
+        }
         ev.preventDefault();
       }
     }
@@ -150,6 +157,9 @@ class TableComponent extends Component {
       this.move(0, xMove);
       ev.preventDefault();
     }
+
+    // Modification actions
+    if (this.props.readOnly) return;
     if (ev.key === 'Backspace' || ev.key === 'Delete') {
       const { selection } = this.state;
       const { deleteCellProp } = this.props;
@@ -193,6 +203,7 @@ class TableComponent extends Component {
       children,
       cells,
       cellValuesById,
+      readOnly,
       selected,
       table,
     } = this.props;
@@ -267,6 +278,7 @@ class TableComponent extends Component {
         </div>
         <div className="TableViewInputRow">
           <FormulaComponent
+            readOnly={readOnly}
             ref={this.setFormulaRef}
             selection={selection}
             setFormula={this.setFormula}

@@ -1,7 +1,8 @@
 .TableContainer {
   display: flex;
   flex-direction: column;
-  margin: 20px;
+  margin: 5px 10px;
+  grid-area: 1 / 1 / 2 / 2;
 }
 
 .TableTitle {
@@ -16,6 +17,7 @@
   text-align: center;
   display: grid;
   background-color: #F4F4F4;
+  flex-grow: 1;
 }
 
 .TableErrorText {

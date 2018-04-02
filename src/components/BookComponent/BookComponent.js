@@ -26,9 +26,11 @@ class BookComponent extends PureComponent {
       selectedViewId: '0',
       views: [{
         id: '0',
+        stack: [],
         tableId: props.tables[0].id,
       }, {
         id: '1',
+        stack: ['t0ref'],
         tableId: props.tables[1].id,
       }],
     };
@@ -58,32 +60,52 @@ class BookComponent extends PureComponent {
     } = this.props;
     const { selectedViewId, views } = this.state;
 
-    const tableComponents = views.map(({ id, tableId }) => (
-      <TableComponent
-        key={id}
-        viewId={id}
-        tableId={tableId}
-        cellValuesById={cellValuesById[tableId].byId}
-        selected={selectedViewId === id}
-        setViewSelection={this.setViewSelection}
-      >
-        <select
-          className="ViewSelect"
-          name={id}
-          value={tableId}
-          onChange={this.changeTableViewTable}
+    const tableComponents = views.map(({ id, stack, tableId }) => {
+      const viewData = [{
+        ...cellValuesById[tableId],
+        path: '',
+      }];
+      stack.forEach((name) => {
+        const lastViewData = viewData[viewData.length - 1];
+        viewData.push({
+          ...lastViewData.byName[name],
+          path: `${lastViewData.path}.${name}`,
+        });
+      });
+
+      const tableViews = viewData.map(({ template, byId, path }, i) => (
+        <TableComponent
+          key={path}
+          viewId={id}
+          tableId={template}
+          cellValuesById={byId}
+          readOnly={i !== 0}
+          selected={selectedViewId === id && i === viewData.length - 1}
+          setViewSelection={this.setViewSelection}
         >
-          {tables.map(table => (
-            <option
-              key={table.id}
-              value={table.id}
-            >
-              {table.name}
-            </option>
-          ))}
-        </select>
-      </TableComponent>
-    ));
+          <select
+            className="ViewSelect"
+            name={id}
+            value={tableId}
+            onChange={this.changeTableViewTable}
+          >
+            {tables.map(table => (
+              <option
+                key={table.id}
+                value={table.id}
+              >
+                {table.name}
+              </option>
+            ))}
+          </select>
+        </TableComponent>
+      ));
+      return (
+        <div style={{ display: 'grid' }}>
+          {tableViews}
+        </div>
+      );
+    });
 
     return (
       <div>

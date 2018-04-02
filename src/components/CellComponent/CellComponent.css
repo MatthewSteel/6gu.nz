@@ -5,7 +5,7 @@
   font: helvetica;
   margin: 1px;
   flex: 1 1 auto;
-  min-height: 4ex;
+  min-height: 5ex;
 }
 
 .Cell .Name {
@@ -33,4 +33,3 @@
   border: 1px solid blue;
   margin: 0px;
 }
-

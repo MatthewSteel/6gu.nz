@@ -57,6 +57,21 @@ const initialState = {
     y: 1,
     width: 3,
     height: 2,
+  }, {
+    id: 'cell4',
+    tableId: 'table1',
+    name: 't0ref',
+    formula: [{
+      call: { ref: 'table0' },
+      args: [{
+        ref: { ref: 'cell0' },
+        expr: [{ value: 1 }],
+      }],
+    }],
+    x: 0,
+    y: 0,
+    width: 1,
+    height: 1,
   }],
 };
 

@@ -74,6 +74,7 @@ class FormulaComponent extends Component {
       <input
         type="text"
         className="FormulaInput"
+        disabled={this.props.readOnly}
         value={this.state.value}
         onChange={this.handleChange}
         onBlur={this.handleOnBlur}
