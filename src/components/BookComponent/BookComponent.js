@@ -4,6 +4,7 @@ import {
   getCellsByTableIdHelper,
   getCellValuesById,
   getTables,
+  getTablesById,
 } from '../../selectors/formulas/selectors';
 import {
   deleteCell,
@@ -15,6 +16,7 @@ import FileComponent from '../FileComponent/FileComponent';
 
 const mapStateToProps = state => ({
   cellValuesById: getCellValuesById(state),
+  tablesById: getTablesById(state),
   tables: getTables(state),
   cellsByTableId: getCellsByTableIdHelper(state),
 });
@@ -28,12 +30,34 @@ const mapDispatchToProps = dispatch => ({
 class BookComponent extends PureComponent {
   constructor(props) {
     super(props);
-    this.setTableSelection = this.setTableSelection.bind(this);
-    this.state = { selectedTableId: props.tables[0].id };
+    this.setViewSelection = this.setViewSelection.bind(this);
+    this.changeTableViewTable = this.changeTableViewTable.bind(this);
+    this.state = {
+      selectedViewId: '0',
+      views: [{
+        id: '0',
+        tableId: props.tables[0].id,
+      }, {
+        id: '1',
+        tableId: props.tables[1].id,
+      }],
+    };
   }
 
-  setTableSelection(tableId) {
-    this.setState({ selectedTableId: tableId });
+  setViewSelection(viewId) {
+    this.setState({ selectedViewId: viewId });
+  }
+
+  changeTableViewTable(ev) {
+    const { views } = this.state;
+    const targetTableId = ev.target.value;
+    this.setState({
+      selectedViewId: ev.target.name,
+      views: [...views.map((view) => {
+        if (view.id !== ev.target.name) return view;
+        return { ...view, tableId: targetTableId };
+      })],
+    });
   }
 
   render() {
@@ -41,25 +65,43 @@ class BookComponent extends PureComponent {
       cellsByTableId,
       cellValuesById,
       tables,
+      tablesById,
       setCellFormula,
       deleteCellProp,
       loadFileProp,
     } = this.props;
-    const { selectedTableId } = this.state;
+    const { selectedViewId, views } = this.state;
 
-    const tableComponents = tables.map((table) => {
-      const tableCells = cellsByTableId[table.id] || [];
+    const tableComponents = views.map(({ id, tableId }) => {
+      const tableCells = cellsByTableId[tableId] || [];
       return (
         <TableComponent
-          key={table.id}
-          table={table}
+          key={id}
+          viewId={id}
+          table={tablesById[tableId]}
           cells={tableCells}
-          cellValuesById={cellValuesById[table.id].byId}
-          selected={selectedTableId === table.id}
+          cellValuesById={cellValuesById[tableId].byId}
+          selected={selectedViewId === id}
           deleteCell={deleteCellProp}
           setCellFormula={setCellFormula}
-          setTableSelection={this.setTableSelection}
-        />
+          setViewSelection={this.setViewSelection}
+        >
+          <select
+            className="ViewSelect"
+            name={id}
+            value={tableId}
+            onChange={this.changeTableViewTable}
+          >
+            {tables.map(table => (
+              <option
+                key={table.id}
+                value={table.id}
+              >
+                {table.name}
+              </option>
+            ))}
+          </select>
+        </TableComponent>
       );
     });
 

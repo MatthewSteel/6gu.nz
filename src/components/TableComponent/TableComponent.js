@@ -54,8 +54,8 @@ class TableComponent extends Component {
   }
 
   getFocus() {
-    const { setTableSelection, table } = this.props;
-    setTableSelection(table.id);
+    const { setViewSelection, viewId } = this.props;
+    setViewSelection(viewId);
   }
 
   setFormulaRef(ref) {
@@ -180,7 +180,13 @@ class TableComponent extends Component {
   }
 
   render() {
-    const { cells, cellValuesById, selected, table } = this.props;
+    const {
+      children,
+      cells,
+      cellValuesById,
+      selected,
+      table,
+    } = this.props;
     const { formulaHasFocus, selection } = this.state;
     const style = {
       gridTemplateColumns: 'auto '.repeat(table.width).trim(),
@@ -250,22 +256,25 @@ class TableComponent extends Component {
           {filledCells}
           {emptyCells}
         </div>
-        <FormulaComponent
-          ref={this.setFormulaRef}
-          selection={selection}
-          setFormula={this.setFormula}
-          setFormulaHasFocus={this.setFormulaFocus}
-        />
-        {selected && !formulaHasFocus &&
-          <KeyboardListenerComponent
-            callback={this.cellKeys}
+        <div className="TableViewInputRow">
+          <FormulaComponent
+            ref={this.setFormulaRef}
+            selection={selection}
+            setFormula={this.setFormula}
+            setFormulaHasFocus={this.setFormulaFocus}
           />
-        }
-        {selected && formulaHasFocus &&
-          <KeyboardListenerComponent
-            callback={this.formulaKeys}
-          />
-        }
+          {selected && !formulaHasFocus &&
+            <KeyboardListenerComponent
+              callback={this.cellKeys}
+            />
+          }
+          {selected && formulaHasFocus &&
+            <KeyboardListenerComponent
+              callback={this.formulaKeys}
+            />
+          }
+          {children}
+        </div>
         <span className="TableErrorText">{err}&nbsp;</span>
       </div>
     );
