@@ -75,14 +75,13 @@ describe('actions/the store', () => {
     const x2 = getCells(store.getState()).find(({ y }) => y === 3);
 
     expect(stringFormula(y1.id)).toBe('y = x');
-    // This is annoying -- FIXME if possible.
-    expect(stringFormula(x2.id)).toBe(`x = ${t1Name}.y(${t1Name}.x=10)`);
+    expect(stringFormula(x2.id)).toBe(`x = ${t1Name}.y(x=10)`);
 
     expect(getCellValue(y1)).toEqual({
       error: 'Error: x does not exist.',
     });
     expect(getCellValue(x2)).toEqual({
-      error: `Error: ${t1Name}.x does not exist.`,
+      error: 'Error: x does not exist.',
     });
 
     store.dispatch(setFormula(table1.id, '5,5', 'x="hello"'));
@@ -94,7 +93,6 @@ describe('actions/the store', () => {
     });
 
     expect(stringFormula(y1.id)).toBe('y = x');
-    // Back to normal, at least.
     expect(stringFormula(x2.id)).toBe(`x = ${t1Name}.y(x=10)`);
   });
 });

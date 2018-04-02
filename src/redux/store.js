@@ -126,9 +126,9 @@ const rootReducer = (state, action) => {
       const translatedFormula = translateExpr(
         otherCell.formula,
         otherCell.tableId,
-        (term) => {
+        (term, tableId) => {
           if (
-            cell.tableId !== otherCell.tableId &&
+            cell.tableId !== tableId &&
             term.ref === cell.tableId &&
             term.lookup &&
             term.lookup.name === cell.name
@@ -142,7 +142,7 @@ const rootReducer = (state, action) => {
             };
           }
           if (
-            cell.tableId === otherCell.tableId &&
+            cell.tableId === tableId &&
             term.ref === cell.name
           ) {
             somethingDifferent = true;
@@ -181,9 +181,9 @@ const rootReducer = (state, action) => {
       }
       return {
         ...cell,
-        formula: translateExpr(cell.formula, cell.tableId, (term) => {
+        formula: translateExpr(cell.formula, cell.tableId, (term, tableId) => {
           if (term.ref !== cellId) return term;
-          if (cell.tableId !== existingCell.tableId) {
+          if (existingCell.tableId !== tableId) {
             return {
               ref: existingCell.tableId,
               lookup: { name: existingCell.name },
