@@ -203,6 +203,7 @@ class TableComponent extends Component {
       children,
       cells,
       cellValuesById,
+      path,
       readOnly,
       selected,
       table,
@@ -268,7 +269,7 @@ class TableComponent extends Component {
     }
     return (
       <div className="TableContainer">
-        <div className="TableTitle">{table.name}</div>
+        <div className="TableTitle">{path}</div>
         <div
           className="Table"
           style={style}

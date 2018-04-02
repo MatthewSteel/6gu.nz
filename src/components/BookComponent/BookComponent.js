@@ -47,7 +47,7 @@ class BookComponent extends PureComponent {
       selectedViewId: ev.target.name,
       views: [...views.map((view) => {
         if (view.id !== ev.target.name) return view;
-        return { ...view, tableId: targetTableId };
+        return { ...view, tableId: targetTableId, stack: [] };
       })],
     });
   }
@@ -61,9 +61,10 @@ class BookComponent extends PureComponent {
     const { selectedViewId, views } = this.state;
 
     const tableComponents = views.map(({ id, stack, tableId }) => {
+      const tableName = tables.find(table => table.id === tableId).name;
       const viewData = [{
         ...cellValuesById[tableId],
-        path: '',
+        path: tableName,
       }];
       stack.forEach((name) => {
         const lastViewData = viewData[viewData.length - 1];
@@ -76,6 +77,7 @@ class BookComponent extends PureComponent {
       const tableViews = viewData.map(({ template, byId, path }, i) => (
         <TableComponent
           key={path}
+          path={path}
           viewId={id}
           tableId={template}
           cellValuesById={byId}
@@ -101,7 +103,7 @@ class BookComponent extends PureComponent {
         </TableComponent>
       ));
       return (
-        <div style={{ display: 'grid' }}>
+        <div key={id} style={{ display: 'grid' }}>
           {tableViews}
         </div>
       );
