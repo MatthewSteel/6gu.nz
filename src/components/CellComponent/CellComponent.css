@@ -32,4 +32,7 @@
 
 .Cell.selected {
   border: 1px solid blue;
+  margin-right: -1px;
+  margin-top: -1px;
+  z-index: 1;
 }
