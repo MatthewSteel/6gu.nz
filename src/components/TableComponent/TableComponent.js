@@ -21,13 +21,22 @@ const isWithin = (selY, selX, cell) => {
   );
 };
 
-const defaultFormatter = (value) => {
+const defaultFormatter = (value, pushStack) => {
   if (typeof value === 'string') return value;
   if (value instanceof Array) {
     return `[${value.length}]`;
   }
   if (typeof value === 'object' && value.constructor === Object) {
-    return `{${Object.keys(value.byName).length}}`;
+    const contentsStr = `{${Object.keys(value.byName).length}}`;
+    if (value.template) {
+      return (
+        <div style={{ position: 'relative', zIndex: 0 }}>
+          {contentsStr}
+          <button onClick={pushStack} className="StackButton">+</button>
+        </div>
+      );
+    }
+    return contentsStr;
   }
   if (typeof value === 'number') return value.toString();
   return JSON.stringify(value);
@@ -46,6 +55,7 @@ class TableComponent extends Component {
     this.setFormulaFocus = this.setFormulaFocus.bind(this);
     this.setFormulaRef = this.setFormulaRef.bind(this);
     this.updateSelection = this.updateSelection.bind(this);
+    this.popStack = this.popStack.bind(this);
 
     this.formulaRef = null;
     this.state = {
@@ -175,6 +185,12 @@ class TableComponent extends Component {
     }
   }
 
+  popStack(ev) {
+    const { popViewStack, viewId } = this.props;
+    popViewStack(viewId);
+    ev.preventDefault();
+  }
+
   formulaKeys(ev) {
     if (ev.key === 'Escape') {
       // Enter selects the formula box
@@ -204,6 +220,9 @@ class TableComponent extends Component {
       cells,
       cellValuesById,
       path,
+      isChild,
+      pushViewStack,
+      viewId,
       readOnly,
       selected,
       table,
@@ -238,6 +257,8 @@ class TableComponent extends Component {
           name={name}
           value={cellValuesById[id]}
           fmt={defaultFormatter}
+          pushViewStack={pushViewStack}
+          viewId={viewId}
           selected={cellSelected}
           setSelection={this.setSelection}
         />
@@ -269,7 +290,12 @@ class TableComponent extends Component {
     }
     return (
       <div className="TableContainer">
-        <div className="TableTitle">{path}</div>
+        <div className="TableTitle">
+          {path}
+          {isChild && (
+            <button onClick={this.popStack} className="StackButton">&times;</button>
+          )}
+        </div>
         <div
           className="Table"
           style={style}

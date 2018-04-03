@@ -3,14 +3,16 @@
   flex-direction: column;
   background-color: #FDFDFD;
   font: helvetica;
-  margin: 1px;
   flex: 1 1 auto;
   min-height: 5ex;
+  position: relative;
+  border-left: 1px solid #EEE;
+  border-bottom: 1px solid #EEE;
+  box-sizing: border-box;
 }
 
 .Cell .Name {
   flex: 0 1 20px;
-  margin: 1px;
   color: #55C;
   background-color: #FAFAFA;
   border-bottom: 1px solid #F4F4F4;
@@ -20,7 +22,6 @@
 .Cell .Value {
   flex: 1 1 auto;
   color: #666;
-  margin: 0px 1px 1px;
   background-color: #FDFDFD;
   text-overflow: ellipsis;
 }
@@ -31,5 +32,4 @@
 
 .Cell.selected {
   border: 1px solid blue;
-  margin: 0px;
 }

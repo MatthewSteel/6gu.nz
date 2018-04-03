@@ -8,9 +8,10 @@
 .TableTitle {
   font-weight: 700;
   color: #55C;
-  background-color: #EDEDFF;
+  background-color: #F4F4FF;
   font: helvetica;
   min-height: 20px;
+  position: relative;
 }
 
 .Table {
@@ -31,4 +32,14 @@
   width: 100%;
   display: flex;
   flex-direction: row;
+}
+
+
+.StackButton {
+  position: absolute;
+  right: 0px;
+  top: 0px;
+  bottom: 0px;
+  background-color: #EFEFEF;
+  border: 1px solid #EAEAEA;
 }

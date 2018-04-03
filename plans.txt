@@ -22,23 +22,12 @@ Short-term nice-to-have:
  - Consistent cell-sizing and overflow?
 
 Possible next projects:
- - Browsing through data?
  - Making new sheets,
- - Drop-down boxes on top-level sheets to select them,
  - Table renaming.
 
 Once these features are done I will make a video.
 
 Then tables, maybe?
-
-
-Browsing:
- - Push stack, pop stack actions.
- - Put some links somewhere. Pop next to the table-picker?
-    Or in the header? Maybe link the names? A `<-` In the corner?
-
-    Only offer to expand a thing if it has a template id, I think.
-    We can do "boring object layouts" later.
 
 
 

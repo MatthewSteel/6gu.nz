@@ -2,17 +2,13 @@ import React, { PureComponent } from 'react';
 import classNames from 'classnames';
 import './CellComponent.css';
 
-const getCellContents = (value, fmt) => {
-  if (!value || value.error) {
-    return { error: true };
-  }
-  return { formattedValue: fmt(value.value) };
-};
 
 class CellComponent extends PureComponent {
   constructor(props) {
     super(props);
     this.onClick = this.onClick.bind(this);
+    this.pushStack = this.pushStack.bind(this);
+    this.getCellContents = this.getCellContents.bind(this);
   }
 
   onClick(ev) {
@@ -21,13 +17,34 @@ class CellComponent extends PureComponent {
     setSelection(y, x);
   }
 
+  getCellContents() {
+    const { fmt, value } = this.props;
+    if (!value || value.error) {
+      return { error: true };
+    }
+    return { formattedValue: fmt(value.value, this.pushStack) };
+  }
+
+  pushStack(ev) {
+    const { id, pushViewStack, viewId } = this.props;
+    pushViewStack(viewId, id);
+    ev.preventDefault();
+  }
+
   render() {
-    const { name, value, fmt, x, y, width, height, selected } = this.props;
+    const {
+      name,
+      x,
+      y,
+      width,
+      height,
+      selected,
+    } = this.props;
     const style = {
       gridColumn: `${x + 1} / span ${width}`,
       gridRow: `${y + 1} / span ${height}`,
     };
-    const { error, formattedValue } = getCellContents(value, fmt);
+    const { error, formattedValue } = this.getCellContents();
 
     return (
       <div
@@ -50,8 +67,7 @@ class CellComponent extends PureComponent {
               { CellError: error },
             )}
           >
-            &nbsp;
-            {formattedValue}
+            {formattedValue || '\u200B'}
           </div>
         )}
       </div>

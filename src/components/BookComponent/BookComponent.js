@@ -24,8 +24,12 @@ const mapDispatchToProps = dispatch => ({
 class BookComponent extends PureComponent {
   constructor(props) {
     super(props);
+    this.pushStack = this.pushStack.bind(this);
+    this.popStack = this.popStack.bind(this);
     this.setViewSelection = this.setViewSelection.bind(this);
     this.changeTableViewTable = this.changeTableViewTable.bind(this);
+    this.updateView = this.updateView.bind(this);
+    this.normaliseView = this.normaliseView.bind(this);
     this.state = {
       selectedViewId: '0',
       views: [{
@@ -34,7 +38,7 @@ class BookComponent extends PureComponent {
         tableId: props.tables[0].id,
       }, {
         id: '1',
-        stack: ['cell4'],
+        stack: [],
         tableId: props.tables[1].id,
       }],
     };
@@ -45,15 +49,58 @@ class BookComponent extends PureComponent {
   }
 
   changeTableViewTable(ev) {
-    const { views } = this.state;
     const targetTableId = ev.target.value;
     this.setState({
       selectedViewId: ev.target.name,
-      views: [...views.map((view) => {
-        if (view.id !== ev.target.name) return view;
-        return { ...view, tableId: targetTableId, stack: [] };
-      })],
+      views: this.updateView(this.state.views, ev.target.name, () => (
+        { tableId: targetTableId, stack: [] })),
     });
+  }
+
+  pushStack(viewId, cellId) {
+    this.setState({
+      selectedViewId: viewId,
+      views: this.updateView(this.state.views, viewId, view => (
+        { stack: [...view.stack, cellId] })),
+    });
+  }
+
+  popStack(viewId, n = 1) {
+    this.setState({
+      selectedViewId: viewId,
+      views: this.updateView(this.state.views, viewId, view => (
+        { stack: view.stack.slice(0, view.stack.length - n) })),
+    });
+  }
+
+  updateView(views, viewId, f) {
+    return [
+      ...views.map((view) => {
+        if (view.id !== viewId) return view;
+        return { ...view, ...f(this.normaliseView(view)) };
+      }),
+    ];
+  }
+
+  normaliseView(view) {
+    // A view stack may have invalid entries after some redux state update.
+    // The view is robust at the moment (maybe it shouldn't need to be...)
+    // but pushing/popping on a broken stack is no good. Fix it up before
+    // working on it.
+    const { stack, tableId } = view;
+    let tableData = this.props.cellValuesById[tableId];
+    const newStack = [];
+    stack.forEach((stackRef) => {
+      if (tableData && tableData.byId[stackRef]) {
+        newStack.push(stackRef);
+      } else {
+        tableData = null;
+      }
+    });
+    return {
+      ...view,
+      stack: newStack,
+    };
   }
 
   render() {
@@ -75,12 +122,12 @@ class BookComponent extends PureComponent {
       let pathStillValid = true;
       stack.forEach((stackRef) => {
         const lastViewData = viewData[viewData.length - 1];
-        const newData = lastViewData.byId[stackRef].value;
-        const { name } = cellsById[stackRef];
+        const newData = lastViewData.byId[stackRef];
         pathStillValid = pathStillValid && newData;
         if (pathStillValid) {
+          const { name } = cellsById[stackRef];
           viewData.push({
-            ...newData,
+            ...newData.value,
             path: `${lastViewData.path}.${name}`,
           });
         }
@@ -96,6 +143,9 @@ class BookComponent extends PureComponent {
           readOnly={i !== 0}
           selected={selectedViewId === id && i === viewData.length - 1}
           setViewSelection={this.setViewSelection}
+          isChild={i !== 0}
+          popViewStack={this.popStack}
+          pushViewStack={this.pushStack}
         >
           <select
             className="ViewSelect"
