@@ -199,9 +199,10 @@ const getTopoLocationById = createSelector(
 );
 
 
-const expandSetItem = (k, expr) =>
+const expandSetItem = (k, expr, override = false) =>
   `try {
-    globals[${JSON.stringify(k)}].push({ value: ${expr} });
+    globals[${JSON.stringify(k)}].push({
+      value: ${expr}, override: ${override} });
   } catch (e) {
     globals[${JSON.stringify(k)}].push({ error: e.toString() });
   }`;
@@ -415,7 +416,7 @@ const createFunction = (callTerm, refExpressions) => {
 
   // Code for adding the args to the global state
   callTerm.args.forEach(({ ref }, i) => {
-    functionBits.push(expandSetItem(ref.ref, `v${i}`));
+    functionBits.push(expandSetItem(ref.ref, `v${i}`, true));
   });
 
   // Code for running the function

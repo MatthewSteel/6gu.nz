@@ -26,6 +26,10 @@
   align: right;
 }
 
+.TableOverrideText {
+  color: #888;
+}
+
 .TableViewInputRow {
   align-self: stretch;
   box-sizing: border-box;

@@ -22,7 +22,10 @@ class CellComponent extends PureComponent {
     if (!value || value.error) {
       return { error: true };
     }
-    return { formattedValue: fmt(value.value, this.pushStack) };
+    return {
+      formattedValue: fmt(value.value, this.pushStack),
+      override: value.override,
+    };
   }
 
   pushStack(ev) {
@@ -44,7 +47,7 @@ class CellComponent extends PureComponent {
       gridColumn: `${x + 1} / span ${width}`,
       gridRow: `${y + 1} / span ${height}`,
     };
-    const { error, formattedValue } = this.getCellContents();
+    const { error, formattedValue, override } = this.getCellContents();
 
     return (
       <div
@@ -64,7 +67,7 @@ class CellComponent extends PureComponent {
           <div
             className={classNames(
               'Value',
-              { CellError: error },
+              { CellError: error, CellOverride: override },
             )}
           >
             {formattedValue || '\u200B'}

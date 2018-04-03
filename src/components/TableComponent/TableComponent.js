@@ -234,7 +234,8 @@ class TableComponent extends Component {
     };
 
     const drawnCells = new Set();
-    let err;
+    let selectionError;
+    let selectionValueOverride;
 
     const filledCells = cells.map((cell) => {
       const { id, x, y, width, height, name } = cell;
@@ -245,7 +246,10 @@ class TableComponent extends Component {
         }
       }
       const cellSelected = selected && selection === cell.id;
-      if (cellSelected) err = cellValuesById[id].error;
+      if (cellSelected) {
+        selectionError = cellValuesById[id].error;
+        selectionValueOverride = cellValuesById[id].override;
+      }
       return (
         <CellComponent
           key={id}
@@ -323,7 +327,12 @@ class TableComponent extends Component {
           }
           {children}
         </div>
-        <span className="TableErrorText">{err}&nbsp;</span>
+        <div>
+          <span className="TableErrorText">{selectionError}&nbsp;</span>
+          {selectionValueOverride &&
+            <span className="TableOverrideText">Value overridden in function call</span>
+          }
+        </div>
       </div>
     );
   }

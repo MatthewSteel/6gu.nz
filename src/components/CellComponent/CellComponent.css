@@ -30,6 +30,10 @@
   background-color: #FFF4F4;
 }
 
+.Cell .Value.CellOverride {
+  background-color: #FFFFE8;
+}
+
 .Cell.selected {
   border: 1px solid blue;
   margin-right: -1px;
