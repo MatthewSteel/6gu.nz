@@ -167,6 +167,11 @@ class TableComponent extends Component {
       this.move(0, xMove);
       ev.preventDefault();
     }
+    if (ev.key === 'Escape') {
+      // Enter selects the formula box
+      this.popStack(ev);
+      ev.preventDefault();
+    }
 
     // Modification actions
     if (this.props.readOnly) return;
