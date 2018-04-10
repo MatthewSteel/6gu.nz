@@ -3,6 +3,8 @@
   flex-direction: column;
   margin: 5px 10px;
   grid-area: 1 / 1 / 2 / 2;
+  width: 800px;
+  overflow: hidden;
 }
 
 .TableTitle {
@@ -18,7 +20,8 @@
   text-align: center;
   display: grid;
   background-color: #F4F4F4;
-  flex-grow: 1;
+  padding-right: 1px;
+  padding-bottom: 1px;
 }
 
 .TableErrorText {
@@ -31,13 +34,9 @@
 }
 
 .TableViewInputRow {
-  align-self: stretch;
-  box-sizing: border-box;
-  width: 100%;
   display: flex;
   flex-direction: row;
 }
-
 
 .StackButton {
   position: absolute;

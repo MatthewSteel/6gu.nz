@@ -6,9 +6,9 @@
   flex: 1 1 auto;
   min-height: 5ex;
   position: relative;
-  border-left: 1px solid #EEE;
-  border-bottom: 1px solid #EEE;
-  box-sizing: border-box;
+  border: 1px solid #EEE;
+  margin-right: -1px;
+  margin-bottom: -1px;
 }
 
 .Cell .Name {
@@ -36,7 +36,5 @@
 
 .Cell.selected {
   border: 1px solid blue;
-  margin-right: -1px;
-  margin-top: -1px;
   z-index: 1;
 }

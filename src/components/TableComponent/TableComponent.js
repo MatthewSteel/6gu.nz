@@ -238,18 +238,12 @@ class TableComponent extends Component {
       gridTemplateRows: 'auto '.repeat(table.height).trim(),
     };
 
-    const drawnCells = new Set();
     let selectionError;
     let selectionValueOverride;
 
     const filledCells = cells.map((cell) => {
       const { id, x, y, width, height, name } = cell;
 
-      for (let dy = 0; dy < height; ++dy) {
-        for (let dx = 0; dx < width; ++dx) {
-          drawnCells.add(`${y + dy},${x + dx}`);
-        }
-      }
       const cellSelected = selected && selection === cell.id;
       if (cellSelected) {
         selectionError = cellValuesById[id].error;
@@ -278,7 +272,6 @@ class TableComponent extends Component {
     for (let cy = 0; cy < table.height; ++cy) {
       for (let cx = 0; cx < table.width; ++cx) {
         const place = `${cy},${cx}`;
-        if (drawnCells.has(place)) continue;
         const cellSelected = selected && place === selection;
         emptyCells.push((
           <CellComponent
@@ -309,8 +302,8 @@ class TableComponent extends Component {
           className="Table"
           style={style}
         >
-          {filledCells}
           {emptyCells}
+          {filledCells}
         </div>
         <div className="TableViewInputRow">
           <FormulaComponent
