@@ -119,13 +119,13 @@ class TableComponent extends Component {
 
   setFormula(stringFormula) {
     this.getFocus();
-    const { deleteCellProp, table, setCellFormula, readOnly } = this.props;
+    const { deleteCellProp, tableId, setCellFormula, readOnly } = this.props;
     const { selection } = this.state;
     if (readOnly) return;
     if (stringFormula === '') {
       deleteCellProp(selection);
     } else {
-      setCellFormula(table.id, selection, stringFormula);
+      setCellFormula(tableId, selection, stringFormula);
     }
     this.setState({ selection: null });
   }
