@@ -12,67 +12,12 @@ import defaultCellName from '../selectors/formulas/defaultCellName';
 const initialState = {
   tables: [{
     id: 'table0',
-    name: 'table0',
-    width: 6,
-    height: 5,
+    name: 't1',
   }, {
     id: 'table1',
-    name: 'table1',
-    width: 6,
-    height: 5,
+    name: 't2',
   }],
-  cells: [{
-    id: 'cell0',
-    tableId: 'table0',
-    name: 'Fred',
-    formula: [{ value: 0 }],
-    x: 0,
-    y: 0,
-    width: 1,
-    height: 1,
-  }, {
-    id: 'cell1',
-    tableId: 'table0',
-    name: 'Sally',
-    formula: [{ value: 'bar' }],
-    x: 1,
-    y: 0,
-    width: 1,
-    height: 1,
-  }, {
-    id: 'cell2',
-    tableId: 'table0',
-    name: 'Wiremu',
-    formula: [{ ref: 'cell0', name: 'Fred' }],
-    x: 0,
-    y: 1,
-    width: 1,
-    height: 1,
-  }, {
-    id: 'cell3',
-    tableId: 'table0',
-    name: 'Tui',
-    formula: [{ ref: 'cell2' }, { op: '+' }, { value: 'quux' }],
-    x: 1,
-    y: 1,
-    width: 3,
-    height: 2,
-  }, {
-    id: 'cell4',
-    tableId: 'table1',
-    name: 't0ref',
-    formula: [{
-      call: { ref: 'table0' },
-      args: [{
-        ref: { ref: 'cell0' },
-        expr: [{ value: 1 }],
-      }],
-    }],
-    x: 0,
-    y: 0,
-    width: 1,
-    height: 1,
-  }],
+  cells: [],
 };
 
 export const setFormula = (tableId, cellId, formula) => ({
