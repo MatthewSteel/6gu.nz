@@ -36,6 +36,7 @@ describe('actions/the store', () => {
 
     expect(getCellValue(cells[0])).toEqual({
       value: 12,
+      override: false,
     });
     expect(stringFormula(cells[0].id)).toBe('y = 12');
 
@@ -55,6 +56,7 @@ describe('actions/the store', () => {
     const x2 = getCells(store.getState()).find(({ y }) => y === 3);
     expect(getCellValue(x2)).toEqual({
       value: 10,
+      override: false,
     });
     expect(stringFormula(x2.id)).toBe(`x = ${t1Name}.y(x=10)`);
   });
@@ -87,9 +89,11 @@ describe('actions/the store', () => {
     store.dispatch(setFormula(table1.id, '5,5', 'x="hello"'));
     expect(getCellValue(y1)).toEqual({
       value: 'hello',
+      override: false,
     });
     expect(getCellValue(x2)).toEqual({
       value: 10,
+      override: false,
     });
 
     expect(stringFormula(y1.id)).toBe('y = x');
