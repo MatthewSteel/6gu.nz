@@ -146,6 +146,8 @@ class BookComponent extends PureComponent {
           isChild={i !== 0}
           popViewStack={this.popStack}
           pushViewStack={this.pushStack}
+          height={5}
+          width={6}
         >
           <select
             className="ViewSelect"

@@ -5,20 +5,31 @@ import CellComponent from '../CellComponent/CellComponent';
 import FormulaComponent from '../FormulaComponent/FormulaComponent';
 import KeyboardListenerComponent from '../KeyboardListenerComponent/KeyboardListenerComponent';
 
-import {
-  getCellsByTableId,
-  getTablesById,
-} from '../../selectors/formulas/selectors';
+import { getCellsByTableId } from '../../selectors/formulas/selectors';
 import { deleteCell, setFormula } from '../../redux/store';
 
 import './TableComponent.css';
 
-const isWithin = (selY, selX, cell) => {
-  const { x, y, width, height } = cell;
-  return (
-    y <= selY && selY < y + height &&
-    x <= selX && selX < x + width
-  );
+const rangesOverlap = (x1, length1, x2, length2) =>
+  !(x1 + length1 <= x2 || x2 + length2 <= x1);
+
+const overlaps = (y1, height1, x1, width1, cell) => {
+  const {
+    x: x2,
+    y: y2,
+    width: width2,
+    height: height2,
+  } = cell;
+  return rangesOverlap(y1, height1, y2, height2) &&
+    rangesOverlap(x1, width1, x2, width2);
+};
+
+const clampOverlap = (x, length, lower, upper) => {
+  // both ranges are half-open
+  // returns new x value
+  if (x + length <= lower) return (lower - length) + 1;
+  if (upper <= x) return upper - 1;
+  return x;
 };
 
 const defaultFormatter = (value, pushStack) => {
@@ -63,6 +74,8 @@ class TableComponent extends Component {
       selY: 0,
       selX: 0,
       selection: this.selectedCellId(0, 0),
+      viewX: 0,
+      viewY: 0,
     };
   }
 
@@ -82,9 +95,15 @@ class TableComponent extends Component {
   }
 
   setSelection(selY, selX) {
+    const { viewX, viewY } = this.state;
+    const { width, height } = this.props;
+    const newViewY = clampOverlap(viewY, height, selY, selY + 1);
+    const newViewX = clampOverlap(viewX, width, selX, selX + 1);
     this.setState({
       selY,
       selX,
+      viewY: newViewY,
+      viewX: newViewX,
       selection: this.selectedCellId(selY, selX),
     });
     this.getFocus();
@@ -113,7 +132,8 @@ class TableComponent extends Component {
 
   selectedCellId(selY, selX) {
     const { cells } = this.props;
-    const selectedCell = cells.find(cell => isWithin(selY, selX, cell));
+    const selectedCell = cells.find(cell =>
+      overlaps(selY, 1, selX, 1, cell));
     return selectedCell ?
       selectedCell.id :
       `${selY},${selX}`;
@@ -126,10 +146,10 @@ class TableComponent extends Component {
 
   move(dy, dx) {
     const { selY, selX } = this.state;
-    const { width, height } = this.props.table;
-    const newSelY = Math.min(height - 1, Math.max(0, selY + dy));
-    const newSelX = Math.min(width - 1, Math.max(0, selX + dx));
-    this.setSelection(newSelY, newSelX);
+    this.setSelection(
+      clampOverlap(selY + dy, 1, 0, Infinity),
+      clampOverlap(selX + dx, 1, 0, Infinity),
+    );
   }
 
   cellKeys(ev) {
@@ -230,19 +250,31 @@ class TableComponent extends Component {
       viewId,
       readOnly,
       selected,
-      table,
+      width: viewWidth,
+      height: viewHeight,
     } = this.props;
-    const { formulaHasFocus, selection } = this.state;
+    const { formulaHasFocus, selection, viewY, viewX } = this.state;
     const style = {
-      gridTemplateColumns: 'auto '.repeat(table.width).trim(),
-      gridTemplateRows: 'auto '.repeat(table.height).trim(),
+      gridTemplateColumns: 'auto '.repeat(viewWidth).trim(),
+      gridTemplateRows: 'auto '.repeat(viewHeight).trim(),
     };
 
     let selectionError;
     let selectionValueOverride;
 
+    // const overlaps = (y1, height1, x1, width1, cell) => {
     const filledCells = cells.map((cell) => {
-      const { id, x, y, width, height, name } = cell;
+      if (!overlaps(viewY, viewHeight, viewX, viewWidth, cell)) {
+        return false;
+      }
+      const {
+        id,
+        x,
+        y,
+        width: cellWidth,
+        height: cellHeight,
+        name,
+      } = cell;
 
       const cellSelected = selected && selection === cell.id;
       if (cellSelected) {
@@ -253,10 +285,10 @@ class TableComponent extends Component {
         <CellComponent
           key={id}
           id={id}
-          x={x}
-          width={width}
-          y={y}
-          height={height}
+          x={x - viewX}
+          width={cellWidth}
+          y={y - viewY}
+          height={cellHeight}
           name={name}
           value={cellValuesById[id]}
           fmt={defaultFormatter}
@@ -266,12 +298,12 @@ class TableComponent extends Component {
           setSelection={this.setSelection}
         />
       );
-    });
+    }).filter(Boolean);
 
     const emptyCells = [];
-    for (let cy = 0; cy < table.height; ++cy) {
-      for (let cx = 0; cx < table.width; ++cx) {
-        const place = `${cy},${cx}`;
+    for (let cy = 0; cy < viewHeight; ++cy) {
+      for (let cx = 0; cx < viewWidth; ++cx) {
+        const place = `${cy + viewY},${cx + viewX}`;
         const cellSelected = selected && place === selection;
         emptyCells.push((
           <CellComponent
@@ -337,7 +369,6 @@ class TableComponent extends Component {
 }
 
 const mapStateToProps = (state, ownProps) => ({
-  table: getTablesById(state)[ownProps.tableId],
   cells: getCellsByTableId(state, ownProps.tableId),
 });
 
