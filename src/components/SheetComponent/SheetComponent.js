@@ -6,31 +6,10 @@ import FormulaComponent from '../FormulaComponent/FormulaComponent';
 import KeyboardListenerComponent from '../KeyboardListenerComponent/KeyboardListenerComponent';
 
 import { getCellsBySheetId } from '../../selectors/formulas/selectors';
+import { clampOverlap, overlaps } from '../../selectors/geom/geom';
 import { deleteCell, setFormula } from '../../redux/store';
 
 import './SheetComponent.css';
-
-const rangesOverlap = (x1, length1, x2, length2) =>
-  !(x1 + length1 <= x2 || x2 + length2 <= x1);
-
-const overlaps = (y1, height1, x1, width1, cell) => {
-  const {
-    x: x2,
-    y: y2,
-    width: width2,
-    height: height2,
-  } = cell;
-  return rangesOverlap(y1, height1, y2, height2) &&
-    rangesOverlap(x1, width1, x2, width2);
-};
-
-const clampOverlap = (x, length, lower, upper) => {
-  // both ranges are half-open
-  // returns new x value
-  if (x + length <= lower) return (lower - length) + 1;
-  if (upper <= x) return upper - 1;
-  return x;
-};
 
 const defaultFormatter = (value, pushStack) => {
   if (typeof value === 'string') return value;
@@ -271,7 +250,6 @@ class SheetComponent extends Component {
     let selectionError;
     let selectionValueOverride;
 
-    // const overlaps = (y1, height1, x1, width1, cell) => {
     const filledCells = cells.map((cell) => {
       if (!overlaps(viewY, viewHeight, viewX, viewWidth, cell)) {
         return false;
