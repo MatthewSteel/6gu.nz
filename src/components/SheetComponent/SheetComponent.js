@@ -65,10 +65,12 @@ class SheetComponent extends Component {
     this.setFormula = this.setFormula.bind(this);
     this.setFormulaFocus = this.setFormulaFocus.bind(this);
     this.setFormulaRef = this.setFormulaRef.bind(this);
+    this.setSelectionRef = this.setSelectionRef.bind(this);
     this.updateSelection = this.updateSelection.bind(this);
     this.popStack = this.popStack.bind(this);
 
     this.formulaRef = null;
+    this.selectionRef = null;
     this.state = {
       formulaHasFocus: false,
       selY: 0,
@@ -92,6 +94,10 @@ class SheetComponent extends Component {
 
   setFormulaRef(ref) {
     this.formulaRef = ref;
+  }
+
+  setSelectionRef(ref) {
+    this.selectionRef = ref;
   }
 
   setSelection(selY, selX) {
@@ -154,6 +160,10 @@ class SheetComponent extends Component {
 
   cellKeys(ev) {
     const { readOnly } = this.props; // TODO: sheets, for a bit.
+    if (this.selectionRef) {
+      this.selectionRef.sendKey(ev);
+      if (ev.defaultPrevented) return;
+    }
     if (ev.altKey || ev.ctrlKey || ev.metaKey) return;
     const moves = {
       ArrowLeft: [0, -1],
@@ -276,6 +286,8 @@ class SheetComponent extends Component {
       } = cell;
 
       const cellSelected = selected && selection === cell.id;
+
+      // TODO: Tables etc.
       if (cellSelected) {
         selectionError = cellValuesById[id].error;
         selectionValueOverride = cellValuesById[id].override;
