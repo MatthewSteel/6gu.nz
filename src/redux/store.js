@@ -10,19 +10,19 @@ import defaultCellName from '../selectors/formulas/defaultCellName';
 
 
 const initialState = {
-  tables: [{
-    id: 'table0',
-    name: 't1',
+  sheets: [{
+    id: 'sheet0',
+    name: 's1',
   }, {
-    id: 'table1',
-    name: 't2',
+    id: 'sheet1',
+    name: 's2',
   }],
   cells: [],
 };
 
-export const setFormula = (tableId, cellId, formula) => ({
+export const setFormula = (sheetId, cellId, formula) => ({
   type: 'SET_CELL_FORMULA',
-  payload: { tableId, cellId, formulaStr: formula },
+  payload: { sheetId, cellId, formulaStr: formula },
 });
 
 export const deleteCell = cellId => ({
@@ -32,10 +32,10 @@ export const deleteCell = cellId => ({
 
 export const loadFile = () => ({ type: 'LOAD_FILE' });
 
-const defaultCellForLocation = (tableId, cellId) => {
+const defaultCellForLocation = (sheetId, cellId) => {
   const [y, x] = cellId.split(',').map(Number);
   return {
-    tableId,
+    sheetId,
     id: uuidv4(),
     name: defaultCellName(y, x),
     formula: [{ value: '' }],
@@ -61,8 +61,8 @@ const scheduleSave = () => {
 
 const rootReducer = (state, action) => {
   if (action.type === 'SET_CELL_FORMULA') {
-    const { cellId, formulaStr, tableId } = action.payload;
-    const newFormula = parseFormula(formulaStr, tableId);
+    const { cellId, formulaStr, sheetId } = action.payload;
+    const newFormula = parseFormula(formulaStr, sheetId);
 
     if (!newFormula.name && !newFormula.formula) {
       // Formula is like `name=formula`.
@@ -77,7 +77,7 @@ const rootReducer = (state, action) => {
 
     const existingCell = state.cells.find(({ id }) => id === cellId);
     const cell = {
-      ...(existingCell || defaultCellForLocation(tableId, cellId)),
+      ...(existingCell || defaultCellForLocation(sheetId, cellId)),
       ...newFormula,
     };
 
@@ -85,11 +85,11 @@ const rootReducer = (state, action) => {
       let somethingDifferent = false;
       const translatedFormula = translateExpr(
         otherCell.formula,
-        otherCell.tableId,
-        (term, termTableId) => {
+        otherCell.sheetId,
+        (term, termSheetId) => {
           if (
-            cell.tableId !== termTableId &&
-            term.ref === cell.tableId &&
+            cell.sheetId !== termSheetId &&
+            term.ref === cell.sheetId &&
             term.lookup &&
             term.lookup.name === cell.name
           ) {
@@ -102,7 +102,7 @@ const rootReducer = (state, action) => {
             };
           }
           if (
-            cell.tableId === termTableId &&
+            cell.sheetId === termSheetId &&
             term.ref === cell.name
           ) {
             somethingDifferent = true;
@@ -128,7 +128,7 @@ const rootReducer = (state, action) => {
   if (action.type === 'DELETE_CELL') {
     // We're going to reset everything here. In the future we will want to
     // be less destructive. That is to say, if a cell is not referred to
-    // in a table, don't modify that table.
+    // in a sheet, don't modify that sheet.
     // I think "in the future" we will have a lot of state to keep track
     // of :-/
     const { cellId } = action.payload;
@@ -141,11 +141,11 @@ const rootReducer = (state, action) => {
       }
       return {
         ...cell,
-        formula: translateExpr(cell.formula, cell.tableId, (term, tableId) => {
+        formula: translateExpr(cell.formula, cell.sheetId, (term, sheetId) => {
           if (term.ref !== cellId) return term;
-          if (existingCell.tableId !== tableId) {
+          if (existingCell.sheetId !== sheetId) {
             return {
-              ref: existingCell.tableId,
+              ref: existingCell.sheetId,
               lookup: { name: existingCell.name },
             };
           }

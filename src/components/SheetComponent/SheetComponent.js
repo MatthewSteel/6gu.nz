@@ -5,10 +5,10 @@ import CellComponent from '../CellComponent/CellComponent';
 import FormulaComponent from '../FormulaComponent/FormulaComponent';
 import KeyboardListenerComponent from '../KeyboardListenerComponent/KeyboardListenerComponent';
 
-import { getCellsByTableId } from '../../selectors/formulas/selectors';
+import { getCellsBySheetId } from '../../selectors/formulas/selectors';
 import { deleteCell, setFormula } from '../../redux/store';
 
-import './TableComponent.css';
+import './SheetComponent.css';
 
 const rangesOverlap = (x1, length1, x2, length2) =>
   !(x1 + length1 <= x2 || x2 + length2 <= x1);
@@ -53,7 +53,7 @@ const defaultFormatter = (value, pushStack) => {
   return JSON.stringify(value);
 };
 
-class TableComponent extends Component {
+class SheetComponent extends Component {
   constructor(props) {
     super(props);
     this.cellKeys = this.cellKeys.bind(this);
@@ -119,13 +119,13 @@ class TableComponent extends Component {
 
   setFormula(stringFormula) {
     this.getFocus();
-    const { deleteCellProp, tableId, setCellFormula, readOnly } = this.props;
+    const { deleteCellProp, sheetId, setCellFormula, readOnly } = this.props;
     const { selection } = this.state;
     if (readOnly) return;
     if (stringFormula === '') {
       deleteCellProp(selection);
     } else {
-      setCellFormula(tableId, selection, stringFormula);
+      setCellFormula(sheetId, selection, stringFormula);
     }
     this.setState({ selection: null });
   }
@@ -153,6 +153,7 @@ class TableComponent extends Component {
   }
 
   cellKeys(ev) {
+    const { readOnly } = this.props; // TODO: sheets, for a bit.
     if (ev.altKey || ev.ctrlKey || ev.metaKey) return;
     const moves = {
       ArrowLeft: [0, -1],
@@ -172,29 +173,27 @@ class TableComponent extends Component {
         this.move(-1, 0);
         ev.preventDefault();
       } else {
-        if (this.props.readOnly) {
+        if (readOnly) {
           this.move(1, 0);
         } else {
-          // Enter selects the formula box
+          // Enter selects the formula box when editable
           this.formulaRef.focus();
         }
         ev.preventDefault();
       }
     }
     if (ev.key === 'Tab') {
-      // Enter selects the formula box
       const xMove = ev.shiftKey ? -1 : 1;
       this.move(0, xMove);
       ev.preventDefault();
     }
     if (ev.key === 'Escape') {
-      // Enter selects the formula box
       this.popStack(ev);
       ev.preventDefault();
     }
 
     // Modification actions
-    if (this.props.readOnly) return;
+    if (readOnly) return;
     if (ev.key === 'Backspace' || ev.key === 'Delete') {
       const { selection } = this.state;
       const { deleteCellProp } = this.props;
@@ -323,21 +322,21 @@ class TableComponent extends Component {
       }
     }
     return (
-      <div className="TableContainer">
-        <div className="TableTitle">
+      <div className="SheetContainer">
+        <div className="SheetTitle">
           {path}
           {isChild && (
             <button onClick={this.popStack} className="StackButton">&times;</button>
           )}
         </div>
         <div
-          className="Table"
+          className="Sheet"
           style={style}
         >
           {emptyCells}
           {filledCells}
         </div>
-        <div className="TableViewInputRow">
+        <div className="SheetViewInputRow">
           <FormulaComponent
             readOnly={readOnly}
             ref={this.setFormulaRef}
@@ -358,9 +357,9 @@ class TableComponent extends Component {
           {children}
         </div>
         <div>
-          <span className="TableErrorText">{selectionError}&nbsp;</span>
+          <span className="SheetErrorText">{selectionError}&nbsp;</span>
           {selectionValueOverride &&
-            <span className="TableOverrideText">Value overridden in function call</span>
+            <span className="SheetOverrideText">Value overridden in call</span>
           }
         </div>
       </div>
@@ -369,12 +368,12 @@ class TableComponent extends Component {
 }
 
 const mapStateToProps = (state, ownProps) => ({
-  cells: getCellsByTableId(state, ownProps.tableId),
+  cells: getCellsBySheetId(state, ownProps.sheetId),
 });
 
 const mapDispatchToProps = dispatch => ({
   deleteCellProp: cellId => dispatch(deleteCell(cellId)),
-  setCellFormula: (tableId, cellId, formula) => dispatch(setFormula(tableId, cellId, formula)),
+  setCellFormula: (sheetId, cellId, formula) => dispatch(setFormula(sheetId, cellId, formula)),
 });
 
-export default connect(mapStateToProps, mapDispatchToProps)(TableComponent);
+export default connect(mapStateToProps, mapDispatchToProps)(SheetComponent);

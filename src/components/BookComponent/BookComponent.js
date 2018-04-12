@@ -2,19 +2,19 @@ import React, { PureComponent } from 'react';
 import { connect } from 'react-redux';
 import {
   getCellValuesById,
-  getTables,
-  getTablesById,
+  getSheets,
+  getSheetsById,
   getCellsById,
 } from '../../selectors/formulas/selectors';
 import { loadFile } from '../../redux/store';
-import TableComponent from '../TableComponent/TableComponent';
+import SheetComponent from '../SheetComponent/SheetComponent';
 import FileComponent from '../FileComponent/FileComponent';
 
 const mapStateToProps = state => ({
   cellValuesById: getCellValuesById(state),
   cellsById: getCellsById(state),
-  tablesById: getTablesById(state),
-  tables: getTables(state),
+  sheetsById: getSheetsById(state),
+  sheets: getSheets(state),
 });
 
 const mapDispatchToProps = dispatch => ({
@@ -27,7 +27,7 @@ class BookComponent extends PureComponent {
     this.pushStack = this.pushStack.bind(this);
     this.popStack = this.popStack.bind(this);
     this.setViewSelection = this.setViewSelection.bind(this);
-    this.changeTableViewTable = this.changeTableViewTable.bind(this);
+    this.changeSheetViewSheet = this.changeSheetViewSheet.bind(this);
     this.updateView = this.updateView.bind(this);
     this.normaliseView = this.normaliseView.bind(this);
     this.state = {
@@ -35,11 +35,11 @@ class BookComponent extends PureComponent {
       views: [{
         id: '0',
         stack: [],
-        tableId: props.tables[0].id,
+        sheetId: props.sheets[0].id,
       }, {
         id: '1',
         stack: [],
-        tableId: props.tables[1].id,
+        sheetId: props.sheets[1].id,
       }],
     };
   }
@@ -48,12 +48,12 @@ class BookComponent extends PureComponent {
     this.setState({ selectedViewId: viewId });
   }
 
-  changeTableViewTable(ev) {
-    const targetTableId = ev.target.value;
+  changeSheetViewSheet(ev) {
+    const targetSheetId = ev.target.value;
     this.setState({
       selectedViewId: ev.target.name,
       views: this.updateView(this.state.views, ev.target.name, () => (
-        { tableId: targetTableId, stack: [] })),
+        { sheetId: targetSheetId, stack: [] })),
     });
   }
 
@@ -87,14 +87,14 @@ class BookComponent extends PureComponent {
     // The view is robust at the moment (maybe it shouldn't need to be...)
     // but pushing/popping on a broken stack is no good. Fix it up before
     // working on it.
-    const { stack, tableId } = view;
-    let tableData = this.props.cellValuesById[tableId];
+    const { stack, sheetId } = view;
+    let sheetData = this.props.cellValuesById[sheetId];
     const newStack = [];
     stack.forEach((stackRef) => {
-      if (tableData && tableData.byId[stackRef]) {
+      if (sheetData && sheetData.byId[stackRef]) {
         newStack.push(stackRef);
       } else {
-        tableData = null;
+        sheetData = null;
       }
     });
     return {
@@ -107,17 +107,17 @@ class BookComponent extends PureComponent {
     const {
       cellsById,
       cellValuesById,
-      tables,
+      sheets,
       loadFileProp,
-      tablesById,
+      sheetsById,
     } = this.props;
     const { selectedViewId, views } = this.state;
 
-    const tableComponents = views.map(({ id, stack, tableId }) => {
-      const tableName = tablesById[tableId].name;
+    const sheetComponents = views.map(({ id, stack, sheetId }) => {
+      const sheetName = sheetsById[sheetId].name;
       const viewData = [{
-        ...cellValuesById[tableId],
-        path: tableName,
+        ...cellValuesById[sheetId],
+        path: sheetName,
       }];
       let pathStillValid = true;
       stack.forEach((stackRef) => {
@@ -133,12 +133,12 @@ class BookComponent extends PureComponent {
         }
       });
 
-      const tableViews = viewData.map(({ template, byId, path }, i) => (
-        <TableComponent
+      const sheetViews = viewData.map(({ template, byId, path }, i) => (
+        <SheetComponent
           key={path}
           path={path}
           viewId={id}
-          tableId={template}
+          sheetId={template}
           cellValuesById={byId}
           readOnly={i !== 0}
           selected={selectedViewId === id && i === viewData.length - 1}
@@ -152,30 +152,30 @@ class BookComponent extends PureComponent {
           <select
             className="ViewSelect"
             name={id}
-            value={tableId}
-            onChange={this.changeTableViewTable}
+            value={sheetId}
+            onChange={this.changeSheetViewSheet}
           >
-            {tables.map(table => (
+            {sheets.map(sheet => (
               <option
-                key={table.id}
-                value={table.id}
+                key={sheet.id}
+                value={sheet.id}
               >
-                {table.name}
+                {sheet.name}
               </option>
             ))}
           </select>
-        </TableComponent>
+        </SheetComponent>
       ));
       return (
         <div key={id} style={{ display: 'grid' }}>
-          {tableViews}
+          {sheetViews}
         </div>
       );
     });
 
     return (
       <div>
-        {tableComponents}
+        {sheetComponents}
         <FileComponent
           loadFile={loadFileProp}
         />

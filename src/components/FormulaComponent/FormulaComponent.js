@@ -37,14 +37,14 @@ class FormulaComponent extends Component {
   }
 
   focus() {
-    // Called by TableComponent only
+    // Called by SheetComponent only
     this.inputRef.focus();
     const { length } = this.state.value;
     this.inputRef.setSelectionRange(length, length);
   }
 
   sendKey(key) {
-    // Called by TableComponent only
+    // Called by SheetComponent only
     this.setState({ value: key });
     this.inputRef.setSelectionRange(1, 1);
     this.inputRef.focus();

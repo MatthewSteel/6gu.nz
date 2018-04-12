@@ -7,7 +7,7 @@ describe('parser', () => {
     const term = {
       call: { name: 'called_cell' },
       args: [{
-        ref: { name: 't.c' },
+        ref: { name: 's.c' },
         expr: [{
           name: 'other_cell',
           lookup: {
@@ -21,7 +21,7 @@ describe('parser', () => {
       }],
       lookup: { name: 'field2' },
     };
-    expect(translateTerm(term, null, unparseTerm)).toEqual('called_cell(t.c=other_cell.field * 5).field2');
+    expect(translateTerm(term, null, unparseTerm)).toEqual('called_cell(s.c=other_cell.field * 5).field2');
   });
 
   it('parses a complicated call', () => {

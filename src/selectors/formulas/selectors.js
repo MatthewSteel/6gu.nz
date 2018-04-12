@@ -2,7 +2,7 @@ import { createSelector } from 'reselect';
 import store from '../../redux/store';
 
 export const getCells = state => state.cells;
-export const getTables = state => state.tables;
+export const getSheets = state => state.sheets;
 
 export const getCellsById = createSelector(
   getCells,
@@ -13,78 +13,78 @@ export const getCellsById = createSelector(
   },
 );
 
-export const getCellsByTableIdHelper = createSelector(
+export const getCellsBySheetIdHelper = createSelector(
   getCells,
   (cells) => {
     const ret = {};
     cells.forEach((cell) => {
-      if (!ret[cell.tableId]) ret[cell.tableId] = [];
-      ret[cell.tableId].push(cell);
+      if (!ret[cell.sheetId]) ret[cell.sheetId] = [];
+      ret[cell.sheetId].push(cell);
     });
     return ret;
   },
 );
 
-const getCellsByNameForTableIdHelper = createSelector(
+const getCellsByNameForSheetIdHelper = createSelector(
   getCells,
   (cells) => {
     const ret = {};
     cells.forEach((cell) => {
-      if (!ret[cell.tableId]) ret[cell.tableId] = {};
-      ret[cell.tableId][cell.name] = cell;
+      if (!ret[cell.sheetId]) ret[cell.sheetId] = {};
+      ret[cell.sheetId][cell.name] = cell;
     });
     return ret;
   },
 );
 
-export const getCellsByNameForTableId = (state, tableId) => {
-  const cellsByTableId = getCellsByNameForTableIdHelper(state);
-  return cellsByTableId[tableId] || {};
+export const getCellsByNameForSheetId = (state, sheetId) => {
+  const cellsBySheetId = getCellsByNameForSheetIdHelper(state);
+  return cellsBySheetId[sheetId] || {};
 };
 
-export const getTablesById = createSelector(
-  getTables,
-  (tables) => {
+export const getSheetsById = createSelector(
+  getSheets,
+  (sheets) => {
     const ret = {};
-    tables.forEach((table) => { ret[table.id] = table; });
+    sheets.forEach((sheet) => { ret[sheet.id] = sheet; });
     return ret;
   },
 );
 
-export const getCellsByTableId = (state, tableId) => {
-  const cellsByTableId = getCellsByTableIdHelper(state);
-  return cellsByTableId[tableId] || [];
+export const getCellsBySheetId = (state, sheetId) => {
+  const cellsBySheetId = getCellsBySheetIdHelper(state);
+  return cellsBySheetId[sheetId] || [];
 };
 
-export const getTablesByName = createSelector(
-  getTables,
-  (tables) => {
+export const getSheetsByName = createSelector(
+  getSheets,
+  (sheets) => {
     const ret = {};
-    tables.forEach((table) => { ret[table.name] = table; });
+    sheets.forEach((sheet) => { ret[sheet.name] = sheet; });
     return ret;
   },
 );
 
 
-export const getTableIdForRef = (ref, defaultTableId) => {
-  const tablesById = getTablesById(store.getState());
+export const getSheetIdForRef = (ref, defaultSheetId) => {
+  const sheetsById = getSheetsById(store.getState());
   const cellsById = getCellsById(store.getState());
-  if (tablesById[ref]) return ref;
+  if (sheetsById[ref]) return ref;
   const maybeCell = cellsById[ref];
-  if (maybeCell) return maybeCell.tableId;
-  return defaultTableId;
+  if (maybeCell) return maybeCell.sheetId;
+  return defaultSheetId;
 };
 
 
-const translateCall = (term, tableId, f) => {
-  const call = f(term.call, tableId);
+const translateCall = (term, sheetId, f) => {
+  const call = f(term.call, sheetId);
   // Sometimes we're translating names -> refs, sometimes we are
   // translating refs -> printable strings etc :-(.
   const callRef = call.ref || term.call.ref;
-  const callTableId = getTableIdForRef(callRef, tableId);
+  const callSheetId = getSheetIdForRef(callRef, sheetId);
   const translatedArgs = term.args.map(({ ref, expr }) => ({
-    ref: f(ref, callTableId),
-    expr: translateExpr(expr, tableId, f),
+    ref: f(ref, callSheetId),
+    expr: translateExpr(expr, sheetId, f),
   }));
   return f(
     {
@@ -92,27 +92,27 @@ const translateCall = (term, tableId, f) => {
       args: translatedArgs,
       lookup: term.lookup,
     },
-    tableId,
+    sheetId,
   );
 };
 
-export const translateTerm = (term, tableId, f) => {
-  if (term.name || term.ref) return f(term, tableId);
-  if (term.value !== undefined || term.op) return f(term, tableId);
-  if (term.call) return translateCall(term, tableId, f);
+export const translateTerm = (term, sheetId, f) => {
+  if (term.name || term.ref) return f(term, sheetId);
+  if (term.value !== undefined || term.op) return f(term, sheetId);
+  if (term.call) return translateCall(term, sheetId, f);
   if (term.expression) {
     return f(
-      { expression: translateExpr(term.expression, tableId, f) },
-      tableId,
+      { expression: translateExpr(term.expression, sheetId, f) },
+      sheetId,
     );
   }
-  if (term.badFormula) return f(term, tableId);
+  if (term.badFormula) return f(term, sheetId);
   throw new Error('Unknown term type');
 };
 
 
-export const translateExpr = (expr, tableId, f) =>
-  expr.map(term => translateTerm(term, tableId, f));
+export const translateExpr = (expr, sheetId, f) =>
+  expr.map(term => translateTerm(term, sheetId, f));
 
 
 export const flattenExpr = (expr) => {
@@ -130,26 +130,26 @@ export const flattenExpr = (expr) => {
 const getFormulaGraphs = createSelector(
   getCells,
   getCellsById,
-  getTables,
-  getTablesById,
-  (cells, cellsById, tables, tablesById) => {
+  getSheets,
+  getSheetsById,
+  (cells, cellsById, sheets, sheetsById) => {
     const forwardsGraph = {};
     const backwardsGraph = {};
-    [...cells, ...tables].forEach(({ id }) => {
+    [...cells, ...sheets].forEach(({ id }) => {
       forwardsGraph[id] = [];
       backwardsGraph[id] = [];
     });
     cells.forEach(({ id, formula }) => {
       const refs = flattenExpr(formula).filter(term =>
-        term.ref && !refError(term, tablesById, cellsById));
+        term.ref && !refError(term, sheetsById, cellsById));
       refs.forEach((term) => {
         forwardsGraph[id].push(term.ref);
         backwardsGraph[term.ref].push(id);
       });
     });
-    tables.forEach(({ id }) => {
-      const tableCells = getCellsByTableId(store.getState(), id);
-      tableCells.forEach((cell) => {
+    sheets.forEach(({ id }) => {
+      const sheetCells = getCellsBySheetId(store.getState(), id);
+      sheetCells.forEach((cell) => {
         forwardsGraph[id].push(cell.id);
         backwardsGraph[cell.id].push(id);
       });
@@ -217,7 +217,7 @@ const expandCall = (callTerm) => {
     'globals',
     'getRef',
     'pleaseThrow',
-    'tableValue',
+    'sheetValue',
     ...customArgs,
   ].join(', ');
   return `globals[${JSON.stringify(signature)}](${allArgs})`;
@@ -267,14 +267,14 @@ const getRef = (globals, ref) => {
   return values[values.length - 1];
 };
 
-const tableValue = (tableId, globals) => {
-  const tableCells = getCellsByTableId(store.getState(), tableId);
+const sheetValue = (sheetId, globals) => {
+  const sheetCells = getCellsBySheetId(store.getState(), sheetId);
   const ret = {
     byId: {},
     byName: {},
-    template: tableId,
+    template: sheetId,
   };
-  tableCells.forEach(({ id, name }) => {
+  sheetCells.forEach(({ id, name }) => {
     const cellContents = getRef(globals, id);
     ret.byId[id] = cellContents;
     ret.byName[name] = cellContents.value;
@@ -285,23 +285,23 @@ const tableValue = (tableId, globals) => {
 // eslint-disable-next-line no-unused-vars
 const pleaseThrow = (s) => { throw new Error(s); };
 
-const refError = (term, tablesById, cellsById) => {
+const refError = (term, sheetsById, cellsById) => {
   if (term.badFormula) return term.badFormula;
-  if (term.ref && !(cellsById[term.ref] || tablesById[term.ref])) {
+  if (term.ref && !(cellsById[term.ref] || sheetsById[term.ref])) {
     return term.ref;
   }
-  if (term.ref && tablesById[term.ref] && term.lookup) {
+  if (term.ref && sheetsById[term.ref] && term.lookup) {
     return `${term.ref}.${term.lookup.name}`;
   }
   return false;
 };
 
-const cellExpressions = (cells, cellsById, tablesById) => {
+const cellExpressions = (cells, cellsById, sheetsById) => {
   const ret = {};
   cells.forEach((cell) => {
     const allTerms = flattenExpr(cell.formula);
     const termErrors = allTerms
-      .map(term => refError(term, tablesById, cellsById))
+      .map(term => refError(term, sheetsById, cellsById))
       .filter(Boolean);
     if (termErrors.length > 0) {
       ret[cell.id] = `pleaseThrow(${JSON.stringify(termErrors[0])} + ' does not exist.')`;
@@ -312,32 +312,32 @@ const cellExpressions = (cells, cellsById, tablesById) => {
   return ret;
 };
 
-const tableExpressions = (tables) => {
+const sheetExpressions = (sheets) => {
   const ret = {};
-  tables.forEach(({ id }) => {
-    ret[id] = `tableValue(${JSON.stringify(id)}, globals)`;
+  sheets.forEach(({ id }) => {
+    ret[id] = `sheetValue(${JSON.stringify(id)}, globals)`;
   });
   return ret;
 };
 
 export const getCellValuesById = createSelector(
   getCells,
-  getTables,
-  getTablesById,
+  getSheets,
+  getSheetsById,
   getCellsById,
   getTopoSortedRefIds,
-  (allCells, allTables, tablesById, cellsById, sortedRefIds) => {
+  (allCells, allSheets, sheetsById, cellsById, sortedRefIds) => {
     const globals = {};
 
     // Initialize circular refs and things that depend on them.
-    [...allCells, ...allTables].forEach(({ id }) => {
+    [...allCells, ...allSheets].forEach(({ id }) => {
       globals[id] = [{ error: 'Error: Circular reference (or depends on one)' }];
     });
 
-    // All expressions for cells and tables
+    // All expressions for cells and sheets
     const refExpressions = {
-      ...cellExpressions(allCells, cellsById, tablesById),
-      ...tableExpressions(allTables),
+      ...cellExpressions(allCells, cellsById, sheetsById),
+      ...sheetExpressions(allSheets),
     };
 
     // Write all functions
@@ -353,16 +353,16 @@ export const getCellValuesById = createSelector(
       // eslint-disable-next-line no-eval
       eval(expandSetItem(id, refExpressions[id]));
     });
-    return getGlobalValues(globals, allCells, allTables);
+    return getGlobalValues(globals, allCells, allSheets);
   },
 );
 
-const getGlobalValues = (globals, allCells, allTables) => {
+const getGlobalValues = (globals, allCells, allSheets) => {
   const ret = {};
   allCells.forEach(({ id }) => { ret[id] = getRef(globals, id); });
-  // A bit of a hack: we should try to re-insert tables that contain
+  // A bit of a hack: we should try to re-insert sheets that contain
   // circular-ref cells into the topological order, probably.
-  allTables.forEach(({ id }) => { ret[id] = tableValue(id, globals); });
+  allSheets.forEach(({ id }) => { ret[id] = sheetValue(id, globals); });
   return ret;
 };
 
@@ -447,7 +447,7 @@ const createFunction = (callTerm, refExpressions) => {
     'globals',
     'getRef',
     'pleaseThrow',
-    'tableValue',
+    'sheetValue',
     ...argNames,
     definition,
   );

@@ -3,9 +3,9 @@ import { lexFormula } from './lexer';
 
 import {
   getCellsById,
-  getCellsByNameForTableId,
-  getTablesById,
-  getTablesByName,
+  getCellsByNameForSheetId,
+  getSheetsById,
+  getSheetsByName,
   translateExpr,
 } from './selectors';
 
@@ -185,36 +185,36 @@ const getNameFromTokens = (tokens) => {
   return { formulaStart: 0, formulaName: {} };
 };
 
-const subNamesForRefsInName = (term, tableId) => {
+const subNamesForRefsInName = (term, sheetId) => {
   // Three cases:
-  // 1. It's the name of a cell in our table. Make a straight ref.
-  // 2. It's the name of another table. Make a straight ref.
-  // 3. It's a cell looked up on another table. Make a ref to it.
+  // 1. It's the name of a cell in our sheet. Make a straight ref.
+  // 2. It's the name of another sheet. Make a straight ref.
+  // 3. It's a cell looked up on another sheet. Make a ref to it.
   // Any further lookups are made by name -- no translations.
-  const myTableCellsByName = getCellsByNameForTableId(
+  const mySheetCellsByName = getCellsByNameForSheetId(
     store.getState(),
-    tableId,
+    sheetId,
   );
-  const maybeMyCell = myTableCellsByName[term.name];
+  const maybeMyCell = mySheetCellsByName[term.name];
 
-  const tablesByName = getTablesByName(store.getState());
-  const maybeThatTable = tablesByName[term.name];
+  const sheetsByName = getSheetsByName(store.getState());
+  const maybeThatSheet = sheetsByName[term.name];
 
   let eventualRef = term.name; // a bad reference if not replaced
   let eventualLookup = term.lookup;
   if (maybeMyCell) {
     eventualRef = maybeMyCell.id;
-  } else if (maybeThatTable) {
+  } else if (maybeThatSheet) {
     if (!term.lookup) {
-      // Just `=table`, not `=table.cell`
-      eventualRef = maybeThatTable.id;
+      // Just `=sheet`, not `=sheet.cell`
+      eventualRef = maybeThatSheet.id;
     } else {
-      // `=table.cell`, we hope
-      const thatTableCellsByName = getCellsByNameForTableId(
+      // `=sheet.cell`, we hope
+      const thatSheetCellsByName = getCellsByNameForSheetId(
         store.getState(),
-        maybeThatTable.id,
+        maybeThatSheet.id,
       );
-      const thatCell = thatTableCellsByName[term.lookup.name];
+      const thatCell = thatSheetCellsByName[term.lookup.name];
       if (thatCell) {
         eventualRef = thatCell.id;
         eventualLookup = thatCell.lookup;
@@ -227,8 +227,8 @@ const subNamesForRefsInName = (term, tableId) => {
   };
 };
 
-const subNamesForRefsInTerm = (term, tableId) => {
-  if (term.name) return subNamesForRefsInName(term, tableId);
+const subNamesForRefsInTerm = (term, sheetId) => {
+  if (term.name) return subNamesForRefsInName(term, sheetId);
   if (term.call) {
     const argRefs = term.args.map(({ ref }) => ref);
     if ([term.call, ...argRefs].some(({ lookup }) => lookup)) {
@@ -238,15 +238,15 @@ const subNamesForRefsInTerm = (term, tableId) => {
   return term;
 };
 
-const subNamesForRefs = (nameFormula, tableId) => {
+const subNamesForRefs = (nameFormula, sheetId) => {
   if (!nameFormula) return {};
-  return { formula: translateExpr(nameFormula, tableId, subNamesForRefsInTerm) };
+  return { formula: translateExpr(nameFormula, sheetId, subNamesForRefsInTerm) };
 };
 
-const parseFormulaExpr = (tokens, formulaStart, tableId, s) => {
+const parseFormulaExpr = (tokens, formulaStart, sheetId, s) => {
   try {
     return {
-      ...subNamesForRefs(parseTokens(tokens, formulaStart), tableId),
+      ...subNamesForRefs(parseTokens(tokens, formulaStart), sheetId),
     };
   } catch (e) {
     // Bad formula, but we might at least have a name. Stick everything
@@ -260,13 +260,13 @@ const parseFormulaExpr = (tokens, formulaStart, tableId, s) => {
   }
 };
 
-export const parseFormula = (s, tableId) => {
+export const parseFormula = (s, sheetId) => {
   try {
     const tokens = lexFormula(s);
     const { formulaStart, formulaName } = getNameFromTokens(tokens);
     return {
       ...formulaName,
-      ...parseFormulaExpr(tokens, formulaStart, tableId, s),
+      ...parseFormulaExpr(tokens, formulaStart, sheetId, s),
     };
   } catch (e) {
     // Really bad -- can't lex or get a name... Formula is totally
@@ -275,28 +275,28 @@ export const parseFormula = (s, tableId) => {
   }
 };
 
-const unparseRef = (id, tableId) => {
-  // id -> table_name, local_cell_name, or table.distance_cell_name
-  const tablesById = getTablesById(store.getState());
+const unparseRef = (id, sheetId) => {
+  // id -> sheet_name, local_cell_name, or sheet.distant_cell_name
+  const sheetsById = getSheetsById(store.getState());
   const cellsById = getCellsById(store.getState());
-  const maybeTable = tablesById[id];
-  if (maybeTable) {
-    return maybeTable.name;
+  const maybeSheet = sheetsById[id];
+  if (maybeSheet) {
+    return maybeSheet.name;
   }
   const maybeCell = cellsById[id];
   if (maybeCell) {
-    if (maybeCell.tableId === tableId) return maybeCell.name;
-    const cellTable = tablesById[maybeCell.tableId];
-    return `${cellTable.name}.${maybeCell.name}`;
+    if (maybeCell.sheetId === sheetId) return maybeCell.name;
+    const cellSheet = sheetsById[maybeCell.sheetId];
+    return `${cellSheet.name}.${maybeCell.name}`;
   }
   return id; // bad ref from parser, probably
 };
 
-export const unparseTerm = (term, tableId) => {
+export const unparseTerm = (term, sheetId) => {
   if (term.lookup) {
     const termWithoutLookup = { ...term, lookup: undefined };
-    const pre = unparseTerm(termWithoutLookup, tableId);
-    const post = unparseTerm(term.lookup, tableId);
+    const pre = unparseTerm(termWithoutLookup, sheetId);
+    const post = unparseTerm(term.lookup, sheetId);
     return `${pre}.${post}`;
   }
   if (term.call) {
@@ -308,7 +308,7 @@ export const unparseTerm = (term, tableId) => {
   if (term.expression) return `(${term.expression.join(' ')})`;
   if (term.badFormula) return term.badFormula;
   if (term.op) return term.op;
-  if (term.ref) return unparseRef(term.ref, tableId);
+  if (term.ref) return unparseRef(term.ref, sheetId);
   if (term.name) return term.name;
   if (term.value !== undefined) return JSON.stringify(term.value);
   throw new Error('Unknown term type');
@@ -324,6 +324,6 @@ export const stringFormula = (cellId) => {
     retToJoin.push(cell.name);
   }
   retToJoin.push('=');
-  const terms = translateExpr(cell.formula, cell.tableId, unparseTerm);
+  const terms = translateExpr(cell.formula, cell.sheetId, unparseTerm);
   return [...retToJoin, ...terms].join(' ');
 };

@@ -1,4 +1,4 @@
-.TableContainer {
+.SheetContainer {
   display: flex;
   flex-direction: column;
   margin: 5px 10px;
@@ -7,7 +7,7 @@
   overflow: hidden;
 }
 
-.TableTitle {
+.SheetTitle {
   font-weight: 700;
   color: #55C;
   background-color: #F4F4FF;
@@ -16,7 +16,7 @@
   position: relative;
 }
 
-.Table {
+.Sheet {
   text-align: center;
   display: grid;
   background-color: #F4F4F4;
@@ -24,16 +24,16 @@
   padding-bottom: 1px;
 }
 
-.TableErrorText {
+.SheetErrorText {
   color: #DD8484;
   align: right;
 }
 
-.TableOverrideText {
+.SheetOverrideText {
   color: #888;
 }
 
-.TableViewInputRow {
+.SheetViewInputRow {
   display: flex;
   flex-direction: row;
 }

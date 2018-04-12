@@ -20,11 +20,11 @@ describe('lexFormula', () => {
   });
 
   it('gives us what we expect for lookups and calls', () => {
-    expect(lexFormula(' =func( table.cell=0).value')).toEqual([
+    expect(lexFormula(' =func( sheet.cell=0).value')).toEqual([
       { assignment: '=' },
       { name: 'func' },
       { open: '(' },
-      { name: 'table' },
+      { name: 'sheet' },
       { lookup: '.' },
       { name: 'cell' },
       { assignment: '=' },
