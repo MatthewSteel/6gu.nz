@@ -3,6 +3,26 @@ import classNames from 'classnames';
 import EmptyCellComponent from './EmptyCellComponent';
 import './CellComponent.css';
 
+const defaultFormatter = (value, pushStack) => {
+  if (typeof value === 'string') return value;
+  if (value instanceof Array) {
+    return `[${value.length}]`;
+  }
+  if (typeof value === 'object' && value.constructor === Object) {
+    const contentsStr = `{${Object.keys(value.byName).length}}`;
+    if (value.template) {
+      return (
+        <div style={{ position: 'relative', zIndex: 0 }}>
+          {contentsStr}
+          <button onClick={pushStack} className="StackButton">+</button>
+        </div>
+      );
+    }
+    return contentsStr;
+  }
+  if (typeof value === 'number') return value.toString();
+  return JSON.stringify(value);
+};
 
 class CellComponent extends EmptyCellComponent {
   constructor(props) {
@@ -12,12 +32,12 @@ class CellComponent extends EmptyCellComponent {
   }
 
   getCellContents() {
-    const { fmt, value } = this.props;
+    const { value } = this.props;
     if (!value || value.error) {
       return { error: true };
     }
     return {
-      formattedValue: fmt(value.value, this.pushStack),
+      formattedValue: defaultFormatter(value.value, this.pushStack),
       override: value.override,
     };
   }

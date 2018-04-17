@@ -12,27 +12,6 @@ import { deleteCell, setFormula } from '../../redux/store';
 
 import './SheetComponent.css';
 
-const defaultFormatter = (value, pushStack) => {
-  if (typeof value === 'string') return value;
-  if (value instanceof Array) {
-    return `[${value.length}]`;
-  }
-  if (typeof value === 'object' && value.constructor === Object) {
-    const contentsStr = `{${Object.keys(value.byName).length}}`;
-    if (value.template) {
-      return (
-        <div style={{ position: 'relative', zIndex: 0 }}>
-          {contentsStr}
-          <button onClick={pushStack} className="StackButton">+</button>
-        </div>
-      );
-    }
-    return contentsStr;
-  }
-  if (typeof value === 'number') return value.toString();
-  return JSON.stringify(value);
-};
-
 class SheetComponent extends Component {
   constructor(props) {
     super(props);
@@ -283,7 +262,6 @@ class SheetComponent extends Component {
           height={cellHeight}
           name={name}
           value={cellValuesById[id]}
-          fmt={defaultFormatter}
           pushViewStack={pushViewStack}
           viewId={viewId}
           selected={cellSelected}
