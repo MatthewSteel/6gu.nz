@@ -241,11 +241,13 @@ class SheetComponent extends Component {
       selected,
       width: viewWidth,
       height: viewHeight,
+      depth,
     } = this.props;
     const { formulaHasFocus, selection, viewY, viewX } = this.state;
     const style = {
       gridTemplateColumns: `repeat(${viewWidth}, auto)`,
       gridTemplateRows: `repeat(${viewHeight * 2}, 2.5ex)`,
+      zIndex: depth + 1,
     };
 
     let selectionError;

@@ -148,6 +148,7 @@ class BookComponent extends PureComponent {
           pushViewStack={this.pushStack}
           height={5}
           width={6}
+          depth={i}
         >
           <select
             className="ViewSelect"
