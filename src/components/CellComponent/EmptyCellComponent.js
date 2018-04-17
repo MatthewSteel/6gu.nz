@@ -25,8 +25,8 @@ class EmptyCellComponent extends PureComponent {
     return (
       <div
         className={classNames(
-          'Cell',
-          { selected },
+          'EmptyCell',
+          { EmptyCellSelected: selected },
         )}
         style={style}
         onClick={this.onClick}
