@@ -1,20 +1,14 @@
-import React, { PureComponent } from 'react';
+import React, { Fragment } from 'react';
 import classNames from 'classnames';
+import EmptyCellComponent from './EmptyCellComponent';
 import './CellComponent.css';
 
 
-class CellComponent extends PureComponent {
+class CellComponent extends EmptyCellComponent {
   constructor(props) {
     super(props);
-    this.onClick = this.onClick.bind(this);
     this.pushStack = this.pushStack.bind(this);
     this.getCellContents = this.getCellContents.bind(this);
-  }
-
-  onClick(ev) {
-    ev.preventDefault();
-    const { x, y, setSelection } = this.props;
-    setSelection(y, x);
   }
 
   getCellContents() {
@@ -43,37 +37,43 @@ class CellComponent extends PureComponent {
       height,
       selected,
     } = this.props;
-    const style = {
+    const nameStyle = {
       gridColumn: `${x + 1} / span ${width}`,
-      gridRow: `${y + 1} / span ${height}`,
+      gridRow: `${(2 * y) + 1} / span 1`,
+    };
+    const valueStyle = {
+      gridColumn: `${x + 1} / span ${width}`,
+      gridRow: `${(2 * y) + 2} / span ${(2 * height) - 1}`,
     };
     const { error, formattedValue, override } = this.getCellContents();
 
     return (
-      <div
-        className={classNames(
-          'Cell',
-          { selected },
-        )}
-        style={style}
-        onClick={this.onClick}
-      >
-        {name && (
-          <div className="Name">
-            {name}
-          </div>
-        )}
-        {name && (
-          <div
-            className={classNames(
-              'Value',
-              { CellError: error, CellOverride: override },
-            )}
-          >
-            {formattedValue || '\u200B'}
-          </div>
-        )}
-      </div>
+      <Fragment>
+        <div
+          className={classNames(
+            'CellName',
+            { CellNameSelected: selected },
+          )}
+          style={nameStyle}
+          onClick={this.onClick}
+        >
+          {name}
+        </div>
+        <div
+          className={classNames(
+            'CellValue',
+            {
+              CellValueError: error,
+              CellValueOverride: override,
+              CellValueSelected: selected,
+            },
+          )}
+          style={valueStyle}
+          onClick={this.onClick}
+        >
+          {formattedValue || '\u200B'}
+        </div>
+      </Fragment>
     );
   }
 }

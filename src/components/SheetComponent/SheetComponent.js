@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import { connect } from 'react-redux';
 
 import CellComponent from '../CellComponent/CellComponent';
+import EmptyCellComponent from '../CellComponent/EmptyCellComponent';
 import FormulaComponent from '../FormulaComponent/FormulaComponent';
 import KeyboardListenerComponent from '../KeyboardListenerComponent/KeyboardListenerComponent';
 
@@ -243,8 +244,8 @@ class SheetComponent extends Component {
     } = this.props;
     const { formulaHasFocus, selection, viewY, viewX } = this.state;
     const style = {
-      gridTemplateColumns: 'auto '.repeat(viewWidth).trim(),
-      gridTemplateRows: 'auto '.repeat(viewHeight).trim(),
+      gridTemplateColumns: `repeat(${viewWidth}, auto)`,
+      gridTemplateRows: `repeat(${viewHeight * 2}, 2.5ex)`,
     };
 
     let selectionError;
@@ -295,16 +296,10 @@ class SheetComponent extends Component {
         const place = `${cy + viewY},${cx + viewX}`;
         const cellSelected = selected && place === selection;
         emptyCells.push((
-          <CellComponent
+          <EmptyCellComponent
             key={place}
-            id={place}
             x={cx}
-            width={1}
             y={cy}
-            height={1}
-            name=""
-            value="&nbsp;"
-            fmt={defaultFormatter}
             selected={cellSelected}
             setSelection={this.setSelection}
           />

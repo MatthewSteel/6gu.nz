@@ -1,40 +1,57 @@
 .Cell {
-  display: flex;
-  flex-direction: column;
   background-color: #FDFDFD;
-  font: helvetica;
-  flex: 1 1 auto;
-  min-height: 5ex;
   position: relative;
   border: 1px solid #EEE;
   margin-right: -1px;
   margin-bottom: -1px;
 }
 
-.Cell .Name {
-  flex: 0 1 20px;
-  color: #55C;
-  background-color: #FAFAFA;
-  border-bottom: 1px solid #F4F4F4;
-  text-overflow: ellipsis;
+.Cell.selected {
+  border: 1px solid blue;
+  z-index: 2;
 }
 
-.Cell .Value {
-  flex: 1 1 auto;
+.CellName {
+  color: #55C;
+  font: helvetica;
+  background-color: #FAFAFA;
+  border: 1px solid #EEE;
+  border-bottom: none;
+  box-shadow: 0px 2px 0px -1px #F4F4F4;
+  text-overflow: ellipsis;
+  z-index: 1;
+  margin-right: -1px;
+}
+
+.CellNameSelected {
+  border: 1px solid blue;
+  border-bottom: none;
+  z-index: 2;
+}
+
+.CellValue {
   color: #666;
+  font: helvetica;
+  border: 1px solid #EEE;
+  border-top: none;
+  box-shadow: 0px -2px 0px -1px #F4F4F4;
   background-color: #FDFDFD;
   text-overflow: ellipsis;
+  z-index: 1;
+  margin-right: -1px;
+  margin-bottom: -1px;
 }
 
-.Cell .Value.CellError {
+.CellValueSelected {
+  border: 1px solid blue;
+  border-top: none;
+  z-index: 2;
+}
+
+.CellValueError {
   background-color: #FFF4F4;
 }
 
-.Cell .Value.CellOverride {
+.CellValueOverride {
   background-color: #FFFFE8;
-}
-
-.Cell.selected {
-  border: 1px solid blue;
-  z-index: 1;
 }
