@@ -21,6 +21,7 @@ class SheetComponent extends Component {
     this.move = this.move.bind(this);
     this.selectedCellId = this.selectedCellId.bind(this);
     this.setSelection = this.setSelection.bind(this);
+    this.setViewSelection = this.setViewSelection.bind(this);
     this.setFormula = this.setFormula.bind(this);
     this.setFormulaFocus = this.setFormulaFocus.bind(this);
     this.setFormulaRef = this.setFormulaRef.bind(this);
@@ -57,6 +58,13 @@ class SheetComponent extends Component {
 
   setSelectionRef(ref) {
     this.selectionRef = ref;
+  }
+
+  setViewSelection(viewSelY, viewSelX) {
+    const { viewY, viewX } = this.state;
+    const selY = viewSelY + viewY;
+    const selX = viewSelX + viewX;
+    return this.setSelection(selY, selX);
   }
 
   setSelection(selY, selX) {
@@ -265,7 +273,7 @@ class SheetComponent extends Component {
           pushViewStack={pushViewStack}
           viewId={viewId}
           selected={cellSelected}
-          setSelection={this.setSelection}
+          setSelection={this.setViewSelection}
         />
       );
     }).filter(Boolean);
@@ -281,7 +289,7 @@ class SheetComponent extends Component {
             x={cx}
             y={cy}
             selected={cellSelected}
-            setSelection={this.setSelection}
+            setSelection={this.setViewSelection}
           />
         ));
       }
