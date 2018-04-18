@@ -1,5 +1,6 @@
 import { createSelector } from 'reselect';
 import store from '../../redux/store';
+import { getNamedMember } from './tables';
 
 export const getCells = state => state.cells;
 export const getSheets = state => state.sheets;
@@ -215,9 +216,6 @@ const expandCall = (callTerm) => {
     expandExpr(expr));
   const allArgs = [
     'globals',
-    'getRef',
-    'pleaseThrow',
-    'sheetValue',
     ...customArgs,
   ].join(', ');
   return `globals[${JSON.stringify(signature)}](${allArgs})`;
@@ -229,16 +227,25 @@ const expandExpr = (expr) => {
   return expandedTerms.join(' ');
 };
 
-const expandRef = term => `getRef(globals, ${JSON.stringify(term.ref)}).value`;
+const expandRef = term => `globals.getRef(globals, ${JSON.stringify(term.ref)}).value`;
 
 const expandLookup = (term) => {
+  // obj.key1.key2 -->
+  // lookup(
+  //   lookup(
+  //     obj
+  //   , "key1")
+  // , "key2").value
   const termWithoutLookup = { ...term, lookup: undefined };
-  const pre = expandTerm(termWithoutLookup);
-  const lookupStrings = [];
+  const obj = expandTerm(termWithoutLookup);
+  const preLookupStrings = [];
+  const postLookupStrings = [];
   for (let l = term.lookup; l; l = l.lookup) {
-    lookupStrings.push(`.byName[${JSON.stringify(l.name)}]`);
+    preLookupStrings.push('globals.getNamedMember(');
+    postLookupStrings.push(`, ${JSON.stringify(l.name)})`);
   }
-  return `${pre}${lookupStrings.join('')}`;
+  // just want values in evaluated formulas for now.
+  return [...preLookupStrings, obj, ...postLookupStrings].join('');
 };
 
 const expandTerm = (term) => {
@@ -277,7 +284,7 @@ const sheetValue = (sheetId, globals) => {
   sheetCells.forEach(({ id, name }) => {
     const cellContents = getRef(globals, id);
     ret.byId[id] = cellContents;
-    ret.byName[name] = cellContents.value;
+    ret.byName[name] = cellContents;
   });
   return ret;
 };
@@ -304,7 +311,7 @@ const cellExpressions = (cells, cellsById, sheetsById) => {
       .map(term => refError(term, sheetsById, cellsById))
       .filter(Boolean);
     if (termErrors.length > 0) {
-      ret[cell.id] = `pleaseThrow(${JSON.stringify(termErrors[0])} + ' does not exist.')`;
+      ret[cell.id] = `globals.pleaseThrow(${JSON.stringify(termErrors[0])} + ' does not exist.')`;
     } else {
       ret[cell.id] = expandExpr(cell.formula);
     }
@@ -315,7 +322,7 @@ const cellExpressions = (cells, cellsById, sheetsById) => {
 const sheetExpressions = (sheets) => {
   const ret = {};
   sheets.forEach(({ id }) => {
-    ret[id] = `sheetValue(${JSON.stringify(id)}, globals)`;
+    ret[id] = `globals.sheetValue(${JSON.stringify(id)}, globals)`;
   });
   return ret;
 };
@@ -327,7 +334,7 @@ export const getCellValuesById = createSelector(
   getCellsById,
   getTopoSortedRefIds,
   (allCells, allSheets, sheetsById, cellsById, sortedRefIds) => {
-    const globals = {};
+    const globals = { getNamedMember, getRef, sheetValue, pleaseThrow };
 
     // Initialize circular refs and things that depend on them.
     [...allCells, ...allSheets].forEach(({ id }) => {
@@ -443,12 +450,5 @@ const createFunction = (callTerm, refExpressions) => {
   const definition = functionBits.join('\n');
   const argNames = callTerm.args.map((arg, i) => `v${i}`);
   // eslint-disable-next-line no-new-func
-  return Function(
-    'globals',
-    'getRef',
-    'pleaseThrow',
-    'sheetValue',
-    ...argNames,
-    definition,
-  );
+  return Function('globals', ...argNames, definition);
 };
