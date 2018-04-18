@@ -42,9 +42,7 @@ class SheetComponent extends Component {
   }
 
   componentDidUpdate() {
-    if (!this.state.selection) {
-      this.updateSelection();
-    }
+    this.updateSelection();
   }
 
   getFocus() {
@@ -113,8 +111,11 @@ class SheetComponent extends Component {
   }
 
   updateSelection() {
-    const { selY, selX } = this.state;
-    this.setState({ selection: this.selectedCellId(selY, selX) });
+    const { selY, selX, selection: currentSelection } = this.state;
+    const nextSelection = this.selectedCellId(selY, selX);
+    if (currentSelection !== nextSelection) {
+      this.setState({ selection: nextSelection });
+    }
   }
 
   move(dy, dx) {
