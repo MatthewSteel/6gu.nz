@@ -227,7 +227,7 @@ const expandExpr = (expr) => {
   return expandedTerms.join(' ');
 };
 
-const expandRef = term => `globals.getRef(globals, ${JSON.stringify(term.ref)}).value`;
+const expandRef = term => `globals.formulaRef(globals, ${JSON.stringify(term.ref)})`;
 
 const expandLookup = (term) => {
   // obj.key1.key2 -->
@@ -268,6 +268,11 @@ const callSignature = (callTerm) => {
   return `${callTerm.call.ref}(${joinedRefs})`;
 };
 
+const formulaRef = (globals, ref) => {
+  const ret = getRef(globals, ref);
+  if (ret.value !== undefined) return ret.value;
+  throw new Error(ret.error);
+};
 
 const getRef = (globals, ref) => {
   const values = globals[ref];
@@ -334,7 +339,7 @@ export const getCellValuesById = createSelector(
   getCellsById,
   getTopoSortedRefIds,
   (allCells, allSheets, sheetsById, cellsById, sortedRefIds) => {
-    const globals = { getNamedMember, getRef, sheetValue, pleaseThrow };
+    const globals = { getNamedMember, formulaRef, sheetValue, pleaseThrow };
 
     // Initialize circular refs and things that depend on them.
     [...allCells, ...allSheets].forEach(({ id }) => {

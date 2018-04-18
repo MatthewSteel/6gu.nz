@@ -33,13 +33,13 @@ describe('TableArray', () => {
     [0, 1].forEach(() => {
       expect(table.getColumn('id').arr).toEqual([
         { error: 'Whole entry failed' },
-        { value: undefined }, // looking up an error gives no value
+        { error: 'Error: Aaaah!' },
         { value: 'baz' },
       ]);
       expect(table.getColumn('k2').arr).toEqual([
         { error: 'Whole entry failed' },
         { value: 'bar' },
-        { value: undefined },
+        { error: 'Error: some other error' },
       ]);
       expect(table.getColumn('k3').arr).toEqual([
         { error: 'Whole entry failed' },
