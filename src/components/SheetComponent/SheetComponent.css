@@ -25,15 +25,6 @@
   position: relative;
 }
 
-.SheetErrorText {
-  color: #DD8484;
-  align: right;
-}
-
-.SheetOverrideText {
-  color: #888;
-}
-
 .SheetViewInputRow {
   display: flex;
   flex-direction: row;

@@ -33,9 +33,8 @@ class CellComponent extends EmptyCellComponent {
 
   getCellContents() {
     const { value } = this.props;
-    if (!value || value.error) {
-      return { error: true };
-    }
+    if (!value) return { error: 'Value missing' }; // ???
+    if (value.error) return { error: value.error };
     return {
       formattedValue: defaultFormatter(value.value, this.pushStack),
       override: value.override,
@@ -43,8 +42,8 @@ class CellComponent extends EmptyCellComponent {
   }
 
   pushStack(ev) {
-    const { id, pushViewStack, viewId } = this.props;
-    pushViewStack(viewId, id);
+    const { id, pushViewStack } = this.props;
+    pushViewStack(id);
     ev.preventDefault();
   }
 
@@ -90,6 +89,7 @@ class CellComponent extends EmptyCellComponent {
           )}
           style={valueStyle}
           onClick={this.onClick}
+          title={override ? 'Value overridden in call' : error}
         >
           {formattedValue || '\u200B'}
         </div>

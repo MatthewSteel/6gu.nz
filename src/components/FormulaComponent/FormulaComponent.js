@@ -1,5 +1,8 @@
 import React, { Component } from 'react';
+import { connect } from 'react-redux';
+
 import { stringFormula } from '../../selectors/formulas/parser';
+import { deleteCell, setFormula } from '../../redux/store';
 import './FormulaComponent.css';
 
 
@@ -14,6 +17,7 @@ class FormulaComponent extends Component {
     this.handleOnFocus = this.handleOnFocus.bind(this);
     this.submit = this.submit.bind(this);
     this.resetValue = this.resetValue.bind(this);
+    this.setFormula = this.setFormula.bind(this);
     this.setRef = this.setRef.bind(this);
   }
 
@@ -25,6 +29,22 @@ class FormulaComponent extends Component {
 
   setRef(ref) {
     this.inputRef = ref;
+  }
+
+  setFormula(formulaStr) {
+    const {
+      deleteCellProp,
+      selection,
+      setCellFormula,
+      readOnly,
+      sheetId,
+    } = this.props;
+    if (readOnly) return;
+    if (formulaStr === '') {
+      deleteCellProp(selection);
+    } else {
+      setCellFormula(sheetId, selection, formulaStr);
+    }
   }
 
   resetValue(selection) {
@@ -55,9 +75,10 @@ class FormulaComponent extends Component {
   }
 
   submit() {
-    const { selection, setFormula } = this.props;
+    const { selection } = this.props;
     if (!selection) return;
-    setFormula(this.state.value);
+    this.inputRef.focus(); // Make sure view is properly focussed
+    this.setFormula(this.state.value);
     this.inputRef.blur();
   }
 
@@ -85,4 +106,14 @@ class FormulaComponent extends Component {
   }
 }
 
-export default FormulaComponent;
+const mapDispatchToProps = dispatch => ({
+  deleteCellProp: cellId => dispatch(deleteCell(cellId)),
+  setCellFormula: (sheetId, cellId, formula) => dispatch(setFormula(sheetId, cellId, formula)),
+});
+
+export default connect(
+  null, // mapStateToProps
+  mapDispatchToProps,
+  null, // mergeProps
+  { withRef: true }, // so we can access member functions
+)(FormulaComponent);
