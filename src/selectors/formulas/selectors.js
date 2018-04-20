@@ -99,7 +99,7 @@ const translateCall = (term, sheetId, f) => {
 
 export const translateTerm = (term, sheetId, f) => {
   if (term.name || term.ref) return f(term, sheetId);
-  if (term.value !== undefined || term.op) return f(term, sheetId);
+  if ('value' in term || term.op) return f(term, sheetId);
   if (term.call) return translateCall(term, sheetId, f);
   if (term.expression) {
     return f(
@@ -253,7 +253,7 @@ const expandTerm = (term) => {
   if (term.ref) return expandRef(term);
   if (term.call) return expandCall(term);
   if (term.op) return term.op;
-  if (term.value !== undefined) return JSON.stringify(term.value);
+  if ('value' in term) return JSON.stringify(term.value);
   if (term.expression) return `(${expandExpr(term.expression)})`;
   throw new Error(`unknown term type ${JSON.stringify(term)}`);
 };
@@ -270,7 +270,7 @@ const callSignature = (callTerm) => {
 
 const formulaRef = (globals, ref) => {
   const ret = getRef(globals, ref);
-  if (ret.value !== undefined) return ret.value;
+  if ('value' in ret) return ret.value;
   throw new Error(ret.error);
 };
 

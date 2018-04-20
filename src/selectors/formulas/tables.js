@@ -67,6 +67,6 @@ export const getNamedMember = (value, colName) => {
   if (!entry) {
     throw new Error(`Lookup item does not have a field "${colName}"`);
   }
-  if (entry.value !== undefined) return entry.value;
+  if ('value' in entry) return entry.value;
   throw new Error(entry.error);
 };

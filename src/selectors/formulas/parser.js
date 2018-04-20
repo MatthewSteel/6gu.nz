@@ -127,7 +127,7 @@ const parseTerm = (tokens, i) => {
       newIndex: newIndex + 1,
     };
   }
-  if (tokens[i].value !== undefined) {
+  if ('value' in tokens[i]) {
     return {
       term: tokens[i],
       newIndex: i + 1,
@@ -310,7 +310,7 @@ export const unparseTerm = (term, sheetId) => {
   if (term.op) return term.op;
   if (term.ref) return unparseRef(term.ref, sheetId);
   if (term.name) return term.name;
-  if (term.value !== undefined) return JSON.stringify(term.value);
+  if ('value' in term) return JSON.stringify(term.value);
   throw new Error('Unknown term type');
 };
 
