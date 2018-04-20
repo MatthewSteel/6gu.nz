@@ -8,14 +8,18 @@ import {
 import { parseFormula } from '../selectors/formulas/parser';
 import defaultCellName from '../selectors/formulas/defaultCellName';
 
+export const SHEET = 'sheet';
+export const CELL = 'cell';
 
 const initialState = {
   sheets: [{
     id: 'sheet0',
     name: 's1',
+    type: SHEET,
   }, {
     id: 'sheet1',
     name: 's2',
+    type: SHEET,
   }],
   cells: [],
 };
@@ -43,6 +47,7 @@ const defaultCellForLocation = (sheetId, cellId) => {
     y,
     width: 1,
     height: 1,
+    type: CELL,
   };
 };
 

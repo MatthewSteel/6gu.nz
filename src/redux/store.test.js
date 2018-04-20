@@ -1,4 +1,4 @@
-import store, { deleteCell, setFormula } from './store';
+import store, { CELL, deleteCell, setFormula } from './store';
 import { getCells, getSheets, getCellValuesById } from '../selectors/formulas/selectors';
 import { stringFormula } from '../selectors/formulas/parser';
 
@@ -24,6 +24,7 @@ describe('actions/the store', () => {
       y: 1,
       width: 1,
       height: 1,
+      type: CELL,
     });
     expect(stringFormula(cells[0].id)).toBe('x = 12');
 
