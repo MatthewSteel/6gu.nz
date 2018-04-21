@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
 
-import { stringFormula } from '../../selectors/formulas/parser';
+import { stringFormula } from '../../selectors/formulas/unparser';
 import { deleteCell, setFormula } from '../../redux/store';
 import './FormulaComponent.css';
 

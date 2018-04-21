@@ -2,6 +2,9 @@ import { createSelector } from 'reselect';
 import store from '../../redux/store';
 import { getNamedMember } from './tables';
 
+
+// Simple "get raw state" selectors (for the moment?)
+
 export const getCells = state => state.cells;
 export const getSheets = state => state.sheets;
 
@@ -67,7 +70,10 @@ export const getSheetsByName = createSelector(
 );
 
 
-export const getSheetIdForRef = (ref, defaultSheetId) => {
+// Formula translation functions: Generic ways to iterate over a forumla's
+// contents, applying a function to every element from the leaves up.
+
+const getSheetIdForRef = (ref, defaultSheetId) => {
   const sheetsById = getSheetsById(store.getState());
   const cellsById = getCellsById(store.getState());
   if (sheetsById[ref]) return ref;
@@ -117,6 +123,7 @@ export const translateExpr = (expr, sheetId, f) =>
 
 
 export const flattenExpr = (expr) => {
+  // Get every element inside the formula (not just leaves)
   const ret = [];
   translateExpr(expr, null, (term) => {
     if (term === undefined) {
@@ -128,6 +135,7 @@ export const flattenExpr = (expr) => {
   return ret;
 };
 
+// Predecessor/successor relations in the formula/computation graph.
 const getFormulaGraphs = createSelector(
   getCells,
   getCellsById,
@@ -155,11 +163,16 @@ const getFormulaGraphs = createSelector(
         backwardsGraph[cell.id].push(id);
       });
     });
-    return { forwardsGraph, backwardsGraph };
+    return {
+      forwardsGraph, // keys depend on values
+      backwardsGraph, // values depend on keys
+    };
   },
 );
 
 
+// Array of thing-ids in "compute-order". Things involved in circular ref
+// problems are omitted for now.
 export const getTopoSortedRefIds = createSelector(
   getFormulaGraphs,
   ({ backwardsGraph }) => {
@@ -190,6 +203,8 @@ export const getTopoSortedRefIds = createSelector(
   },
 );
 
+// id -> order location. If ret[myId] < ret[yourId], your object definitely
+// does not depend on mine.
 const getTopoLocationById = createSelector(
   getTopoSortedRefIds,
   (ordering) => {
@@ -199,6 +214,8 @@ const getTopoLocationById = createSelector(
   },
 );
 
+
+// Functions to translate into formulas into code to be evaluated
 
 const expandSetItem = (k, expr, override = false) =>
   `try {
@@ -235,7 +252,7 @@ const expandLookup = (term) => {
   //   lookup(
   //     obj
   //   , "key1")
-  // , "key2").value
+  // , "key2")
   const termWithoutLookup = { ...term, lookup: undefined };
   const obj = expandTerm(termWithoutLookup);
   const preLookupStrings = [];
@@ -259,6 +276,8 @@ const expandTerm = (term) => {
 };
 
 
+// Distinct spreadsheet "what-if" "calls" are translated into JS functions.
+// We store them based on input and output ref ids.
 const callSignature = (callTerm) => {
   if (!callTerm.call.ref) {
     throw new Error('Can only call refs');
@@ -268,17 +287,36 @@ const callSignature = (callTerm) => {
   return `${callTerm.call.ref}(${joinedRefs})`;
 };
 
+// Functions used in formula evaluation.
+// A note on the value/storage model:
+//  - A cell's evaluation can either result in a value being produced or
+//    an error being raised. Data "at rest" is either tagged as a value
+//    or an error.
+//  - Data "in flight" is all just values (because exceptions flow out of
+//    band of the code we generate.)
+//  - Functions like `iferror` and `iserror` will need to be macros or
+//    something, probably :/
+//
+// A note on the function evaluation model:
+//  - We have a stack of values (or errors) for every reference. The first
+//    element is normally the "actual" value of the ref, subsequent values
+//    are pushed/popped/used in "what-if" function calls.
+
+
+// Get the "top of stack" value/error for a ref
+const getRef = (globals, ref) => {
+  const values = globals[ref];
+  return values[values.length - 1];
+};
+
+// Unwrap a "ref at rest" into a "value in flight or exception"
 const formulaRef = (globals, ref) => {
   const ret = getRef(globals, ref);
   if ('value' in ret) return ret.value;
   throw new Error(ret.error);
 };
 
-const getRef = (globals, ref) => {
-  const values = globals[ref];
-  return values[values.length - 1];
-};
-
+// Make a literal struct from a sheet's cells.
 const sheetValue = (sheetId, globals) => {
   const sheetCells = getCellsBySheetId(store.getState(), sheetId);
   const ret = {
@@ -369,6 +407,8 @@ export const getCellValuesById = createSelector(
   },
 );
 
+// Translates the computation data into something more palatable for UI
+// consumption. No more stacks, mostly.
 const getGlobalValues = (globals, allCells, allSheets) => {
   const ret = {};
   allCells.forEach(({ id }) => { ret[id] = getRef(globals, id); });
@@ -378,6 +418,8 @@ const getGlobalValues = (globals, allCells, allSheets) => {
   return ret;
 };
 
+// For figuring out what to run for functions: All things that depend on
+// this cell, all things that this cell depends on.
 const transitiveClosure = (ids, graph) => {
   let frontier = ids;
   const closure = new Set(frontier);
@@ -400,6 +442,9 @@ const transitiveClosure = (ids, graph) => {
   return closure;
 };
 
+// In functions we want to evaluate all cells "in between" the user-set
+// refs and the output ref. That's the intersection of the things that
+// depend on the in-refs and the things the out-ref depends on.
 const setIntersection = (setA, setB) => {
   const intersection = new Set();
   setA.forEach((value) => {
@@ -423,6 +468,7 @@ const functionCellsInOrder = (call) => {
     topoLocationsById[id1] - topoLocationsById[id2]);
 };
 
+// Actually building the code to eval and making a real function.
 const createFunction = (callTerm, refExpressions) => {
   const functionBits = [];
 
