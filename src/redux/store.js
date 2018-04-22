@@ -91,6 +91,7 @@ const rootReducer = (state, action) => {
         otherCell.formula,
         otherCell.sheetId,
         (term, termSheetId) => {
+          // ref is `sheetId.cellName` for a different sheet
           if (
             cell.sheetId !== termSheetId &&
             term.ref === cell.sheetId &&
@@ -105,6 +106,7 @@ const rootReducer = (state, action) => {
               ref: cell.id,
             };
           }
+          // ref is `cellName` for a cell in the same sheet
           if (
             cell.sheetId === termSheetId &&
             term.ref === cell.name
