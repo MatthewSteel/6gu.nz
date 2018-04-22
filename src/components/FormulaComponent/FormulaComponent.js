@@ -12,7 +12,7 @@ class FormulaComponent extends Component {
     this.inputRef = null;
     const selectedCellId = this.props.selection && this.props.selection.cellId;
     const initialValue = selectedCellId ?
-      stringFormula(props.selection.cellId) :
+      stringFormula(selectedCellId) :
       '';
     this.state = { value: initialValue };
 
@@ -27,7 +27,7 @@ class FormulaComponent extends Component {
 
   componentWillReceiveProps(nextProps) {
     if (!selectionsEqual(nextProps.selection, this.props.selection)) {
-      this.resetValue(nextProps.selection);
+      this.resetValue(nextProps.selection.cellId);
     }
   }
 
