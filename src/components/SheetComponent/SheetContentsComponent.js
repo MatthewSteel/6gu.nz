@@ -88,8 +88,8 @@ class SheetContentsComponent extends Component {
   }
 
   updateSelection() {
-    const { setFormulaSelectionId } = this.props;
-    setFormulaSelectionId(this.selectedCellId());
+    const { setFormulaSelection } = this.props;
+    setFormulaSelection(this.selectedCellId());
   }
 
   move(dy, dx, event) {

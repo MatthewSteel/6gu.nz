@@ -2,6 +2,7 @@ import React, { Component } from 'react';
 import FormulaComponent from '../FormulaComponent/FormulaComponent';
 
 import SheetContentsComponent from './SheetContentsComponent';
+import { selectionsEqual } from '../../redux/store';
 import './SheetComponent.css';
 
 class SheetComponent extends Component {
@@ -12,12 +13,12 @@ class SheetComponent extends Component {
     this.setFormulaRef = this.setFormulaRef.bind(this);
     this.popStack = this.popStack.bind(this);
     this.pushStack = this.pushStack.bind(this);
-    this.setFormulaSelectionCellId = this.setFormulaSelectionCellId.bind(this);
+    this.setFormulaSelection = this.setFormulaSelection.bind(this);
 
     this.formulaRef = null;
     this.state = {
       formulaHasFocus: false,
-      formulaSelectionCellId: null,
+      formulaSelection: null,
     };
   }
 
@@ -38,10 +39,10 @@ class SheetComponent extends Component {
     }
   }
 
-  setFormulaSelectionCellId(cellId) {
-    const { formulaSelectionCellId } = this.state;
-    if (formulaSelectionCellId === cellId) return;
-    this.setState({ formulaSelectionCellId: cellId });
+  setFormulaSelection(newSelection) {
+    const { formulaSelection } = this.state;
+    if (selectionsEqual(formulaSelection, newSelection)) return;
+    this.setState({ formulaSelection: newSelection });
   }
 
   // These two methods passed down to children so they can operate on the
@@ -70,7 +71,7 @@ class SheetComponent extends Component {
       depth,
       sheetId,
     } = this.props;
-    const { formulaHasFocus, formulaSelectionCellId } = this.state;
+    const { formulaHasFocus, formulaSelection } = this.state;
     const style = {
       gridTemplateColumns: `repeat(${width}, auto)`,
       gridTemplateRows: `repeat(${height * 2}, 2.5ex)`,
@@ -95,7 +96,7 @@ class SheetComponent extends Component {
             pushViewStack={this.pushStack}
             popViewStack={this.popStack}
             readOnly={readOnly}
-            setFormulaSelectionId={this.setFormulaSelectionCellId}
+            setFormulaSelection={this.setFormulaSelection}
             formulaHasFocus={formulaHasFocus}
             sheetId={sheetId}
             getViewFocus={this.getFocus}
@@ -109,7 +110,7 @@ class SheetComponent extends Component {
           <FormulaComponent
             readOnly={readOnly}
             ref={this.setFormulaRef}
-            selection={formulaSelectionCellId}
+            selection={formulaSelection}
             setFormulaHasFocus={this.setFormulaFocus}
             sheetId={sheetId}
           />
