@@ -11,6 +11,14 @@ import { deleteCell } from '../../redux/store';
 
 import './SheetComponent.css';
 
+
+// For moving the cursor out of a large cell
+const maybeBreakOut = (curr, move, start, length) => {
+  if (move < 0) return start - 1;
+  if (move > 0) return start + length;
+  return curr;
+};
+
 class SheetContentsComponent extends Component {
   constructor(props) {
     super(props);
@@ -18,6 +26,7 @@ class SheetContentsComponent extends Component {
     this.formulaKeys = this.formulaKeys.bind(this);
     this.move = this.move.bind(this);
     this.selectedCellId = this.selectedCellId.bind(this);
+    this.maybeSelectedCell = this.maybeSelectedCell.bind(this);
     this.setSelection = this.setSelection.bind(this);
     this.setViewSelection = this.setViewSelection.bind(this);
     this.setChildSelectionTableRef = this.setChildSelectionTableRef.bind(this);
@@ -63,27 +72,40 @@ class SheetContentsComponent extends Component {
     this.updateSelection();
   }
 
-  selectedCellId(selY, selX) {
-    const { cells } = this.props;
-    const selectedCell = cells.find(cell =>
-      overlaps(selY, 1, selX, 1, cell));
+  selectedCellId() {
+    const { selY, selX } = this.state;
+    const selectedCell = this.maybeSelectedCell();
     return selectedCell ?
       selectedCell.id :
       `${selY},${selX}`;
   }
 
-  updateSelection() {
-    const { setFormulaSelectionId } = this.props;
+  maybeSelectedCell() {
+    const { cells } = this.props;
     const { selY, selX } = this.state;
-    setFormulaSelectionId(this.selectedCellId(selY, selX));
+    return cells.find(cell => overlaps(selY, 1, selX, 1, cell));
   }
 
-  move(dy, dx) {
+  updateSelection() {
+    const { setFormulaSelectionId } = this.props;
+    setFormulaSelectionId(this.selectedCellId());
+  }
+
+  move(dy, dx, event) {
     const { selY, selX } = this.state;
-    this.setSelection(
-      clampOverlap(selY + dy, 1, 0, Infinity),
-      clampOverlap(selX + dx, 1, 0, Infinity),
-    );
+    const selectedCell = this.maybeSelectedCell();
+    // Speed past "big" cells -- move multiple "spaces"
+    const wantedNewY = selectedCell ?
+      maybeBreakOut(selY, dy, selectedCell.y, selectedCell.height) :
+      selY + dy;
+    const wantedNewX = selectedCell ?
+      maybeBreakOut(selX, dx, selectedCell.x, selectedCell.width) :
+      selX + dx;
+    const newY = clampOverlap(wantedNewY, 1, 0, Infinity);
+    const newX = clampOverlap(wantedNewX, 1, 0, Infinity);
+    if (newY === selY && newX === selX) return;
+    this.setSelection(newY, newX);
+    event.preventDefault();
   }
 
   cellKeys(ev) {
@@ -106,27 +128,22 @@ class SheetContentsComponent extends Component {
     // Movement actions
     if (moves[ev.key]) {
       // Cursor key nav
-      this.move(...moves[ev.key]);
-      ev.preventDefault();
+      this.move(...moves[ev.key], ev);
     }
     if (ev.key === 'Enter') {
       if (ev.shiftKey) {
-        this.move(-1, 0);
-        ev.preventDefault();
-      } else {
-        if (readOnly) {
-          this.move(1, 0);
-        } else if (realFormulaRef) {
-          // Enter selects the formula box when editable
-          realFormulaRef.focus();
-        }
+        this.move(-1, 0, ev);
+      } else if (readOnly) {
+        this.move(1, 0, ev);
+      } else if (realFormulaRef) {
+        // Enter selects the formula box when editable
+        realFormulaRef.focus();
         ev.preventDefault();
       }
     }
     if (ev.key === 'Tab') {
       const xMove = ev.shiftKey ? -1 : 1;
-      this.move(0, xMove);
-      ev.preventDefault();
+      this.move(0, xMove, ev);
     }
     if (ev.key === 'Escape') {
       const { popViewStack } = this.props;
@@ -139,8 +156,7 @@ class SheetContentsComponent extends Component {
       ev.preventDefault();
       if (!readOnly) {
         // Careful: swallow the event so a parent doesn't get it.
-        const { selY, selX } = this.state;
-        const selection = this.selectedCellId(selY, selX);
+        const selection = this.selectedCellId();
         const { deleteCellProp } = this.props;
         deleteCellProp(selection);
         if (realFormulaRef) realFormulaRef.resetValue();
@@ -170,14 +186,12 @@ class SheetContentsComponent extends Component {
     if (ev.key === 'Enter') {
       if (realFormulaRef) realFormulaRef.submit(ev);
       const yMove = ev.shiftKey ? -1 : 1;
-      this.move(yMove, 0);
-      ev.preventDefault();
+      this.move(yMove, 0, ev);
     }
     if (ev.key === 'Tab') {
       if (realFormulaRef) realFormulaRef.submit(ev);
       const xMove = ev.shiftKey ? -1 : 1;
-      this.move(0, xMove);
-      ev.preventDefault();
+      this.move(0, xMove, ev);
     }
   }
 
@@ -191,8 +205,8 @@ class SheetContentsComponent extends Component {
       viewWidth,
       viewHeight,
     } = this.props;
-    const { selY, selX, viewY, viewX } = this.state;
-    const selection = this.selectedCellId(selY, selX);
+    const { viewY, viewX } = this.state;
+    const selection = this.selectedCellId();
 
     const filledCells = cells.map((cell) => {
       if (!overlaps(viewY, viewHeight, viewX, viewWidth, cell)) {
