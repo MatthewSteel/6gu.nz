@@ -75,9 +75,10 @@ class SheetContentsComponent extends Component {
   selectedCellId() {
     const { selY, selX } = this.state;
     const selectedCell = this.maybeSelectedCell();
+    const { sheetId } = this.props;
     return selectedCell ?
-      selectedCell.id :
-      `${selY},${selX}`;
+      { context: sheetId, cellId: selectedCell.id } : // A real item
+      { context: sheetId, y: selY, x: selX }; // a blank cell
   }
 
   maybeSelectedCell() {
@@ -158,7 +159,7 @@ class SheetContentsComponent extends Component {
         // Careful: swallow the event so a parent doesn't get it.
         const selection = this.selectedCellId();
         const { deleteCellProp } = this.props;
-        deleteCellProp(selection);
+        if (selection.cellId) deleteCellProp(selection.cellId);
         if (realFormulaRef) realFormulaRef.resetValue();
       }
     }
@@ -166,8 +167,8 @@ class SheetContentsComponent extends Component {
       // User just starts typing.
       // Careful: swallow the event so a parent doesn't get it.
       ev.preventDefault();
-      if (!readOnly) {
-        if (realFormulaRef) realFormulaRef.sendKey(ev.key);
+      if (!readOnly && realFormulaRef) {
+        realFormulaRef.sendKey(ev.key);
       }
     }
   }
@@ -221,7 +222,7 @@ class SheetContentsComponent extends Component {
         name,
       } = cell;
 
-      const cellSelected = viewSelected && selection === cell.id;
+      const cellSelected = viewSelected && selection.cellId === cell.id;
 
       return (
         <CellComponent
@@ -244,7 +245,9 @@ class SheetContentsComponent extends Component {
     for (let cy = 0; cy < viewHeight; ++cy) {
       for (let cx = 0; cx < viewWidth; ++cx) {
         const place = `${cy + viewY},${cx + viewX}`;
-        const cellSelected = viewSelected && place === selection;
+        const cellSelected = viewSelected &&
+          cy + viewY === selection.y &&
+          cx + viewX === selection.x;
         emptyCells.push((
           <EmptyCellComponent
             key={place}

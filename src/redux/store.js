@@ -24,9 +24,9 @@ const initialState = {
   cells: [],
 };
 
-export const setFormula = (sheetId, cellId, formula) => ({
+export const setFormula = (selection, formula) => ({
   type: 'SET_CELL_FORMULA',
-  payload: { sheetId, cellId, formulaStr: formula },
+  payload: { selection, formulaStr: formula },
 });
 
 export const deleteCell = cellId => ({
@@ -36,20 +36,17 @@ export const deleteCell = cellId => ({
 
 export const loadFile = () => ({ type: 'LOAD_FILE' });
 
-const defaultCellForLocation = (sheetId, cellId) => {
-  const [y, x] = cellId.split(',').map(Number);
-  return {
-    sheetId,
-    id: uuidv4(),
-    name: defaultCellName(y, x),
-    formula: [{ value: '' }],
-    x,
-    y,
-    width: 1,
-    height: 1,
-    type: CELL,
-  };
-};
+const defaultCellForLocation = (sheetId, y, x) => ({
+  sheetId,
+  id: uuidv4(),
+  name: defaultCellName(y, x),
+  formula: [{ value: '' }],
+  x,
+  y,
+  width: 1,
+  height: 1,
+  type: CELL,
+});
 
 const scheduleSave = () => {
   const updateId = uuidv4();
@@ -66,8 +63,8 @@ const scheduleSave = () => {
 
 const rootReducer = (state, action) => {
   if (action.type === 'SET_CELL_FORMULA') {
-    const { cellId, formulaStr, sheetId } = action.payload;
-    const newFormula = parseFormula(formulaStr, sheetId);
+    const { selection, formulaStr } = action.payload;
+    const newFormula = parseFormula(formulaStr, selection.context);
 
     if (!newFormula.name && !newFormula.formula) {
       // Formula is like `name=formula`.
@@ -80,9 +77,11 @@ const rootReducer = (state, action) => {
       return state;
     }
 
-    const existingCell = state.cells.find(({ id }) => id === cellId);
+    const baseCell = selection.cellId ?
+      state.cells.find(({ id }) => id === selection.cellId) :
+      defaultCellForLocation(selection.context, selection.y, selection.x);
     const cell = {
-      ...(existingCell || defaultCellForLocation(sheetId, cellId)),
+      ...baseCell,
       ...newFormula,
     };
 
@@ -123,7 +122,7 @@ const rootReducer = (state, action) => {
     return {
       ...state,
       cells: [
-        ...state.cells.filter(({ id }) => id !== cellId).map(rewireBadRefs),
+        ...state.cells.filter(({ id }) => id !== selection.cellId).map(rewireBadRefs),
         cell,
       ],
       updateId: scheduleSave(),

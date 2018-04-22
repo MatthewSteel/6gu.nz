@@ -6,11 +6,24 @@ import { deleteCell, setFormula } from '../../redux/store';
 import './FormulaComponent.css';
 
 
+const selectionsEqual = (sel1, sel2) => {
+  if (!sel1 && !sel2) return true;
+  if (!sel1 !== !sel2) return false;
+  if (sel1.cellId) return sel1.cellId === sel2.cellId;
+  const { y, x, context } = sel1;
+  return y === sel2.y && x === sel2.x && context === sel2.context;
+};
+
+
 class FormulaComponent extends Component {
   constructor(props) {
     super(props);
     this.inputRef = null;
-    this.state = { value: stringFormula(props.selection) };
+    const selectedCellId = this.props.selection && this.props.selection.cellId;
+    const initialValue = selectedCellId ?
+      stringFormula(props.selection.cellId) :
+      '';
+    this.state = { value: initialValue };
 
     this.handleChange = this.handleChange.bind(this);
     this.handleOnBlur = this.handleOnBlur.bind(this);
@@ -22,7 +35,7 @@ class FormulaComponent extends Component {
   }
 
   componentWillReceiveProps(nextProps) {
-    if (nextProps.selection !== this.props.selection) {
+    if (!selectionsEqual(nextProps.selection, this.props.selection)) {
       this.resetValue(nextProps.selection);
     }
   }
@@ -37,13 +50,12 @@ class FormulaComponent extends Component {
       selection,
       setCellFormula,
       readOnly,
-      sheetId,
     } = this.props;
     if (readOnly) return;
-    if (formulaStr === '') {
-      deleteCellProp(selection);
-    } else {
-      setCellFormula(sheetId, selection, formulaStr);
+    if (formulaStr !== '') {
+      setCellFormula(selection, formulaStr);
+    } else if (selection.cellId) {
+      deleteCellProp(selection.cellId);
     }
   }
 
@@ -108,7 +120,7 @@ class FormulaComponent extends Component {
 
 const mapDispatchToProps = dispatch => ({
   deleteCellProp: cellId => dispatch(deleteCell(cellId)),
-  setCellFormula: (sheetId, cellId, formula) => dispatch(setFormula(sheetId, cellId, formula)),
+  setCellFormula: (context, cellId, formula) => dispatch(setFormula(context, cellId, formula)),
 });
 
 export default connect(
