@@ -1,4 +1,4 @@
-import { unparseTerm } from './parser';
+import { unparseTerm } from './unparser';
 import { translateTerm } from './selectors';
 
 describe('unparser', () => {
