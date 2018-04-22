@@ -102,8 +102,9 @@ class SheetContentsComponent extends Component {
     const wantedNewX = selectedCell ?
       maybeBreakOut(selX, dx, selectedCell.x, selectedCell.width) :
       selX + dx;
-    const newY = clampOverlap(wantedNewY, 1, 0, Infinity);
-    const newX = clampOverlap(wantedNewX, 1, 0, Infinity);
+    const { yLowerBound, yUpperBound, xLowerBound, xUpperBound } = this.props;
+    const newY = clampOverlap(wantedNewY, 1, yLowerBound, yUpperBound);
+    const newX = clampOverlap(wantedNewX, 1, xLowerBound, xUpperBound);
     if (newY === selY && newX === selX) return;
     this.setSelection(newY, newX);
     event.preventDefault();
@@ -280,6 +281,10 @@ class SheetContentsComponent extends Component {
 
 const mapStateToProps = (state, ownProps) => ({
   cells: getCellsBySheetId(state, ownProps.sheetId),
+  yLowerBound: 0,
+  yUpperBound: Infinity,
+  xLowerBound: 0,
+  xUpperBound: Infinity,
 });
 
 const mapDispatchToProps = dispatch => ({
