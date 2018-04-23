@@ -55,6 +55,8 @@ const lexOne = (input, i) => {
   if (next.match(/^[<>+\-*/%&|^]$/)) return lexOp(input, i);
   if (next === '(') return { matchEnd: i + 1, token: { open: '(' } };
   if (next === ')') return { matchEnd: i + 1, token: { close: ')' } };
+  if (next === '[') return { matchEnd: i + 1, token: { openBracket: '[' } };
+  if (next === ']') return { matchEnd: i + 1, token: { closeBracket: ']' } };
   if (canStartName(next)) return lexName(input, i);
   if (next.match(/^[0-9]$/)) return lexNumber(input, i);
   if (next === '"') return lexString(input, i);

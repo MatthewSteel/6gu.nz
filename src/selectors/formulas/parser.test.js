@@ -3,7 +3,7 @@ import { parseFormula, parseTokens } from './parser';
 
 describe('parser', () => {
   it('parses a complicated call', () => {
-    const formula = 'a.b(foo=bar.baz.arf, quux=1+"hi").field';
+    const formula = 'a.b(foo=bar.baz.arf[10], quux=1+"hi").field';
     const tokens = [
       { name: 'a' },
       { lookup: '.' },
@@ -16,6 +16,9 @@ describe('parser', () => {
       { name: 'baz' },
       { lookup: '.' },
       { name: 'arf' },
+      { openBracket: '[' },
+      { value: 10 },
+      { closeBracket: ']' },
       { comma: ',' },
       { name: 'quux' },
       { assignment: '=' },
@@ -30,7 +33,16 @@ describe('parser', () => {
       call: { lookup: { name: 'b' }, name: 'a' },
       args: [{
         ref: { name: 'foo' },
-        expr: [{ lookup: { lookup: { name: 'arf' }, name: 'baz' }, name: 'bar' }],
+        expr: [{
+          name: 'bar',
+          lookup: {
+            name: 'baz',
+            lookup: {
+              name: 'arf',
+              lookupIndex: [{ value: 10 }],
+            },
+          },
+        }],
       }, {
         ref: { name: 'quux' },
         expr: [{ value: 1 }, { op: '+' }, { value: 'hi' }],

@@ -39,6 +39,20 @@ const parseLookups = (tokens, i, lookupObj) => {
       ret.lookup = nextLookup;
       return { term: ret, newIndex: endOfLookups };
     }
+    if (nextToken.openBracket) {
+      const {
+        term: expression,
+        newIndex: expressionIndex,
+      } = parseExpression(tokens, i + 2);
+      if (
+        !tokens[expressionIndex] ||
+        !tokens[expressionIndex].closeBracket
+      ) {
+        throw new Error('Missing close bracket after index expression');
+      }
+      ret.lookupIndex = expression;
+      return { term: ret, newIndex: expressionIndex + 1 };
+    }
   }
   return { term: ret, newIndex: i + 1 };
 };
@@ -150,7 +164,7 @@ const parseExpression = (tokens, i) => {
     const { term, newIndex } = parseTerm(tokens, j);
     elements.push(term);
     j = newIndex;
-    if (j === tokens.length || tokens[j].close || tokens[j].comma) {
+    if (j === tokens.length || tokens[j].close || tokens[j].comma || tokens[j].closeBracket) {
       return {
         term: elements,
         newIndex: j,
