@@ -11,6 +11,7 @@ describe('unparser', () => {
           name: 'other_cell',
           lookup: {
             name: 'field',
+            lookupIndex: [{ value: 10 }],
           },
         }, {
           op: '*',
@@ -20,6 +21,6 @@ describe('unparser', () => {
       }],
       lookup: { name: 'field2' },
     };
-    expect(translateTerm(term, null, unparseTerm)).toEqual('called_cell(s.c=other_cell.field * 5).field2');
+    expect(translateTerm(term, null, unparseTerm)).toEqual('called_cell(s.c=other_cell.field[10] * 5).field2');
   });
 });

@@ -29,8 +29,13 @@ export const unparseTerm = (term, sheetId) => {
   if (term.lookup) {
     const termWithoutLookup = { ...term, lookup: undefined };
     const pre = unparseTerm(termWithoutLookup, sheetId);
-    const post = unparseTerm(term.lookup, sheetId);
-    return `${pre}.${post}`;
+    return `${pre}.${term.lookup}`;
+  }
+  if (term.lookupIndex) {
+    const termWithoutLookup = { ...term, lookupIndex: undefined };
+    const pre = unparseTerm(termWithoutLookup, sheetId);
+    const post = term.lookupIndex.join(' ');
+    return `${pre}[${post}]`;
   }
   if (term.call) {
     const argsText = term.args

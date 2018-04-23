@@ -103,17 +103,21 @@ const translateCall = (term, sheetId, f) => {
   );
 };
 
+
 export const translateTerm = (term, sheetId, f) => {
-  if (term.name || term.ref) return f(term, sheetId);
-  if ('value' in term || term.op) return f(term, sheetId);
-  if (term.call) return translateCall(term, sheetId, f);
-  if (term.expression) {
+  const ret = { ...term };
+  if (ret.lookup) ret.lookup = translateTerm(ret.lookup, sheetId, f);
+  if (ret.lookupIndex) ret.lookupIndex = translateExpr(ret.lookupIndex, sheetId, f);
+  if (ret.name || ret.ref) return f(ret, sheetId);
+  if ('value' in ret || ret.op) return f(ret, sheetId);
+  if (ret.call) return translateCall(ret, sheetId, f);
+  if (ret.expression) {
     return f(
-      { expression: translateExpr(term.expression, sheetId, f) },
+      { expression: translateExpr(ret.expression, sheetId, f) },
       sheetId,
     );
   }
-  if (term.badFormula) return f(term, sheetId);
+  if (ret.badFormula) return f(ret, sheetId);
   throw new Error('Unknown term type');
 };
 
