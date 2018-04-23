@@ -24,19 +24,23 @@ const parseOperators = (tokens, i) => {
 
 const parseLookups = (tokens, i, lookupObj) => {
   const ret = { ...lookupObj };
-  let lastToken = ret;
-  let j;
-  for (j = i + 1; j < tokens.length && tokens[j].lookup; j += 2) {
-    if (j + 1 === tokens.length || !tokens[j + 1].name) {
-      throw new Error('Expected name to be looked up');
+  if (tokens[i + 1]) {
+    const nextToken = tokens[i + 1];
+    if (nextToken.lookup) {
+      if (!tokens[i + 2] || !tokens[i + 2].name) {
+        throw new Error('Expected name to be looked up');
+      }
+      const { term: nextLookup, newIndex: endOfLookups } = parseLookups(
+        tokens,
+        i + 2,
+        tokens[i + 2],
+      );
+
+      ret.lookup = nextLookup;
+      return { term: ret, newIndex: endOfLookups };
     }
-    lastToken.lookup = { ...tokens[j + 1] };
-    lastToken = tokens[j + 1];
   }
-  return {
-    term: ret,
-    newIndex: j,
-  };
+  return { term: ret, newIndex: i + 1 };
 };
 
 
