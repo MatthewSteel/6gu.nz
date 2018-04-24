@@ -164,10 +164,10 @@ export const flattenExpr = (expr) => {
   return ret;
 };
 
-const refEdges = (ref, sheetsById) => {
+const refEdges = (ref) => {
   if (ref.type === CELL) {
     return flattenExpr(ref.formula)
-      .filter(term => term.ref && !refError(term, sheetsById))
+      .filter(term => term.ref && !refError(term))
       .map(term => term.ref);
   }
   if (ref.type !== SHEET) {
@@ -180,8 +180,7 @@ const refEdges = (ref, sheetsById) => {
 // Predecessor/successor relations in the formula/computation graph.
 const getFormulaGraphs = createSelector(
   getRefs,
-  getSheetsById,
-  (refs, sheetsById) => {
+  (refs) => {
     const forwardsGraph = {};
     const backwardsGraph = {};
     refs.forEach(({ id }) => {
@@ -189,7 +188,7 @@ const getFormulaGraphs = createSelector(
       backwardsGraph[id] = [];
     });
     refs.forEach((ref) => {
-      refEdges(ref, sheetsById).forEach((jNodeId) => {
+      refEdges(ref).forEach((jNodeId) => {
         forwardsGraph[ref.id].push(jNodeId);
         backwardsGraph[jNodeId].push(ref.id);
       });
@@ -354,20 +353,16 @@ const sheetValue = (sheetId, globals) => {
 // eslint-disable-next-line no-unused-vars
 const pleaseThrow = (s) => { throw new Error(s); };
 
-const refError = (term, sheetsById) => {
+const refError = (term) => {
   if (term.badFormula) return 'Bad formula';
   if (term.name) return refErrorMessage(term.name);
-  if (term.lookup && sheetsById[term.on.ref]) {
-    const sheetName = sheetsById[term.on.ref].name;
-    return refErrorMessage(`${sheetName}.${term.lookup}`);
-  }
   return false;
 };
 
-const cellExpression = (cell, sheetsById) => {
+const cellExpression = (cell) => {
   const allTerms = flattenExpr(cell.formula);
   const termErrors = allTerms
-    .map(term => refError(term, sheetsById))
+    .map(term => refError(term))
     .filter(Boolean);
   if (termErrors.length > 0) {
     return `pleaseThrow(${termErrors[0]})`;
@@ -375,29 +370,28 @@ const cellExpression = (cell, sheetsById) => {
   return expandExpr(cell.formula);
 };
 
-const refExpression = (ref, sheetsById) => {
+const refExpression = (ref) => {
   if (ref.type === SHEET) {
     return `globals.sheetValue(${JSON.stringify(ref.id)}, globals)`;
   }
   if (ref.type !== CELL) {
     throw new Error(`unknown object type ${ref.type}`);
   }
-  return cellExpression(ref, sheetsById);
+  return cellExpression(ref);
 };
 
-const getRefExpressions = (refs, sheetsById) => {
+const getRefExpressions = (refs) => {
   const ret = {};
   refs.forEach((ref) => {
-    ret[ref.id] = refExpression(ref, sheetsById);
+    ret[ref.id] = refExpression(ref);
   });
   return ret;
 };
 
 export const getCellValuesById = createSelector(
   getRefs,
-  getSheetsById,
   getTopoSortedRefIds,
-  (refs, sheetsById, sortedRefIds) => {
+  (refs, sortedRefIds) => {
     const globals = { getNamedMember, formulaRef, sheetValue, pleaseThrow };
 
     // Initialize circular refs and things that depend on them.
@@ -406,7 +400,7 @@ export const getCellValuesById = createSelector(
     });
 
     // All expressions for cells and sheets
-    const refExpressions = getRefExpressions(refs, sheetsById);
+    const refExpressions = getRefExpressions(refs);
 
     // Write all functions
     const allFormulas = refs.map(({ formula }) => formula).filter(Boolean);

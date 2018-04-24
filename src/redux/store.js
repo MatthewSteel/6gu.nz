@@ -1,7 +1,7 @@
 import { createStore } from 'redux';
 import uuidv4 from 'uuid-v4';
 import {
-  getCellsById,
+  getRefsById,
   flattenExpr,
   translateExpr,
 } from '../selectors/formulas/selectors';
@@ -142,7 +142,7 @@ const rootReducer = (state, action) => {
     // I think "in the future" we will have a lot of state to keep track
     // of :-/
     const { cellId } = action.payload;
-    const existingCell = getCellsById(state)[cellId];
+    const existingCell = getRefsById(state)[cellId];
     if (!existingCell) return state;
 
     const translateFormula = (cell) => {

@@ -4,7 +4,7 @@ import {
   getCellValuesById,
   getSheets,
   getSheetsById,
-  getCellsById,
+  getRefsById,
 } from '../../selectors/formulas/selectors';
 import { loadFile } from '../../redux/store';
 import SheetComponent from '../SheetComponent/SheetComponent';
@@ -12,7 +12,7 @@ import FileComponent from '../FileComponent/FileComponent';
 
 const mapStateToProps = state => ({
   cellValuesById: getCellValuesById(state),
-  cellsById: getCellsById(state),
+  refsById: getRefsById(state),
   sheetsById: getSheetsById(state),
   sheets: getSheets(state),
 });
@@ -105,7 +105,7 @@ class BookComponent extends PureComponent {
 
   render() {
     const {
-      cellsById,
+      refsById,
       cellValuesById,
       sheets,
       loadFileProp,
@@ -125,7 +125,7 @@ class BookComponent extends PureComponent {
         const newData = lastViewData.byId[stackRef];
         pathStillValid = pathStillValid && newData;
         if (pathStillValid) {
-          const { name } = cellsById[stackRef];
+          const { name } = refsById[stackRef];
           viewData.push({
             ...newData.value,
             path: `${lastViewData.path}.${name}`,
