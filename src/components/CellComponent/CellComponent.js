@@ -1,14 +1,22 @@
 import React, { Fragment } from 'react';
 import classNames from 'classnames';
 import EmptyCellComponent from './EmptyCellComponent';
+import { getType } from '../../selectors/formulas/tables';
 import './CellComponent.css';
 
 const defaultFormatter = (value, pushStack) => {
   if (typeof value === 'string') return value;
-  if (value instanceof Array) {
-    return `[${value.length}]`;
+  if (typeof value === 'number') return value.toString();
+  if (typeof value === 'boolean') {
+    return (
+      <input type="checkbox" checked={value} disabled />
+    );
   }
-  if (typeof value === 'object' && value.constructor === Object) {
+  const ourType = getType(value);
+  if (ourType === 'array') {
+    return `[${value.arr.length}]`;
+  }
+  if (ourType === 'object') {
     const contentsStr = `{${Object.keys(value.byName).length}}`;
     if (value.template) {
       return (
@@ -19,12 +27,6 @@ const defaultFormatter = (value, pushStack) => {
       );
     }
     return contentsStr;
-  }
-  if (typeof value === 'number') return value.toString();
-  if (typeof value === 'boolean') {
-    return (
-      <input type="checkbox" checked={value} disabled />
-    );
   }
   return JSON.stringify(value);
 };

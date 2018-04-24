@@ -9,7 +9,7 @@ export class TableArray {
     if (this.keys) return; // already initialised
 
     // Check it's a table
-    const firstValue = this.arr.find(({ value }) => value);
+    const firstValue = this.arr.find(cell => cell && cell.value);
     if (!firstValue) return;
     const { byName } = firstValue.value;
     if (!byName) return;
@@ -52,7 +52,7 @@ export const getType = (value) => {
   // If it's a table literal, we might be able to tell by the cell type.
   if (value.byName) return 'object';
   if (value instanceof TableArray) {
-    if (value.isTable) return 'table';
+    if (value.isTable()) return 'table';
     return 'array';
   }
   return 'primitive'; // probably...
