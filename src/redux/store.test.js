@@ -60,6 +60,13 @@ describe('actions/the store', () => {
       override: false,
     });
     expect(stringFormula(x2.id)).toBe(`x = ${s1Name}.y(x=10)`);
+
+    store.dispatch(setFormula({ context: sheet2.id, y: 4, x: 0 }, `y=${s1Name}.y`));
+    const y2 = getCells(store.getState()).find(({ y }) => y === 4);
+    expect(getCellValue(y2)).toEqual({
+      value: 12,
+      override: false,
+    });
   });
 
   it('handles deletions and re-wiring', () => {

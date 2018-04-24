@@ -101,28 +101,22 @@ const rootReducer = (state, action) => {
         otherCell.formula,
         otherCell.sheetId,
         (term, termSheetId) => {
-          // ref is `sheetId.cellName` for a different sheet
+          // ref is `sheetId.cellName`
           if (
-            cell.sheetId !== termSheetId &&
-            term.ref === cell.sheetId &&
             term.lookup &&
-            term.lookup.name === cell.name
+            term.on.ref === cell.sheetId &&
+            term.lookup === cell.name
           ) {
             somethingDifferent = true;
-            return {
-              ...term,
-              name: undefined,
-              lookup: undefined,
-              ref: cell.id,
-            };
+            return { ref: cell.id };
           }
           // ref is `cellName` for a cell in the same sheet
           if (
             cell.sheetId === termSheetId &&
-            term.ref === cell.name
+            term.name === cell.name
           ) {
             somethingDifferent = true;
-            return { ...term, name: undefined, ref: cell.id };
+            return { ref: cell.id };
           }
           return term;
         },
@@ -161,11 +155,11 @@ const rootReducer = (state, action) => {
           if (term.ref !== cellId) return term;
           if (existingCell.sheetId !== sheetId) {
             return {
-              ref: existingCell.sheetId,
-              lookup: { name: existingCell.name },
+              lookup: existingCell.name,
+              on: { ref: existingCell.sheetId },
             };
           }
-          return { ...term, ref: existingCell.name };
+          return { name: existingCell.name };
         }),
       };
     };

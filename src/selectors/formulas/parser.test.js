@@ -30,24 +30,26 @@ describe('parser', () => {
       { name: 'field' },
     ];
     const expectedOutput = [{
-      call: { lookup: { name: 'b' }, name: 'a' },
-      args: [{
-        ref: { name: 'foo' },
-        expr: [{
-          name: 'bar',
-          lookup: {
-            name: 'baz',
-            lookup: {
-              name: 'arf',
-              lookupIndex: [{ value: 10 }],
+      lookup: 'field',
+      on: {
+        call: { lookup: 'b', on: { name: 'a' } },
+        args: [{
+          ref: { name: 'foo' },
+          expr: [{
+            lookupIndex: [{ value: 10 }],
+            on: {
+              lookup: 'arf',
+              on: {
+                lookup: 'baz',
+                on: { name: 'bar' },
+              },
             },
-          },
+          }],
+        }, {
+          ref: { name: 'quux' },
+          expr: [{ value: 1 }, { op: '+' }, { value: 'hi' }],
         }],
-      }, {
-        ref: { name: 'quux' },
-        expr: [{ value: 1 }, { op: '+' }, { value: 'hi' }],
-      }],
-      lookup: { name: 'field' },
+      },
     }];
 
     expect(lexFormula(formula)).toEqual(tokens); // Just in case...
@@ -59,7 +61,7 @@ describe('parser', () => {
     expect(parseFormula('foo =')).toEqual({ name: 'foo' });
     expect(parseFormula('foo = bar')).toEqual({
       name: 'foo',
-      formula: [{ ref: 'bar', lookup: undefined }],
+      formula: [{ name: 'bar' }],
     });
     expect(parseFormula('foo = bar +')).toEqual({
       name: 'foo',

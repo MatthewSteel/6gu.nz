@@ -26,16 +26,10 @@ const unparseRef = (id, sheetId) => {
 };
 
 export const unparseTerm = (term, sheetId) => {
-  if (term.lookup) {
-    const termWithoutLookup = { ...term, lookup: undefined };
-    const pre = unparseTerm(termWithoutLookup, sheetId);
-    return `${pre}.${term.lookup}`;
-  }
+  if (term.lookup) return `${term.on}.${term.lookup}`;
   if (term.lookupIndex) {
-    const termWithoutLookup = { ...term, lookupIndex: undefined };
-    const pre = unparseTerm(termWithoutLookup, sheetId);
-    const post = term.lookupIndex.join(' ');
-    return `${pre}[${post}]`;
+    const args = term.lookupIndex.join(' ');
+    return `${term.on}[${args}]`;
   }
   if (term.call) {
     const argsText = term.args

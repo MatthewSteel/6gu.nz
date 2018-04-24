@@ -23,38 +23,31 @@ const parseOperators = (tokens, i) => {
 };
 
 const parseLookups = (tokens, i, lookupObj) => {
-  const ret = { ...lookupObj };
-  if (tokens[i + 1]) {
-    const nextToken = tokens[i + 1];
+  if (tokens[i]) {
+    const nextToken = tokens[i];
     if (nextToken.lookup) {
-      if (!tokens[i + 2] || !tokens[i + 2].name) {
+      if (!tokens[i + 1] || !tokens[i + 1].name) {
         throw new Error('Expected name to be looked up');
       }
-      const { term: nextLookup, newIndex: endOfLookups } = parseLookups(
-        tokens,
-        i + 2,
-        tokens[i + 2],
-      );
-
-      ret.lookup = nextLookup;
-      return { term: ret, newIndex: endOfLookups };
+      const termSoFar = { lookup: tokens[i + 1].name, on: lookupObj };
+      return parseLookups(tokens, i + 2, termSoFar);
     }
     if (nextToken.openBracket) {
       const {
         term: expression,
         newIndex: expressionIndex,
-      } = parseExpression(tokens, i + 2);
+      } = parseExpression(tokens, i + 1);
       if (
         !tokens[expressionIndex] ||
         !tokens[expressionIndex].closeBracket
       ) {
         throw new Error('Missing close bracket after index expression');
       }
-      ret.lookupIndex = expression;
-      return { term: ret, newIndex: expressionIndex + 1 };
+      const termSoFar = { lookupIndex: expression, on: lookupObj };
+      return parseLookups(tokens, expressionIndex + 1, termSoFar);
     }
   }
-  return { term: ret, newIndex: i + 1 };
+  return { term: lookupObj, newIndex: i };
 };
 
 
@@ -73,7 +66,7 @@ const parseArgsList = (tokens, i) => {
     const {
       term: lookups,
       newIndex: eqIndex,
-    } = parseLookups(tokens, j, tokens[j]);
+    } = parseLookups(tokens, j + 1, tokens[j]);
     if (eqIndex === tokens.length || !tokens[eqIndex].assignment) {
       throw new Error('Expected assignment in argument');
     }
@@ -108,9 +101,15 @@ const parseArgsList = (tokens, i) => {
 
 
 const parseTermFromName = (tokens, i) => {
-  const { term, newIndex } = parseLookups(tokens, i, tokens[i]);
+  const { term, newIndex } = parseLookups(tokens, i + 1, tokens[i]);
   const nextToken = tokens[newIndex];
-  if (nextToken === undefined || nextToken.op || nextToken.close || nextToken.comma) {
+  if (
+    nextToken === undefined ||
+    nextToken.op ||
+    nextToken.close ||
+    nextToken.comma ||
+    nextToken.closeBracket
+  ) {
     return {
       term,
       newIndex,
@@ -125,7 +124,7 @@ const parseTermFromName = (tokens, i) => {
       call: term,
       args: argsData.term,
     };
-    const finalExpr = parseLookups(tokens, argsData.newIndex - 1, callTerm);
+    const finalExpr = parseLookups(tokens, argsData.newIndex, callTerm);
     return {
       term: finalExpr.term,
       newIndex: finalExpr.newIndex,
@@ -208,49 +207,45 @@ const getNameFromTokens = (tokens) => {
 // a good ref-suggestion tab-completion engine will avoid us having to
 // rely on this so much.
 const subNamesForRefsInName = (term, sheetId) => {
-  // Three cases:
-  // 1. It's the name of a cell in our sheet. Make a straight ref.
-  // 2. It's the name of another sheet. Make a straight ref.
-  // 3. It's a cell looked up on another sheet. Make a ref to it.
-  // Any further lookups are made by name -- no translations.
   const mySheetCellsByName = getCellsByNameForSheetId(
     store.getState(),
     sheetId,
   );
   const maybeMyCell = mySheetCellsByName[term.name];
-
-  const sheetsByName = getSheetsByName(store.getState());
-  const maybeThatSheet = sheetsByName[term.name];
-
-  let eventualRef = term.name; // a bad reference if not replaced
-  let eventualLookup = term.lookup;
   if (maybeMyCell) {
-    eventualRef = maybeMyCell.id;
-  } else if (maybeThatSheet) {
-    if (!term.lookup) {
-      // Just `=sheet`, not `=sheet.cell`
-      eventualRef = maybeThatSheet.id;
-    } else {
-      // `=sheet.cell`, we hope
-      const thatSheetCellsByName = getCellsByNameForSheetId(
-        store.getState(),
-        maybeThatSheet.id,
-      );
-      const thatCell = thatSheetCellsByName[term.lookup.name];
-      if (thatCell) {
-        eventualRef = thatCell.id;
-        eventualLookup = thatCell.lookup;
-      }
-    }
+    return { ref: maybeMyCell.id };
   }
-  return {
-    lookup: eventualLookup,
-    ref: eventualRef,
-  };
+
+  const maybeThatSheet = getSheetsByName(store.getState())[term.name];
+  if (maybeThatSheet) {
+    return { ref: maybeThatSheet.id };
+  }
+
+  return term; // bad ref
+};
+
+const subNamesForRefsInLookup = (term) => {
+  // This turns "tableRef.cellName" into "cellRef".
+  if (!term.on.ref) return term;
+  const { ref } = term.on;
+  const cellsByNameForSheetId = getCellsByNameForSheetId(
+    store.getState(),
+    ref,
+  );
+  const maybeCell = cellsByNameForSheetId[term.lookup];
+  if (maybeCell) {
+    return { ref: maybeCell.id };
+  }
+  return term;
 };
 
 const subNamesForRefsInTerm = (term, sheetId) => {
-  if (term.name) return subNamesForRefsInName(term, sheetId);
+  if (term.name) {
+    return subNamesForRefsInName(term, sheetId);
+  }
+  if (term.lookup) {
+    return subNamesForRefsInLookup(term);
+  }
   if (term.call) {
     const argRefs = term.args.map(({ ref }) => ref);
     if ([term.call, ...argRefs].some(({ lookup }) => lookup)) {

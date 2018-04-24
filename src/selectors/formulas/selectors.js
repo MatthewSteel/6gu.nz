@@ -84,7 +84,7 @@ const getSheetIdForRef = (ref, defaultSheetId) => {
 
 
 const translateCall = (term, sheetId, f) => {
-  const call = f(term.call, sheetId);
+  const call = translateTerm(term.call, sheetId, f);
   // Sometimes we're translating names -> refs, sometimes we are
   // translating refs -> printable strings etc :-(.
   const callRef = call.ref || term.call.ref;
@@ -97,27 +97,37 @@ const translateCall = (term, sheetId, f) => {
     {
       call,
       args: translatedArgs,
-      lookup: term.lookup,
     },
     sheetId,
   );
 };
 
+const translateLookup = (term, sheetId, f) => {
+  const on = translateTerm(term.on, sheetId, f);
+  return f({ lookup: term.lookup, on }, sheetId);
+};
+
+
+const translateLookupIndex = (term, sheetId, f) => {
+  const lookupIndex = translateExpr(term.lookupIndex, sheetId, f);
+  const on = translateTerm(term.on, sheetId, f);
+  return f({ lookupIndex, on }, sheetId);
+};
+
 
 export const translateTerm = (term, sheetId, f) => {
-  const ret = { ...term };
-  if (ret.lookup) ret.lookup = translateTerm(ret.lookup, sheetId, f);
-  if (ret.lookupIndex) ret.lookupIndex = translateExpr(ret.lookupIndex, sheetId, f);
-  if (ret.name || ret.ref) return f(ret, sheetId);
-  if ('value' in ret || ret.op) return f(ret, sheetId);
-  if (ret.call) return translateCall(ret, sheetId, f);
-  if (ret.expression) {
+  if (term.lookup) return translateLookup(term, sheetId, f);
+  if (term.lookupIndex) return translateLookupIndex(term, sheetId, f);
+  if (term.name || term.ref) return f(term, sheetId);
+  if ('value' in term || term.op) return f(term, sheetId);
+  if (term.call) return translateCall(term, sheetId, f);
+  if (term.expression) {
     return f(
-      { expression: translateExpr(ret.expression, sheetId, f) },
+      { expression: translateExpr(term.expression, sheetId, f) },
       sheetId,
     );
   }
-  if (ret.badFormula) return f(ret, sheetId);
+  if (term.badFormula) return f(term, sheetId);
   throw new Error('Unknown term type');
 };
 
@@ -251,23 +261,11 @@ const expandExpr = (expr) => {
 const expandRef = term => `globals.formulaRef(globals, ${JSON.stringify(term.ref)})`;
 
 const expandLookup = (term) => {
-  // obj.key1.key2 -->
-  // lookup(
-  //   lookup(
-  //     obj
-  //   , "key1")
-  // , "key2")
-  const termWithoutLookup = { ...term, lookup: undefined };
-  const obj = expandTerm(termWithoutLookup);
-  const preLookupStrings = [];
-  const postLookupStrings = [];
-  for (let l = term.lookup; l; l = l.lookup) {
-    preLookupStrings.push('globals.getNamedMember(');
-    postLookupStrings.push(`, ${JSON.stringify(l.name)})`);
-  }
-  // just want values in evaluated formulas for now.
-  return [...preLookupStrings, obj, ...postLookupStrings].join('');
+  const expandedOn = expandTerm(term.on);
+  return `globals.getNamedMember(${expandedOn}, ${JSON.stringify(term.lookup)})`;
 };
+
+const refErrorMessage = name => `(${JSON.stringify(name)} + ' does not exist.')`;
 
 const expandTerm = (term) => {
   if (term.lookup) return expandLookup(term);
@@ -339,13 +337,12 @@ const sheetValue = (sheetId, globals) => {
 // eslint-disable-next-line no-unused-vars
 const pleaseThrow = (s) => { throw new Error(s); };
 
-const refError = (term, sheetsById, cellsById) => {
-  if (term.badFormula) return term.badFormula;
-  if (term.ref && !(cellsById[term.ref] || sheetsById[term.ref])) {
-    return term.ref;
-  }
-  if (term.ref && sheetsById[term.ref] && term.lookup) {
-    return `${term.ref}.${term.lookup.name}`;
+const refError = (term, sheetsById) => {
+  if (term.badFormula) return 'Bad formula';
+  if (term.name) return refErrorMessage(term.name);
+  if (term.lookup && sheetsById[term.on.ref]) {
+    const sheetName = sheetsById[term.on.ref].name;
+    return refErrorMessage(`${sheetName}.${term.lookup}`);
   }
   return false;
 };
@@ -358,7 +355,7 @@ const cellExpressions = (cells, cellsById, sheetsById) => {
       .map(term => refError(term, sheetsById, cellsById))
       .filter(Boolean);
     if (termErrors.length > 0) {
-      ret[cell.id] = `globals.pleaseThrow(${JSON.stringify(termErrors[0])} + ' does not exist.')`;
+      ret[cell.id] = `pleaseThrow(${termErrors[0]})`;
     } else {
       ret[cell.id] = expandExpr(cell.formula);
     }
