@@ -21,6 +21,11 @@ const defaultFormatter = (value, pushStack) => {
     return contentsStr;
   }
   if (typeof value === 'number') return value.toString();
+  if (typeof value === 'boolean') {
+    return (
+      <input type="checkbox" checked={value} disabled />
+    );
+  }
   return JSON.stringify(value);
 };
 
