@@ -85,6 +85,69 @@ export const getSheetsByName = createSelector(
 );
 
 
+export const refParentId = (refId) => {
+  const refsById = getRefsById(store.getState());
+  const ref = refsById[refId];
+  if (ref.type === SHEET) return undefined;
+  if (ref.type !== CELL) throw new Error(`unknown ref type ${ref.type}`);
+  return ref.sheetId;
+};
+
+
+const refHeight = (ref) => {
+  if (ref === undefined) return 0;
+  if (ref.type === SHEET) return 1;
+  if (ref.type !== CELL) throw new Error(`unknown ref type ${ref.type}`);
+  return 2;
+};
+
+const rewriteOnRefTermToParentLookup = (innermostLookup) => {
+  if (!innermostLookup.ref) throw new Error('Must pass lookup on `refId`');
+  const refsById = getRefsById(store.getState());
+  const ref = refsById[innermostLookup.ref];
+
+  if (ref.type !== CELL) throw new Error(`unknown parent type for ${ref.type}`);
+  return { lookup: ref.name, on: { ref: ref.sheetId } };
+};
+
+
+export const lookupExpression = (contextRefId, targetRefId) => {
+  // We might "statically resolve" foo.bar[12] to a particular table cell
+  // (and not depend on the whole column `bar` being evaluated first.)
+  // This function turns a formula { ref } to that cell into a bunch of
+  // index- and name-lookups.
+  // This is kinda the opposite of the "subNames" procedure when parsing.
+  const refsById = getRefsById(store.getState());
+  let sourceContextRef = refsById[contextRefId];
+  let targetContextRef = refsById[refParentId(targetRefId)];
+
+  // Kinda ugly: The "rewrite" function replaces the `on` property with
+  // a different `on` property. We return `ret.on` at the end.
+  const ret = { on: { ref: targetRefId } };
+
+  let innermostLookup = ret;
+  while (refHeight(targetContextRef) > refHeight(sourceContextRef)) {
+    // If we are a table-cell, the table-context will need to be provided
+    // to anyone in a sheet
+    innermostLookup.on = rewriteOnRefTermToParentLookup(innermostLookup.on);
+    innermostLookup = innermostLookup.on;
+    targetContextRef = refsById[refParentId(targetContextRef.id)];
+  }
+  while (refHeight(sourceContextRef) > refHeight(targetContextRef)) {
+    // Other people's table context won't be useful to qualify a reference
+    // to us if we're just a cell in a sheet.
+    sourceContextRef = refsById[refParentId(sourceContextRef.id)];
+  }
+  while (targetContextRef !== sourceContextRef) {
+    // Similar levels of context, but "far" from each other.
+    innermostLookup.on = rewriteOnRefTermToParentLookup(innermostLookup.on);
+    innermostLookup = innermostLookup.on;
+    targetContextRef = refsById[refParentId(targetContextRef.id)];
+    sourceContextRef = refsById[refParentId(sourceContextRef.id)];
+  }
+  return ret.on;
+};
+
 // Formula translation functions: Generic ways to iterate over a forumla's
 // contents, applying a function to every element from the leaves up.
 
