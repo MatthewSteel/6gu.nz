@@ -1,5 +1,5 @@
 import { createSelector } from 'reselect';
-import store from '../../redux/store';
+import store, { SHEET, CELL } from '../../redux/store';
 import { getNamedMember } from './tables';
 
 
@@ -7,6 +7,21 @@ import { getNamedMember } from './tables';
 
 export const getCells = state => state.cells;
 export const getSheets = state => state.sheets;
+
+export const getRefs = createSelector(
+  getCells,
+  getSheets,
+  (cells, sheets) => cells.concat(sheets),
+);
+
+export const getRefsById = createSelector(
+  getRefs,
+  (refs) => {
+    const ret = {};
+    refs.forEach((ref) => { ret[ref.id] = ref; });
+    return ret;
+  },
+);
 
 export const getCellsById = createSelector(
   getCells,
@@ -73,13 +88,13 @@ export const getSheetsByName = createSelector(
 // Formula translation functions: Generic ways to iterate over a forumla's
 // contents, applying a function to every element from the leaves up.
 
-const getSheetIdForRef = (ref, defaultSheetId) => {
-  const sheetsById = getSheetsById(store.getState());
-  const cellsById = getCellsById(store.getState());
-  if (sheetsById[ref]) return ref;
-  const maybeCell = cellsById[ref];
-  if (maybeCell) return maybeCell.sheetId;
-  return defaultSheetId;
+const getSheetIdForRefId = (refId, defaultSheetId) => {
+  const refsById = getRefsById(store.getState());
+  let ref = refsById[refId];
+  if (ref && ref.type === CELL) ref = refsById[ref.sheetId];
+  // TODO: TableCell -> Row -> Table -> Sheet (+ Col -> Table)
+  if (!ref || ref.type !== SHEET) return defaultSheetId; // Not found
+  return ref.id;
 };
 
 
@@ -88,7 +103,7 @@ const translateCall = (term, sheetId, f) => {
   // Sometimes we're translating names -> refs, sometimes we are
   // translating refs -> printable strings etc :-(.
   const callRef = call.ref || term.call.ref;
-  const callSheetId = getSheetIdForRef(callRef, sheetId);
+  const callSheetId = getSheetIdForRefId(callRef, sheetId);
   const translatedArgs = term.args.map(({ ref, expr }) => ({
     ref: f(ref, callSheetId),
     expr: translateExpr(expr, sheetId, f),
@@ -149,32 +164,34 @@ export const flattenExpr = (expr) => {
   return ret;
 };
 
+const refEdges = (ref, sheetsById) => {
+  if (ref.type === CELL) {
+    return flattenExpr(ref.formula)
+      .filter(term => term.ref && !refError(term, sheetsById))
+      .map(term => term.ref);
+  }
+  if (ref.type !== SHEET) {
+    throw new Error(`Unknown element type ${ref.type}`);
+  }
+  const sheetCells = getCellsBySheetId(store.getState(), ref.id);
+  return sheetCells.map(({ id }) => id);
+};
+
 // Predecessor/successor relations in the formula/computation graph.
 const getFormulaGraphs = createSelector(
-  getCells,
-  getCellsById,
-  getSheets,
+  getRefs,
   getSheetsById,
-  (cells, cellsById, sheets, sheetsById) => {
+  (refs, sheetsById) => {
     const forwardsGraph = {};
     const backwardsGraph = {};
-    [...cells, ...sheets].forEach(({ id }) => {
+    refs.forEach(({ id }) => {
       forwardsGraph[id] = [];
       backwardsGraph[id] = [];
     });
-    cells.forEach(({ id, formula }) => {
-      const refs = flattenExpr(formula).filter(term =>
-        term.ref && !refError(term, sheetsById, cellsById));
-      refs.forEach((term) => {
-        forwardsGraph[id].push(term.ref);
-        backwardsGraph[term.ref].push(id);
-      });
-    });
-    sheets.forEach(({ id }) => {
-      const sheetCells = getCellsBySheetId(store.getState(), id);
-      sheetCells.forEach((cell) => {
-        forwardsGraph[id].push(cell.id);
-        backwardsGraph[cell.id].push(id);
+    refs.forEach((ref) => {
+      refEdges(ref, sheetsById).forEach((jNodeId) => {
+        forwardsGraph[ref.id].push(jNodeId);
+        backwardsGraph[jNodeId].push(ref.id);
       });
     });
     return {
@@ -347,56 +364,58 @@ const refError = (term, sheetsById) => {
   return false;
 };
 
-const cellExpressions = (cells, cellsById, sheetsById) => {
-  const ret = {};
-  cells.forEach((cell) => {
-    const allTerms = flattenExpr(cell.formula);
-    const termErrors = allTerms
-      .map(term => refError(term, sheetsById, cellsById))
-      .filter(Boolean);
-    if (termErrors.length > 0) {
-      ret[cell.id] = `pleaseThrow(${termErrors[0]})`;
-    } else {
-      ret[cell.id] = expandExpr(cell.formula);
-    }
-  });
-  return ret;
+const cellExpression = (cell, sheetsById) => {
+  const allTerms = flattenExpr(cell.formula);
+  const termErrors = allTerms
+    .map(term => refError(term, sheetsById))
+    .filter(Boolean);
+  if (termErrors.length > 0) {
+    return `pleaseThrow(${termErrors[0]})`;
+  }
+  return expandExpr(cell.formula);
 };
 
-const sheetExpressions = (sheets) => {
+const refExpression = (ref, sheetsById) => {
+  if (ref.type === SHEET) {
+    return `globals.sheetValue(${JSON.stringify(ref.id)}, globals)`;
+  }
+  if (ref.type !== CELL) {
+    throw new Error(`unknown object type ${ref.type}`);
+  }
+  return cellExpression(ref, sheetsById);
+};
+
+const getRefExpressions = (refs, sheetsById) => {
   const ret = {};
-  sheets.forEach(({ id }) => {
-    ret[id] = `globals.sheetValue(${JSON.stringify(id)}, globals)`;
+  refs.forEach((ref) => {
+    ret[ref.id] = refExpression(ref, sheetsById);
   });
   return ret;
 };
 
 export const getCellValuesById = createSelector(
-  getCells,
-  getSheets,
+  getRefs,
   getSheetsById,
-  getCellsById,
   getTopoSortedRefIds,
-  (allCells, allSheets, sheetsById, cellsById, sortedRefIds) => {
+  (refs, sheetsById, sortedRefIds) => {
     const globals = { getNamedMember, formulaRef, sheetValue, pleaseThrow };
 
     // Initialize circular refs and things that depend on them.
-    [...allCells, ...allSheets].forEach(({ id }) => {
+    refs.forEach(({ id }) => {
       globals[id] = [{ error: 'Error: Circular reference (or depends on one)' }];
     });
 
     // All expressions for cells and sheets
-    const refExpressions = {
-      ...cellExpressions(allCells, cellsById, sheetsById),
-      ...sheetExpressions(allSheets),
-    };
+    const refExpressions = getRefExpressions(refs, sheetsById);
 
     // Write all functions
-    const allFormulas = allCells.map(({ formula }) => formula);
+    const allFormulas = refs.map(({ formula }) => formula).filter(Boolean);
     const allTerms = [].concat(...allFormulas.map(flattenExpr));
     const allCalls = allTerms.filter(({ call }) => !!call);
     allCalls.forEach((callTerm) => {
-      globals[callSignature(callTerm)] = createFunction(callTerm, refExpressions);
+      const signature = callSignature(callTerm);
+      if (globals[signature]) return;
+      globals[signature] = createFunction(callTerm, refExpressions);
     });
 
     // Evaluate every cell.
@@ -404,18 +423,25 @@ export const getCellValuesById = createSelector(
       // eslint-disable-next-line no-eval
       eval(expandSetItem(id, refExpressions[id]));
     });
-    return getGlobalValues(globals, allCells, allSheets);
+    return getGlobalValues(globals, refs);
   },
 );
 
-// Translates the computation data into something more palatable for UI
-// consumption. No more stacks, mostly.
-const getGlobalValues = (globals, allCells, allSheets) => {
-  const ret = {};
-  allCells.forEach(({ id }) => { ret[id] = getRef(globals, id); });
+
+const getGlobalValue = (globals, ref) => {
+  if (ref.type === CELL) return getRef(globals, ref.id);
+  if (ref.type !== SHEET) throw new Error(`unknown type ${ref.type}`);
   // A bit of a hack: we should try to re-insert sheets that contain
   // circular-ref cells into the topological order, probably.
-  allSheets.forEach(({ id }) => { ret[id] = sheetValue(id, globals); });
+  // There's no need to re-evaluate these.
+  return sheetValue(ref.id, globals);
+};
+
+// Translates the computation data into something more palatable for UI
+// consumption. No more stacks, mostly.
+const getGlobalValues = (globals, refs) => {
+  const ret = {};
+  refs.forEach((ref) => { ret[ref.id] = getGlobalValue(globals, ref); });
   return ret;
 };
 
