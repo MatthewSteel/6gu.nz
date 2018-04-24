@@ -44,7 +44,7 @@ export const getCellsBySheetIdHelper = createSelector(
   },
 );
 
-const getCellsByNameForSheetIdHelper = createSelector(
+const getRefsByNameForContextIdHelper = createSelector(
   getCells,
   (cells) => {
     const ret = {};
@@ -56,9 +56,9 @@ const getCellsByNameForSheetIdHelper = createSelector(
   },
 );
 
-export const getCellsByNameForSheetId = (state, sheetId) => {
-  const cellsBySheetId = getCellsByNameForSheetIdHelper(state);
-  return cellsBySheetId[sheetId] || {};
+export const getRefsByNameForContextId = (state, contextId) => {
+  const refsByContextId = getRefsByNameForContextIdHelper(state);
+  return refsByContextId[contextId] || {};
 };
 
 export const getSheetsById = createSelector(
@@ -151,67 +151,74 @@ export const lookupExpression = (contextRefId, targetRefId) => {
 // Formula translation functions: Generic ways to iterate over a forumla's
 // contents, applying a function to every element from the leaves up.
 
-const getSheetIdForRefId = (refId, defaultSheetId) => {
+const isContext = (type) => {
+  if (type === CELL) return false;
+  if (type !== SHEET) throw new Error(`unknown type ${type}`);
+  return true;
+};
+
+export const getContextIdForRefId = (refId, defaultContextId) => {
   const refsById = getRefsById(store.getState());
-  let ref = refsById[refId];
-  if (ref && ref.type === CELL) ref = refsById[ref.sheetId];
-  // TODO: TableCell -> Row -> Table -> Sheet (+ Col -> Table)
-  if (!ref || ref.type !== SHEET) return defaultSheetId; // Not found
-  return ref.id;
+  let maybeContext = refsById[refId];
+  while (maybeContext && !isContext(maybeContext.type)) {
+    maybeContext = refsById[refParentId(maybeContext.id)];
+  }
+  if (!maybeContext) return defaultContextId;
+  return maybeContext.id;
 };
 
 
-const translateCall = (term, sheetId, f) => {
-  const call = translateTerm(term.call, sheetId, f);
+const translateCall = (term, contextId, f) => {
+  const call = translateTerm(term.call, contextId, f);
   // Sometimes we're translating names -> refs, sometimes we are
   // translating refs -> printable strings etc :-(.
   const callRef = call.ref || term.call.ref;
-  const callSheetId = getSheetIdForRefId(callRef, sheetId);
+  const callContextId = getContextIdForRefId(callRef, contextId);
   const translatedArgs = term.args.map(({ ref, expr }) => ({
-    ref: f(ref, callSheetId),
-    expr: translateExpr(expr, sheetId, f),
+    ref: f(ref, callContextId),
+    expr: translateExpr(expr, contextId, f),
   }));
   return f(
     {
       call,
       args: translatedArgs,
     },
-    sheetId,
+    contextId,
   );
 };
 
-const translateLookup = (term, sheetId, f) => {
-  const on = translateTerm(term.on, sheetId, f);
-  return f({ lookup: term.lookup, on }, sheetId);
+const translateLookup = (term, contextId, f) => {
+  const on = translateTerm(term.on, contextId, f);
+  return f({ lookup: term.lookup, on }, contextId);
 };
 
 
-const translateLookupIndex = (term, sheetId, f) => {
-  const lookupIndex = translateExpr(term.lookupIndex, sheetId, f);
-  const on = translateTerm(term.on, sheetId, f);
-  return f({ lookupIndex, on }, sheetId);
+const translateLookupIndex = (term, contextId, f) => {
+  const lookupIndex = translateExpr(term.lookupIndex, contextId, f);
+  const on = translateTerm(term.on, contextId, f);
+  return f({ lookupIndex, on }, contextId);
 };
 
 
-export const translateTerm = (term, sheetId, f) => {
-  if (term.lookup) return translateLookup(term, sheetId, f);
-  if (term.lookupIndex) return translateLookupIndex(term, sheetId, f);
-  if (term.name || term.ref) return f(term, sheetId);
-  if ('value' in term || term.op) return f(term, sheetId);
-  if (term.call) return translateCall(term, sheetId, f);
+export const translateTerm = (term, contextId, f) => {
+  if (term.lookup) return translateLookup(term, contextId, f);
+  if (term.lookupIndex) return translateLookupIndex(term, contextId, f);
+  if (term.name || term.ref) return f(term, contextId);
+  if ('value' in term || term.op) return f(term, contextId);
+  if (term.call) return translateCall(term, contextId, f);
   if (term.expression) {
     return f(
-      { expression: translateExpr(term.expression, sheetId, f) },
-      sheetId,
+      { expression: translateExpr(term.expression, contextId, f) },
+      contextId,
     );
   }
-  if (term.badFormula) return f(term, sheetId);
+  if (term.badFormula) return f(term, contextId);
   throw new Error('Unknown term type');
 };
 
 
-export const translateExpr = (expr, sheetId, f) =>
-  expr.map(term => translateTerm(term, sheetId, f));
+export const translateExpr = (expr, contextId, f) =>
+  expr.map(term => translateTerm(term, contextId, f));
 
 
 export const flattenExpr = (expr) => {

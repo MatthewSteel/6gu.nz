@@ -1,9 +1,12 @@
-import store from '../../redux/store';
+import store, { SHEET } from '../../redux/store';
 import { lexFormula } from './lexer';
 
 import {
-  getCellsByNameForSheetId,
+  getContextIdForRefId,
+  getRefsById,
+  getRefsByNameForContextId,
   getSheetsByName,
+  refParentId,
   translateExpr,
 } from './selectors';
 
@@ -206,46 +209,45 @@ const getNameFromTokens = (tokens) => {
 // Post-processing: turn string names into refs. Hopefully in the future
 // a good ref-suggestion tab-completion engine will avoid us having to
 // rely on this so much.
-const subNamesForRefsInName = (term, sheetId) => {
-  const mySheetCellsByName = getCellsByNameForSheetId(
-    store.getState(),
-    sheetId,
-  );
-  const maybeMyCell = mySheetCellsByName[term.name];
-  if (maybeMyCell) {
-    return { ref: maybeMyCell.id };
+const subNamesForRefsInName = (term, contextId) => {
+  // Check cols in table, cells in sheet.
+  let thisContextId = contextId;
+  while (thisContextId) {
+    const maybeMyRef = getRefsByNameForContextId(
+      store.getState(),
+      thisContextId,
+    )[term.name];
+    if (maybeMyRef) return { ref: maybeMyRef.id };
+    thisContextId = getContextIdForRefId(refParentId(thisContextId));
   }
 
-  const maybeThatSheet = getSheetsByName(store.getState())[term.name];
-  if (maybeThatSheet) {
-    return { ref: maybeThatSheet.id };
+  // Check sheets in book
+  const maybeSheet = getSheetsByName(store.getState())[term.name];
+  if (maybeSheet) {
+    return { ref: maybeSheet.id };
   }
 
   return term; // bad ref
 };
 
 const subNamesForRefsInLookup = (term) => {
-  // This turns "tableRef.cellName" into "cellRef".
+  // This turns "tableRef.cellName" into "cellRef" etc.
+  // Should do colRef[index] too.
   if (!term.on.ref) return term;
-  const { ref } = term.on;
-  const cellsByNameForSheetId = getCellsByNameForSheetId(
-    store.getState(),
-    ref,
-  );
-  const maybeCell = cellsByNameForSheetId[term.lookup];
-  if (maybeCell) {
-    return { ref: maybeCell.id };
+  const { ref: refId } = term.on;
+  const ref = getRefsById(store.getState())[refId];
+  if (ref.type === SHEET) {
+    const maybeCell = getRefsByNameForContextId(store.getState(), refId)[term.lookup];
+    if (maybeCell) {
+      return { ref: maybeCell.id };
+    }
   }
   return term;
 };
 
-const subNamesForRefsInTerm = (term, sheetId) => {
-  if (term.name) {
-    return subNamesForRefsInName(term, sheetId);
-  }
-  if (term.lookup) {
-    return subNamesForRefsInLookup(term);
-  }
+const subNamesForRefsInTerm = (term, contextId) => {
+  if (term.name) return subNamesForRefsInName(term, contextId);
+  if (term.lookup) return subNamesForRefsInLookup(term);
   if (term.call) {
     const argRefs = term.args.map(({ ref }) => ref);
     if ([term.call, ...argRefs].some(({ lookup }) => lookup)) {
@@ -255,15 +257,15 @@ const subNamesForRefsInTerm = (term, sheetId) => {
   return term;
 };
 
-const subNamesForRefs = (nameFormula, sheetId) => {
+const subNamesForRefs = (nameFormula, contextId) => {
   if (!nameFormula) return {};
-  return { formula: translateExpr(nameFormula, sheetId, subNamesForRefsInTerm) };
+  return { formula: translateExpr(nameFormula, contextId, subNamesForRefsInTerm) };
 };
 
-const parseFormulaExpr = (tokens, formulaStart, sheetId, s) => {
+const parseFormulaExpr = (tokens, formulaStart, contextId, s) => {
   try {
     return {
-      ...subNamesForRefs(parseTokens(tokens, formulaStart), sheetId),
+      ...subNamesForRefs(parseTokens(tokens, formulaStart), contextId),
     };
   } catch (e) {
     // Bad formula, but we might at least have a name. Stick everything
@@ -277,13 +279,13 @@ const parseFormulaExpr = (tokens, formulaStart, sheetId, s) => {
   }
 };
 
-export const parseFormula = (s, sheetId) => {
+export const parseFormula = (s, contextId) => {
   try {
     const tokens = lexFormula(s);
     const { formulaStart, formulaName } = getNameFromTokens(tokens);
     return {
       ...formulaName,
-      ...parseFormulaExpr(tokens, formulaStart, sheetId, s),
+      ...parseFormulaExpr(tokens, formulaStart, contextId, s),
     };
   } catch (e) {
     // Really bad -- can't lex or get a name... Formula is totally
