@@ -10,6 +10,8 @@ import defaultCellName from '../selectors/formulas/defaultCellName';
 
 export const SHEET = 'sheet';
 export const CELL = 'cell';
+export const ARRAY = 'array';
+export const ARRAY_CELL = 'array_cell';
 
 
 export const selectionsEqual = (sel1, sel2) => {
@@ -96,6 +98,7 @@ const rootReducer = (state, action) => {
     };
 
     const rewireBadRefs = (otherCell) => {
+      if (!otherCell.formula) return otherCell;
       let somethingDifferent = false;
       const translatedFormula = translateExpr(
         otherCell.formula,
@@ -146,6 +149,7 @@ const rootReducer = (state, action) => {
     if (!existingCell) return state;
 
     const translateFormula = (cell) => {
+      if (!cell.formula) return cell;
       if (!flattenExpr(cell.formula).some(({ ref }) => ref === cellId)) {
         return cell;
       }

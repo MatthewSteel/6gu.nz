@@ -1,6 +1,6 @@
 import { createSelector } from 'reselect';
-import store, { SHEET, CELL } from '../../redux/store';
-import { getNamedMember } from './tables';
+import store, { ARRAY, SHEET, CELL } from '../../redux/store';
+import { getNamedMember, TableArray } from './tables';
 
 
 // Simple "get raw state" selectors (for the moment?)
@@ -23,23 +23,24 @@ export const getRefsById = createSelector(
   },
 );
 
+export const getChildrenByParentId = createSelector(
+  getRefs,
+  (refs) => {
+    const ret = {};
+    refs.forEach((ref) => { ret[ref.id] = []; });
+    refs.forEach((ref) => {
+      if (ref.sheetId) ret[ref.sheetId].push(ref);
+      if (ref.arrayId) ret[ref.arrayId].push(ref);
+    });
+    return ret;
+  },
+);
+
 export const getCellsById = createSelector(
   getCells,
   (cells) => {
     const ret = {};
     cells.forEach((cell) => { ret[cell.id] = cell; });
-    return ret;
-  },
-);
-
-export const getCellsBySheetIdHelper = createSelector(
-  getCells,
-  (cells) => {
-    const ret = {};
-    cells.forEach((cell) => {
-      if (!ret[cell.sheetId]) ret[cell.sheetId] = [];
-      ret[cell.sheetId].push(cell);
-    });
     return ret;
   },
 );
@@ -69,11 +70,6 @@ export const getSheetsById = createSelector(
     return ret;
   },
 );
-
-export const getCellsBySheetId = (state, sheetId) => {
-  const cellsBySheetId = getCellsBySheetIdHelper(state);
-  return cellsBySheetId[sheetId] || [];
-};
 
 export const getSheetsByName = createSelector(
   getSheets,
@@ -235,16 +231,13 @@ export const flattenExpr = (expr) => {
 };
 
 const refEdges = (ref) => {
-  if (ref.type === CELL) {
+  if (ref.formula) {
     return flattenExpr(ref.formula)
       .filter(term => term.ref && !refError(term))
       .map(term => term.ref);
   }
-  if (ref.type !== SHEET) {
-    throw new Error(`Unknown element type ${ref.type}`);
-  }
-  const sheetCells = getCellsBySheetId(store.getState(), ref.id);
-  return sheetCells.map(({ id }) => id);
+  const children = getChildrenByParentId(store.getState())[ref.id];
+  return children.map(({ id }) => id);
 };
 
 // Predecessor/successor relations in the formula/computation graph.
@@ -406,7 +399,7 @@ const formulaRef = (globals, ref) => {
 
 // Make a literal struct from a sheet's cells.
 const sheetValue = (sheetId, globals) => {
-  const sheetCells = getCellsBySheetId(store.getState(), sheetId);
+  const sheetCells = getChildrenByParentId(store.getState())[sheetId];
   const ret = {
     byId: {},
     byName: {},
@@ -420,6 +413,16 @@ const sheetValue = (sheetId, globals) => {
   return ret;
 };
 
+const arrayValue = (arrayId, globals) => {
+  const arrayRef = getRefsById(store.getState())[arrayId];
+  const storage = new Array(arrayRef.length);
+  const arrayCells = getChildrenByParentId(store.getState())[arrayId];
+  arrayCells.forEach(({ index, id }) => {
+    storage[index] = getRef(globals, id);
+  });
+  return new TableArray(storage);
+};
+
 // eslint-disable-next-line no-unused-vars
 const pleaseThrow = (s) => { throw new Error(s); };
 
@@ -429,25 +432,28 @@ const refError = (term) => {
   return false;
 };
 
-const cellExpression = (cell) => {
-  const allTerms = flattenExpr(cell.formula);
+const formulaExpression = (formula) => {
+  const allTerms = flattenExpr(formula);
   const termErrors = allTerms
     .map(term => refError(term))
     .filter(Boolean);
   if (termErrors.length > 0) {
     return `pleaseThrow(${termErrors[0]})`;
   }
-  return expandExpr(cell.formula);
+  return expandExpr(formula);
 };
 
 const refExpression = (ref) => {
   if (ref.type === SHEET) {
     return `globals.sheetValue(${JSON.stringify(ref.id)}, globals)`;
   }
-  if (ref.type !== CELL) {
+  if (ref.type === ARRAY) {
+    return `globals.arrayValue(${JSON.stringify(ref.id)}, globals)`;
+  }
+  if (!ref.formula) {
     throw new Error(`unknown object type ${ref.type}`);
   }
-  return cellExpression(ref);
+  return formulaExpression(ref.formula);
 };
 
 const getRefExpressions = (refs) => {
@@ -462,7 +468,13 @@ export const getCellValuesById = createSelector(
   getRefs,
   getTopoSortedRefIds,
   (refs, sortedRefIds) => {
-    const globals = { getNamedMember, formulaRef, sheetValue, pleaseThrow };
+    const globals = {
+      arrayValue,
+      getNamedMember,
+      formulaRef,
+      sheetValue,
+      pleaseThrow,
+    };
 
     // Initialize circular refs and things that depend on them.
     refs.forEach(({ id }) => {
@@ -493,11 +505,12 @@ export const getCellValuesById = createSelector(
 
 
 const getGlobalValue = (globals, ref) => {
-  if (ref.type === CELL) return getRef(globals, ref.id);
-  if (ref.type !== SHEET) throw new Error(`unknown type ${ref.type}`);
+  if (ref.formula) return getRef(globals, ref.id);
   // A bit of a hack: we should try to re-insert sheets that contain
   // circular-ref cells into the topological order, probably.
-  // There's no need to re-evaluate these.
+  // There's no _real_ need to re-evaluate these.
+  if (ref.type === ARRAY) return arrayValue(ref.id, globals);
+  if (ref.type !== SHEET) throw new Error(`unknown type ${ref.type}`);
   return sheetValue(ref.id, globals);
 };
 

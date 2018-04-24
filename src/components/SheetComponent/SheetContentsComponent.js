@@ -5,7 +5,7 @@ import KeyboardListenerComponent from '../KeyboardListenerComponent/KeyboardList
 import CellComponent from '../CellComponent/CellComponent';
 import EmptyCellComponent from '../CellComponent/EmptyCellComponent';
 
-import { getCellsBySheetId } from '../../selectors/formulas/selectors';
+import { getChildrenByParentId } from '../../selectors/formulas/selectors';
 import { clampOverlap, overlaps } from '../../selectors/geom/geom';
 import { deleteCell } from '../../redux/store';
 
@@ -280,7 +280,7 @@ class SheetContentsComponent extends Component {
 }
 
 const mapStateToProps = (state, ownProps) => ({
-  cells: getCellsBySheetId(state, ownProps.sheetId),
+  cells: getChildrenByParentId(state)[ownProps.sheetId],
   yLowerBound: 0,
   yUpperBound: Infinity,
   xLowerBound: 0,
