@@ -38,8 +38,6 @@ class SheetContentsComponent extends ContentsBaseComponent {
       viewSelected,
       viewWidth,
       viewHeight,
-      viewOffsetX,
-      viewOffsetY,
     } = this.props;
     const { scrollY, scrollX } = this.state;
     const selection = this.selectedCellId();
@@ -79,9 +77,9 @@ class SheetContentsComponent extends ContentsBaseComponent {
         <CellComponent
           key={id}
           id={id}
-          x={truncX - scrollX + viewOffsetX}
+          x={truncX - scrollX}
           width={truncXLen}
-          y={truncY - scrollY + viewOffsetY}
+          y={truncY - scrollY}
           height={truncYLen}
           name={name}
           value={cellValuesById[id]}
@@ -107,8 +105,10 @@ class SheetContentsComponent extends ContentsBaseComponent {
         emptyCells.push((
           <EmptyCellComponent
             key={place}
-            x={cx + viewOffsetX}
-            y={cy + viewOffsetY}
+            x={cx}
+            y={cy}
+            width={1}
+            height={1}
             selected={cellSelected}
             setSelection={this.setViewSelection}
           />

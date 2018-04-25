@@ -1,105 +1,45 @@
-import React, { Fragment } from 'react';
-import classNames from 'classnames';
-import EmptyCellComponent from './EmptyCellComponent';
-import { getType } from '../../selectors/formulas/tables';
+import React, { Fragment, PureComponent } from 'react';
+import CellNameComponent from './CellNameComponent';
+import CellValueComponent from './CellValueComponent';
 import './CellComponent.css';
 
-const defaultFormatter = (value, pushStack) => {
-  if (typeof value === 'string') return value;
-  if (typeof value === 'number') return value.toString();
-  if (typeof value === 'boolean') {
-    return (
-      <input type="checkbox" checked={value} disabled />
-    );
-  }
-  const ourType = getType(value);
-  if (ourType === 'array') {
-    return `[${value.arr.length}]`;
-  }
-  if (ourType === 'object') {
-    const contentsStr = `{${Object.keys(value.byName).length}}`;
-    if (value.template) {
-      return (
-        <div style={{ position: 'relative', zIndex: 0 }}>
-          {contentsStr}
-          <button onClick={pushStack} className="StackButton">+</button>
-        </div>
-      );
-    }
-    return contentsStr;
-  }
-  return JSON.stringify(value);
-};
-
-class CellComponent extends EmptyCellComponent {
-  constructor(props) {
-    super(props);
-    this.pushStack = this.pushStack.bind(this);
-    this.getCellContents = this.getCellContents.bind(this);
-  }
-
-  getCellContents() {
-    const { value } = this.props;
-    if (!value) return { error: 'Value missing' }; // ???
-    if (value.error) return { error: value.error };
-    return {
-      formattedValue: defaultFormatter(value.value, this.pushStack),
-      override: value.override,
-    };
-  }
-
-  pushStack(ev) {
-    const { id, pushViewStack } = this.props;
-    pushViewStack(id);
-    ev.preventDefault();
-  }
-
+class CellComponent extends PureComponent {
   render() {
     const {
+      id,
+      pushViewStack,
       name,
       x,
       y,
       width,
       height,
       selected,
+      setSelection,
+      value,
     } = this.props;
-    const nameStyle = {
-      gridColumn: `${x + 1} / span ${width}`,
-      gridRow: `${(2 * y) + 1} / span 1`,
-    };
-    const valueStyle = {
-      gridColumn: `${x + 1} / span ${width}`,
-      gridRow: `${(2 * y) + 2} / span ${(2 * height) - 1}`,
-    };
-    const { error, formattedValue, override } = this.getCellContents();
 
     return (
       <Fragment>
-        <div
-          className={classNames(
-            'CellName',
-            { CellNameSelected: selected },
-          )}
-          style={nameStyle}
-          onClick={this.onClick}
-        >
-          {name}
-        </div>
-        <div
-          className={classNames(
-            'CellValue',
-            {
-              CellValueError: error,
-              CellValueOverride: override,
-              CellValueSelected: selected,
-            },
-          )}
-          style={valueStyle}
-          onClick={this.onClick}
-          title={override ? 'Value overridden in call' : error}
-        >
-          {formattedValue || '\u200B'}
-        </div>
+        <CellNameComponent
+          name={name}
+          x={x}
+          y={y}
+          width={width}
+          height={0.5}
+          selected={selected}
+          setSelection={setSelection}
+        />
+        <CellValueComponent
+          x={x}
+          y={y + 0.5}
+          width={width}
+          height={height - 0.5}
+          selected={selected}
+          setSelection={setSelection}
+          value={value}
+          pushViewStack={pushViewStack}
+          id={id}
+        />
       </Fragment>
     );
   }

@@ -1,15 +1,13 @@
 import React, { PureComponent } from 'react';
 import classNames from 'classnames';
-import './CellComponent.css';
 import BaseCellComponent from './BaseCellComponent';
 
-
-class EmptyCellComponent extends PureComponent {
+class CellNameComponent extends PureComponent {
   render() {
-    const { x, y, width, height, selected, setSelection } = this.props;
+    const { x, y, width, height, name, selected, setSelection } = this.props;
     const className = classNames(
-      'EmptyCell',
-      { EmptyCellSelected: selected },
+      'CellName',
+      { CellNameSelected: selected },
     );
     return (
       <BaseCellComponent
@@ -19,8 +17,11 @@ class EmptyCellComponent extends PureComponent {
         height={height}
         className={className}
         setSelection={setSelection}
-      />
+      >
+        {name}
+      </BaseCellComponent>
     );
   }
 }
-export default EmptyCellComponent;
+
+export default CellNameComponent;

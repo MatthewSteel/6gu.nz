@@ -34,11 +34,8 @@ export default class ContentsBaseComponent extends Component {
     this.childSelectionTableRef = ref;
   }
 
-  setViewSelection(viewSelY, viewSelX) {
-    const { scrollY, scrollX } = this.state;
-    const { viewOffsetY, viewOffsetX } = this.props;
-    const selY = viewSelY + scrollY - viewOffsetY;
-    const selX = viewSelX + scrollX - viewOffsetX;
+  setViewSelection(worldY, worldX) {
+    const { x: selX, y: selY } = this.worldToLocal({ y: worldY, x: worldX });
     this.setSelection(selY, selX);
   }
 
@@ -57,12 +54,63 @@ export default class ContentsBaseComponent extends Component {
     this.updateSelection();
   }
 
+  worldToLocal(world) {
+    // Turn "position on screen" into "position relative to our top-left"
+    const { viewOffsetY, viewOffsetX } = this.props;
+    const windowY = world.y - viewOffsetY;
+    const windowX = world.x - viewOffsetX;
+
+    // Turn "position relative to our top-left" in world-coords into
+    // "offset from top-left elem" in elements.
+    // Add an offset in case we have special header rows etc.
+    const localScale = this.localScale();
+    const elemsIntoWindowY = localScale.y * windowY - localScale.yOffset;
+    const elemsIntoWindowX = localScale.x * windowX - localScale.xOffset;
+
+    // Turn "offset from top-left elem" into "offset from very start"
+    // Always truncate in case someone sends us a fractional world coord
+    // we can't deal with.
+    // Also, don't let it go negative -- we might click on a header :-/
+    // Maybe that'll be useful later...
+    const { scrollY, scrollX } = this.state;
+    return {
+      y: Math.max(0, Math.floor(elemsIntoWindowY + scrollY)),
+      x: Math.max(0, Math.floor(elemsIntoWindowX + scrollX)),
+    };
+  }
+
+  localToWorld(local) {
+    // Turn "Local elem position" into "offset position from own corner"
+    const { scrollY, scrollX } = this.state;
+    const elemsIntoWindowY = local.y - scrollY;
+    const elemsIntoWindowX = local.y - scrollX;
+
+    // Turn "elem position from our top left" into "global coords from our
+    // top left".
+    const localScale = this.localScale();
+    const windowY = elemsIntoWindowY / localScale.y;
+    const windowX = elemsIntoWindowX / localScale.x;
+
+    // Turn "coords from top left of window" into "coords from top left of
+    // sheet. Possibly ends up fractional :-)
+    const { viewOffsetY, viewOffsetX } = this.props;
+    return {
+      y: windowY + viewOffsetY,
+      x: windowX + viewOffsetX,
+    };
+  }
+
+  // eslint-disable-next-line class-methods-use-this
+  localScale() {
+    return { y: 1, x: 1, yOffset: 0, xOffset: 0 };
+  }
+
   selectedCellId() {
     const { selY, selX } = this.state;
     const selectedCell = this.maybeSelectedCell();
-    const { sheetId } = this.props;
+    const { contextId } = this.props;
     return {
-      context: sheetId,
+      context: contextId,
       cellId: selectedCell && selectedCell.id, // may be undefined
       y: selY,
       x: selX,
