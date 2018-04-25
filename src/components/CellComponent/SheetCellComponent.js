@@ -3,7 +3,7 @@ import CellNameComponent from './CellNameComponent';
 import CellValueComponent from './CellValueComponent';
 import './CellComponent.css';
 
-class CellComponent extends PureComponent {
+class SheetCellComponent extends PureComponent {
   render() {
     const {
       id,
@@ -45,4 +45,4 @@ class CellComponent extends PureComponent {
   }
 }
 
-export default CellComponent;
+export default SheetCellComponent;

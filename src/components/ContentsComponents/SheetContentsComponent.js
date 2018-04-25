@@ -2,7 +2,7 @@ import React, { Fragment } from 'react';
 import { connect } from 'react-redux';
 
 import KeyboardListenerComponent from '../KeyboardListenerComponent/KeyboardListenerComponent';
-import CellComponent from '../CellComponent/CellComponent';
+import SheetCellComponent from '../CellComponent/SheetCellComponent';
 import EmptyCellComponent from '../CellComponent/EmptyCellComponent';
 import ContentsBaseComponent from './ContentsBaseComponent';
 
@@ -74,7 +74,7 @@ class SheetContentsComponent extends ContentsBaseComponent {
         length: truncYLen,
       } = truncateOverlap(y, cellHeight, scrollY, viewHeight);
       return (
-        <CellComponent
+        <SheetCellComponent
           key={id}
           id={id}
           x={truncX - scrollX}
