@@ -20,8 +20,8 @@ export default class ContentsBaseComponent extends Component {
     this.state = {
       selY: 0,
       selX: 0,
-      viewX: 0,
-      viewY: 0,
+      scrollX: 0,
+      scrollY: 0,
     };
     this.updateSelection();
   }
@@ -35,22 +35,23 @@ export default class ContentsBaseComponent extends Component {
   }
 
   setViewSelection(viewSelY, viewSelX) {
-    const { viewY, viewX } = this.state;
-    const selY = viewSelY + viewY;
-    const selX = viewSelX + viewX;
+    const { scrollY, scrollX } = this.state;
+    const { viewOffsetY, viewOffsetX } = this.props;
+    const selY = viewSelY + scrollY - viewOffsetY;
+    const selX = viewSelX + scrollX - viewOffsetX;
     this.setSelection(selY, selX);
   }
 
   setSelection(selY, selX) {
-    const { viewX, viewY } = this.state;
+    const { scrollX, scrollY } = this.state;
     const { getViewFocus, viewWidth, viewHeight } = this.props;
-    const newViewY = clampOverlap(viewY, viewHeight, selY, selY + 1);
-    const newViewX = clampOverlap(viewX, viewWidth, selX, selX + 1);
+    const newScrollY = clampOverlap(scrollY, viewHeight, selY, selY + 1);
+    const newScrollX = clampOverlap(scrollX, viewWidth, selX, selX + 1);
     this.setState({
       selY,
       selX,
-      viewY: newViewY,
-      viewX: newViewX,
+      scrollY: newScrollY,
+      scrollX: newScrollX,
     });
     getViewFocus();
     this.updateSelection();
@@ -60,9 +61,12 @@ export default class ContentsBaseComponent extends Component {
     const { selY, selX } = this.state;
     const selectedCell = this.maybeSelectedCell();
     const { sheetId } = this.props;
-    return selectedCell ?
-      { context: sheetId, cellId: selectedCell.id } : // A real item
-      { context: sheetId, y: selY, x: selX }; // a blank cell
+    return {
+      context: sheetId,
+      cellId: selectedCell && selectedCell.id, // may be undefined
+      y: selY,
+      x: selX,
+    };
   }
 
   updateSelection() {
@@ -73,16 +77,21 @@ export default class ContentsBaseComponent extends Component {
   move(dy, dx, event) {
     const { selY, selX } = this.state;
     const selectedCell = this.maybeSelectedCell();
+
     // Speed past "big" cells -- move multiple "spaces"
-    const wantedNewY = selectedCell ?
-      maybeBreakOut(selY, dy, selectedCell.y, selectedCell.height) :
-      selY + dy;
-    const wantedNewX = selectedCell ?
-      maybeBreakOut(selX, dx, selectedCell.x, selectedCell.width) :
-      selX + dx;
-    const { yLowerBound, yUpperBound, xLowerBound, xUpperBound } = this.props;
-    const newY = clampOverlap(wantedNewY, 1, yLowerBound, yUpperBound);
-    const newX = clampOverlap(wantedNewX, 1, xLowerBound, xUpperBound);
+    const selBox = selectedCell ?
+      this.cellPosition(selectedCell) :
+      { x: selX, y: selY, width: 1, height: 1 };
+    const wantedNewY = maybeBreakOut(selY, dy, selBox.y, selBox.height);
+    const wantedNewX = maybeBreakOut(selX, dx, selBox.x, selBox.width);
+
+    // Clamp wanted selection to navigable cells.
+    const { yLB, yUB, xLB, xUB } = this.bounds();
+    const newY = clampOverlap(wantedNewY, 1, yLB, yUB);
+    const newX = clampOverlap(wantedNewX, 1, xLB, xUB);
+
+    // Only move (and swallow event) if we actually move somewhere.
+    // In particular, send the event to our parent if we hit a wall.
     if (newY === selY && newX === selX) return;
     this.setSelection(newY, newX);
     event.preventDefault();

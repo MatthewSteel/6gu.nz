@@ -18,6 +18,17 @@ class SheetContentsComponent extends ContentsBaseComponent {
     return cells.find(cell => overlaps(selY, 1, selX, 1, cell));
   }
 
+  // eslint-disable-next-line class-methods-use-this
+  cellPosition(cell) {
+    const { x, y, width, height } = cell;
+    return { x, y, width, height };
+  }
+
+  // eslint-disable-next-line class-methods-use-this
+  bounds() {
+    return { xLB: 0, yLB: 0, xUB: Infinity, yUB: Infinity };
+  }
+
   render() {
     const {
       cells,
@@ -27,12 +38,15 @@ class SheetContentsComponent extends ContentsBaseComponent {
       viewSelected,
       viewWidth,
       viewHeight,
+      viewOffsetX,
+      viewOffsetY,
     } = this.props;
-    const { viewY, viewX } = this.state;
+    const { scrollY, scrollX } = this.state;
     const selection = this.selectedCellId();
 
+    const placedCellLocs = new Set();
     const filledCells = cells.map((cell) => {
-      if (!overlaps(viewY, viewHeight, viewX, viewWidth, cell)) {
+      if (!overlaps(scrollY, viewHeight, scrollX, viewWidth, cell)) {
         return false;
       }
       const {
@@ -44,22 +58,30 @@ class SheetContentsComponent extends ContentsBaseComponent {
         name,
       } = cell;
 
+      // Say "we have seen all of these locations" so we don't draw empty
+      // cells there. Coords in table-space.
+      for (let cx = x; cx < x + cellWidth; ++cx) {
+        for (let cy = y; cy < y + cellHeight; ++cy) {
+          placedCellLocs.add(`${cy},${cx}`);
+        }
+      }
+
       const cellSelected = viewSelected && selection.cellId === cell.id;
       const {
         x: truncX,
         length: truncXLen,
-      } = truncateOverlap(x, cellWidth, viewX, viewWidth);
+      } = truncateOverlap(x, cellWidth, scrollX, viewWidth);
       const {
         x: truncY,
         length: truncYLen,
-      } = truncateOverlap(y, cellHeight, viewY, viewHeight);
+      } = truncateOverlap(y, cellHeight, scrollY, viewHeight);
       return (
         <CellComponent
           key={id}
           id={id}
-          x={truncX - viewX}
+          x={truncX - scrollX + viewOffsetX}
           width={truncXLen}
-          y={truncY - viewY}
+          y={truncY - scrollY + viewOffsetY}
           height={truncYLen}
           name={name}
           value={cellValuesById[id]}
@@ -73,15 +95,20 @@ class SheetContentsComponent extends ContentsBaseComponent {
     const emptyCells = [];
     for (let cy = 0; cy < viewHeight; ++cy) {
       for (let cx = 0; cx < viewWidth; ++cx) {
-        const place = `${cy + viewY},${cx + viewX}`;
+        // Do not over-draw empty cells. We *could* draw them, but we don't
+        // want to because a half-empty child table may not draw over the
+        // top of them.
+        const place = `${cy + scrollY},${cx + scrollX}`;
+        if (placedCellLocs.has(place)) continue;
+
         const cellSelected = viewSelected &&
-          cy + viewY === selection.y &&
-          cx + viewX === selection.x;
+          cy + scrollY === selection.y &&
+          cx + scrollX === selection.x;
         emptyCells.push((
           <EmptyCellComponent
             key={place}
-            x={cx}
-            y={cy}
+            x={cx + viewOffsetX}
+            y={cy + viewOffsetY}
             selected={cellSelected}
             setSelection={this.setViewSelection}
           />
@@ -109,10 +136,8 @@ class SheetContentsComponent extends ContentsBaseComponent {
 
 const mapStateToProps = (state, ownProps) => ({
   cells: getChildrenByParentId(state)[ownProps.contextId],
-  yLowerBound: 0,
-  yUpperBound: Infinity,
-  xLowerBound: 0,
-  xUpperBound: Infinity,
+  viewOffsetX: 0,
+  viewOffsetY: 0,
 });
 
 const mapDispatchToProps = dispatch => ({
