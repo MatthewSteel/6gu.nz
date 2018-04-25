@@ -6,7 +6,7 @@ import CellComponent from '../CellComponent/CellComponent';
 import EmptyCellComponent from '../CellComponent/EmptyCellComponent';
 
 import { getChildrenByParentId } from '../../selectors/formulas/selectors';
-import { clampOverlap, overlaps } from '../../selectors/geom/geom';
+import { clampOverlap, overlaps, truncateOverlap } from '../../selectors/geom/geom';
 import { deleteCell } from '../../redux/store';
 
 import './SheetComponent.css';
@@ -224,15 +224,22 @@ class SheetContentsComponent extends Component {
       } = cell;
 
       const cellSelected = viewSelected && selection.cellId === cell.id;
-
+      const {
+        x: truncX,
+        length: truncXLen,
+      } = truncateOverlap(x, cellWidth, viewX, viewWidth);
+      const {
+        x: truncY,
+        length: truncYLen,
+      } = truncateOverlap(y, cellHeight, viewY, viewHeight);
       return (
         <CellComponent
           key={id}
           id={id}
-          x={x - viewX}
-          width={cellWidth}
-          y={y - viewY}
-          height={cellHeight}
+          x={truncX - viewX}
+          width={truncXLen}
+          y={truncY - viewY}
+          height={truncYLen}
           name={name}
           value={cellValuesById[id]}
           pushViewStack={pushViewStack}
