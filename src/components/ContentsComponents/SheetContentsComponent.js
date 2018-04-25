@@ -12,13 +12,10 @@ import { deleteCell } from '../../redux/store';
 
 
 class SheetContentsComponent extends ContentsBaseComponent {
-  selectedCellId() {
+  maybeSelectedCell() {
+    const { cells } = this.props;
     const { selY, selX } = this.state;
-    const selectedCell = this.maybeSelectedCell();
-    const { sheetId } = this.props;
-    return selectedCell ?
-      { context: sheetId, cellId: selectedCell.id } : // A real item
-      { context: sheetId, y: selY, x: selX }; // a blank cell
+    return cells.find(cell => overlaps(selY, 1, selX, 1, cell));
   }
 
   render() {
@@ -111,7 +108,7 @@ class SheetContentsComponent extends ContentsBaseComponent {
 }
 
 const mapStateToProps = (state, ownProps) => ({
-  cells: getChildrenByParentId(state)[ownProps.sheetId],
+  cells: getChildrenByParentId(state)[ownProps.contextId],
   yLowerBound: 0,
   yUpperBound: Infinity,
   xLowerBound: 0,

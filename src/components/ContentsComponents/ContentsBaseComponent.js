@@ -1,5 +1,5 @@
 import { Component } from 'react';
-import { clampOverlap, overlaps } from '../../selectors/geom/geom';
+import { clampOverlap } from '../../selectors/geom/geom';
 
 // For moving the cursor out of a large cell
 const maybeBreakOut = (curr, move, start, length) => {
@@ -56,10 +56,13 @@ export default class ContentsBaseComponent extends Component {
     this.updateSelection();
   }
 
-  maybeSelectedCell() {
-    const { cells } = this.props;
+  selectedCellId() {
     const { selY, selX } = this.state;
-    return cells.find(cell => overlaps(selY, 1, selX, 1, cell));
+    const selectedCell = this.maybeSelectedCell();
+    const { sheetId } = this.props;
+    return selectedCell ?
+      { context: sheetId, cellId: selectedCell.id } : // A real item
+      { context: sheetId, y: selY, x: selX }; // a blank cell
   }
 
   updateSelection() {

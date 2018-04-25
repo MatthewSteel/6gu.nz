@@ -98,7 +98,7 @@ class SheetComponent extends Component {
             readOnly={readOnly}
             setFormulaSelection={this.setFormulaSelection}
             formulaHasFocus={formulaHasFocus}
-            sheetId={sheetId}
+            contextId={sheetId}
             getViewFocus={this.getFocus}
             viewHeight={height}
             viewWidth={width}
