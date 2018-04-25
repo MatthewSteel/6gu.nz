@@ -50,6 +50,7 @@ export class TableArray {
 export const getType = (value) => {
   // Just for our complex data types for now. For display.
   // If it's a table literal, we might be able to tell by the cell type.
+  if (value === undefined) return undefined;
   if (value.byName) return 'object';
   if (value instanceof TableArray) {
     if (value.isTable()) return 'table';

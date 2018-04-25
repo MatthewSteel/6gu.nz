@@ -1,4 +1,4 @@
-import { TableArray } from './tables';
+import { TableArray, getType } from './tables';
 
 describe('TableArray', () => {
   let table;
@@ -55,5 +55,14 @@ describe('TableArray', () => {
     expect(table2.isTable()).toBe(false);
     const table3 = new TableArray([1, 2, 3]);
     expect(table3.isTable()).toBe(false);
+  });
+});
+
+describe('getType', () => {
+  it('calls the right things primitives', () => {
+    expect(getType(false)).toBe('primitive');
+    expect(getType(1.0)).toBe('primitive');
+    expect(getType('hi')).toBe('primitive');
+    expect(getType(undefined)).toBe(undefined);
   });
 });
