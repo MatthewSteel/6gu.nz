@@ -63,6 +63,6 @@ describe('getType', () => {
     expect(getType(false)).toBe('primitive');
     expect(getType(1.0)).toBe('primitive');
     expect(getType('hi')).toBe('primitive');
-    expect(getType(undefined)).toBe(undefined);
+    expect(getType(undefined)).toBe('primitive');
   });
 });

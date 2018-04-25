@@ -48,8 +48,8 @@ export const deleteCell = cellId => ({
 
 export const loadFile = () => ({ type: 'LOAD_FILE' });
 
-const defaultCellForLocation = (sheetId, y, x) => ({
-  sheetId,
+const defaultCellForLocation = (context, y, x) => ({
+  sheetId: context,
   id: uuidv4(),
   name: defaultCellName(y, x),
   formula: [{ value: '' }],
