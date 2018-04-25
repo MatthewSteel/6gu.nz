@@ -10,8 +10,6 @@ import { getChildrenByParentId } from '../../selectors/formulas/selectors';
 import { overlaps, truncateOverlap } from '../../selectors/geom/geom';
 import { deleteCell } from '../../redux/store';
 
-import './SheetComponent.css';
-
 
 class SheetContentsComponent extends ContentsBaseComponent {
   selectedCellId() {

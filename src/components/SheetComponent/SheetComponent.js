@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import FormulaComponent from '../FormulaComponent/FormulaComponent';
 
-import SheetContentsComponent from './SheetContentsComponent';
+import SheetContentsComponent from '../ContentsComponents/SheetContentsComponent';
 import { selectionsEqual } from '../../redux/store';
 import './SheetComponent.css';
 
