@@ -109,7 +109,9 @@ const rewriteOnRefTermToParentLookup = (innermostLookup) => {
   if (ref.type === ARRAY_CELL) {
     return { lookupIndex: [{ value: ref.index }], on: { ref: ref.arrayId } };
   }
-  if (ref.type !== CELL) throw new Error(`unknown parent type for ${ref.type}`);
+  if (ref.type !== CELL && ref.type !== ARRAY) {
+    throw new Error(`unknown parent type for ${ref.type}`);
+  }
   return { lookup: ref.name, on: { ref: ref.sheetId } };
 };
 
