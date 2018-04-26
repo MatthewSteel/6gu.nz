@@ -221,6 +221,12 @@ export default class ContentsBaseComponent extends Component {
   }
 
   formulaKeys(ev) {
+    if (this.childSelectionTableRef) {
+      this.childSelectionTableRef
+        .getWrappedInstance()
+        .formulaKeys(ev);
+      if (ev.defaultPrevented) return;
+    }
     const { formulaRef } = this.props;
     const realFormulaRef = formulaRef && formulaRef.getWrappedInstance();
     if (ev.key === 'Escape') {
