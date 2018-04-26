@@ -1,5 +1,5 @@
 import { Component } from 'react';
-import { clampOverlap } from '../../selectors/geom/geom';
+import { clampValue, clampOverlap } from '../../selectors/geom/geom';
 
 // For moving the cursor out of a large cell
 const maybeBreakOut = (curr, move, start, length) => {
@@ -42,8 +42,12 @@ export default class ContentsBaseComponent extends Component {
   setSelection(selY, selX) {
     const { scrollX, scrollY } = this.state;
     const { getViewFocus, viewWidth, viewHeight } = this.props;
-    const newScrollY = clampOverlap(scrollY, viewHeight, selY, selY + 1);
-    const newScrollX = clampOverlap(scrollX, viewWidth, selX, selX + 1);
+
+    const localScale = this.localScale();
+    const localViewHeight = viewHeight * localScale.y - localScale.yOffset;
+    const localViewWidth = viewWidth * localScale.x - localScale.xOffset;
+    const newScrollY = clampOverlap(scrollY, localViewHeight, selY, selY + 1);
+    const newScrollX = clampOverlap(scrollX, localViewWidth, selX, selX + 1);
     this.setState({
       selY,
       selX,
@@ -73,9 +77,10 @@ export default class ContentsBaseComponent extends Component {
     // Also, don't let it go negative -- we might click on a header :-/
     // Maybe that'll be useful later...
     const { scrollY, scrollX } = this.state;
+    const { yLB, yUB, xLB, xUB } = this.bounds();
     return {
-      y: Math.max(0, Math.floor(elemsIntoWindowY + scrollY)),
-      x: Math.max(0, Math.floor(elemsIntoWindowX + scrollX)),
+      y: clampValue(Math.floor(elemsIntoWindowY + scrollY), yLB, yUB),
+      x: clampValue(Math.floor(elemsIntoWindowX + scrollX), xLB, xUB),
     };
   }
 
@@ -119,6 +124,10 @@ export default class ContentsBaseComponent extends Component {
 
   updateSelection() {
     const { setFormulaSelection } = this.props;
+    const selectedCell = this.maybeSelectedCell();
+    // If we've selected a table or something we should let them update
+    // the formula box.
+    if (selectedCell && !selectedCell.formula) return;
     setFormulaSelection(this.selectedCellId());
   }
 
@@ -150,7 +159,9 @@ export default class ContentsBaseComponent extends Component {
     const realFormulaRef = formulaRef && formulaRef.getWrappedInstance();
 
     if (this.childSelectionTableRef) {
-      this.childSelectionTableRef.sendKey(ev);
+      this.childSelectionTableRef
+        .getWrappedInstance()
+        .cellKeys(ev);
       if (ev.defaultPrevented) return;
     }
 

@@ -1,6 +1,7 @@
-import React, { Fragment, PureComponent } from 'react';
+import React, { PureComponent } from 'react';
 import CellNameComponent from './CellNameComponent';
 import CellValueComponent from './CellValueComponent';
+import CellSelectionComponent from './CellSelectionComponent';
 import './CellComponent.css';
 
 class SheetCellComponent extends PureComponent {
@@ -19,7 +20,13 @@ class SheetCellComponent extends PureComponent {
     } = this.props;
 
     return (
-      <Fragment>
+      <CellSelectionComponent
+        x={x}
+        y={y}
+        width={width}
+        height={height}
+        selected={selected}
+      >
         <CellNameComponent
           name={name}
           x={x}
@@ -40,7 +47,7 @@ class SheetCellComponent extends PureComponent {
           pushViewStack={pushViewStack}
           id={id}
         />
-      </Fragment>
+      </CellSelectionComponent>
     );
   }
 }

@@ -3,6 +3,7 @@ import store from '../../redux/store';
 import {
   getRefsById,
   lookupExpression,
+  getContextIdForRefId,
   refParentId,
   translateExpr,
 } from './selectors';
@@ -51,9 +52,10 @@ export const stringFormula = (refId) => {
     retToJoin.push(ref.name);
   }
   retToJoin.push('=');
+  const refParent = refParentId(ref.id);
   const lookupTerms = translateExpr(
     ref.formula,
-    refParentId(ref.id),
+    getContextIdForRefId(refParent, refParent),
     subRefsForLookupsInTerm,
   );
   const terms = translateExpr(lookupTerms, null, unparseTerm);

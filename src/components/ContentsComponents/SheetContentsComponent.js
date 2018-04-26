@@ -5,9 +5,11 @@ import KeyboardListenerComponent from '../KeyboardListenerComponent/KeyboardList
 import SheetCellComponent from '../CellComponent/SheetCellComponent';
 import EmptyCellComponent from '../CellComponent/EmptyCellComponent';
 import ContentsBaseComponent from './ContentsBaseComponent';
+import ArrayContentsComponent from './ArrayContentsComponent';
 
 import { getChildrenByParentId } from '../../selectors/formulas/selectors';
 import { overlaps, truncateOverlap } from '../../selectors/geom/geom';
+import { getType } from '../../selectors/formulas/tables';
 import { deleteCell } from '../../redux/store';
 
 
@@ -73,6 +75,29 @@ class SheetContentsComponent extends ContentsBaseComponent {
         x: truncY,
         length: truncYLen,
       } = truncateOverlap(y, cellHeight, scrollY, viewHeight);
+
+      const cellContents = cellValuesById[id];
+      if (truncYLen > 1 && getType(cellContents.value) === 'array') {
+        return (
+          <ArrayContentsComponent
+            key={id}
+            ref={cellSelected && this.setChildSelectionTableRef}
+            contextId={id}
+            formulaRef={this.props.formulaRef}
+            pushViewStack={pushViewStack}
+            popViewStack={this.props.popViewStack}
+            readOnly={this.props.readOnly}
+            setFormulaSelection={this.props.setFormulaSelection}
+            getViewFocus={this.props.getViewFocus}
+            tableData={cellContents.value}
+            viewHeight={truncYLen}
+            viewWidth={truncXLen}
+            viewOffsetX={truncX - scrollX}
+            viewOffsetY={truncY - scrollY}
+            viewSelected={cellSelected}
+          />
+        );
+      }
       return (
         <SheetCellComponent
           key={id}
@@ -82,7 +107,7 @@ class SheetContentsComponent extends ContentsBaseComponent {
           y={truncY - scrollY}
           height={truncYLen}
           name={name}
-          value={cellValuesById[id]}
+          value={cellContents}
           pushViewStack={pushViewStack}
           selected={cellSelected}
           setSelection={this.setViewSelection}

@@ -1,5 +1,5 @@
 import { createSelector } from 'reselect';
-import store, { ARRAY, SHEET, CELL } from '../../redux/store';
+import store, { ARRAY, ARRAY_CELL, SHEET, CELL } from '../../redux/store';
 import { getNamedMember, TableArray } from './tables';
 
 
@@ -85,6 +85,8 @@ export const refParentId = (refId) => {
   const refsById = getRefsById(store.getState());
   const ref = refsById[refId];
   if (ref.type === SHEET) return undefined;
+  if (ref.type === ARRAY) return ref.sheetId;
+  if (ref.type === ARRAY_CELL) return ref.arrayId;
   if (ref.type !== CELL) throw new Error(`unknown ref type ${ref.type}`);
   return ref.sheetId;
 };
@@ -93,6 +95,8 @@ export const refParentId = (refId) => {
 const refHeight = (ref) => {
   if (ref === undefined) return 0;
   if (ref.type === SHEET) return 1;
+  if (ref.type === ARRAY) return 2;
+  if (ref.type === ARRAY_CELL) return 3;
   if (ref.type !== CELL) throw new Error(`unknown ref type ${ref.type}`);
   return 2;
 };
@@ -102,6 +106,9 @@ const rewriteOnRefTermToParentLookup = (innermostLookup) => {
   const refsById = getRefsById(store.getState());
   const ref = refsById[innermostLookup.ref];
 
+  if (ref.type === ARRAY_CELL) {
+    return { lookupIndex: [{ value: ref.index }], on: { ref: ref.arrayId } };
+  }
   if (ref.type !== CELL) throw new Error(`unknown parent type for ${ref.type}`);
   return { lookup: ref.name, on: { ref: ref.sheetId } };
 };
@@ -149,6 +156,8 @@ export const lookupExpression = (contextRefId, targetRefId) => {
 
 const isContext = (type) => {
   if (type === CELL) return false;
+  if (type === ARRAY_CELL) return false;
+  if (type === ARRAY) return false;
   if (type !== SHEET) throw new Error(`unknown type ${type}`);
   return true;
 };
@@ -198,7 +207,7 @@ const translateLookupIndex = (term, contextId, f) => {
 
 export const translateTerm = (term, contextId, f) => {
   if (term.lookup) return translateLookup(term, contextId, f);
-  if (term.lookupIndex) return translateLookupIndex(term, contextId, f);
+  if ('lookupIndex' in term) return translateLookupIndex(term, contextId, f);
   if (term.name || term.ref) return f(term, contextId);
   if ('value' in term || term.op) return f(term, contextId);
   if (term.call) return translateCall(term, contextId, f);
@@ -414,9 +423,8 @@ const sheetValue = (sheetId, globals) => {
 };
 
 const arrayValue = (arrayId, globals) => {
-  const arrayRef = getRefsById(store.getState())[arrayId];
-  const storage = new Array(arrayRef.length);
   const arrayCells = getChildrenByParentId(store.getState())[arrayId];
+  const storage = new Array(arrayCells.length);
   arrayCells.forEach(({ index, id }) => {
     storage[index] = getRef(globals, id);
   });

@@ -2,6 +2,7 @@ import React, { PureComponent } from 'react';
 import classNames from 'classnames';
 import './CellComponent.css';
 import BaseCellComponent from './BaseCellComponent';
+import CellSelectionComponent from './CellSelectionComponent';
 
 
 class EmptyCellComponent extends PureComponent {
@@ -12,14 +13,22 @@ class EmptyCellComponent extends PureComponent {
       { EmptyCellSelected: selected },
     );
     return (
-      <BaseCellComponent
+      <CellSelectionComponent
         x={x}
         y={y}
         width={width}
         height={height}
-        className={className}
-        setSelection={setSelection}
-      />
+        selected={selected}
+      >
+        <BaseCellComponent
+          x={x}
+          y={y}
+          width={width}
+          height={height}
+          className={className}
+          setSelection={setSelection}
+        />
+      </CellSelectionComponent>
     );
   }
 }
