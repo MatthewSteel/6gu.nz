@@ -71,3 +71,18 @@ export const getNamedMember = (value, colName) => {
   if ('value' in entry) return entry.value;
   throw new Error(entry.error);
 };
+
+export const getNumberedMember = (value, index) => {
+  if (value instanceof TableArray) {
+    const ret = value.arr[index];
+    if (!ret) throw new Error(`No value at index ${index}`);
+    if (ret.error) throw new Error(ret.error);
+    return ret.value;
+  }
+  if (typeof value === 'string') {
+    const ret = value.charAt(index);
+    if (ret) return ret;
+    throw new Error(`Index ${index} out of bounds`);
+  }
+  throw new Error('Indexing[] not allowed on this value');
+};

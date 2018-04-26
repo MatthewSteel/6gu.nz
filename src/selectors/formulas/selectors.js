@@ -1,6 +1,6 @@
 import { createSelector } from 'reselect';
 import store, { ARRAY, ARRAY_CELL, SHEET, CELL } from '../../redux/store';
-import { getNamedMember, TableArray } from './tables';
+import { getNamedMember, getNumberedMember, TableArray } from './tables';
 
 
 // Simple "get raw state" selectors (for the moment?)
@@ -355,10 +355,17 @@ const expandLookup = (term) => {
   return `globals.getNamedMember(${expandedOn}, ${JSON.stringify(term.lookup)})`;
 };
 
+const expandLookupIndex = (term) => {
+  const expandedOn = expandTerm(term.on);
+  const expandedIndex = expandExpr(term.lookupIndex);
+  return `globals.getNumberedMember(${expandedOn}, ${expandedIndex})`;
+};
+
 const refErrorMessage = name => `(${JSON.stringify(name)} + ' does not exist.')`;
 
 const expandTerm = (term) => {
   if (term.lookup) return expandLookup(term);
+  if (term.lookupIndex) return expandLookupIndex(term);
   if (term.ref) return expandRef(term);
   if (term.call) return expandCall(term);
   if (term.op) return term.op;
@@ -481,6 +488,7 @@ export const getCellValuesById = createSelector(
     const globals = {
       arrayValue,
       getNamedMember,
+      getNumberedMember,
       formulaRef,
       sheetValue,
       pleaseThrow,
