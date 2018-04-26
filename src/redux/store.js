@@ -116,6 +116,7 @@ const rootReducer = (state, action) => {
           // ref is `cellName` for a cell in the same sheet
           if (
             cell.sheetId === termSheetId &&
+            term.name &&
             term.name === cell.name
           ) {
             somethingDifferent = true;

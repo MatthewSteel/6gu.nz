@@ -1,4 +1,4 @@
-import store, { SHEET } from '../../redux/store';
+import store, { ARRAY, SHEET } from '../../redux/store';
 import { lexFormula } from './lexer';
 
 import {
@@ -232,15 +232,28 @@ const subNamesForRefsInName = (term, contextId) => {
 
 const subNamesForRefsInLookup = (term) => {
   // This turns "tableRef.cellName" into "cellRef" etc.
-  // Should do colRef[index] too.
   if (!term.on.ref) return term;
   const { ref: refId } = term.on;
   const ref = getRefsById(store.getState())[refId];
   if (ref.type === SHEET) {
     const maybeCell = getRefsByNameForContextId(store.getState(), refId)[term.lookup];
-    if (maybeCell) {
-      return { ref: maybeCell.id };
-    }
+    if (maybeCell) return { ref: maybeCell.id };
+  }
+  return term;
+};
+
+const subNamesForRefsInLookupIndex = (term) => {
+  // This turns "arrayRef[arrIndex]" into "arrayCellRef" etc.
+  if (!term.on.ref) return term;
+  if (term.lookupIndex.length !== 1) return term;
+  const index = term.lookupIndex[0].value;
+  if (typeof index !== 'number') return term;
+
+  const { ref: refId } = term.on;
+  const ref = getRefsById(store.getState())[refId];
+  if (ref.type === ARRAY) {
+    const maybeCell = getRefsByNameForContextId(store.getState(), refId)[index];
+    if (maybeCell) return { ref: maybeCell.id };
   }
   return term;
 };
@@ -248,6 +261,7 @@ const subNamesForRefsInLookup = (term) => {
 const subNamesForRefsInTerm = (term, contextId) => {
   if (term.name) return subNamesForRefsInName(term, contextId);
   if (term.lookup) return subNamesForRefsInLookup(term);
+  if (term.lookupIndex) return subNamesForRefsInLookupIndex(term);
   if (term.call) {
     const argRefs = term.args.map(({ ref }) => ref);
     if ([term.call, ...argRefs].some(({ lookup }) => lookup)) {

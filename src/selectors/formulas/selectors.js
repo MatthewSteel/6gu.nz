@@ -46,12 +46,17 @@ export const getCellsById = createSelector(
 );
 
 const getRefsByNameForContextIdHelper = createSelector(
-  getCells,
-  (cells) => {
+  getRefs,
+  (refs) => {
     const ret = {};
-    cells.forEach((cell) => {
-      if (!ret[cell.sheetId]) ret[cell.sheetId] = {};
-      ret[cell.sheetId][cell.name] = cell;
+    refs.forEach((ref) => { ret[ref.id] = {}; });
+    refs.forEach((ref) => {
+      if (ref.sheetId) {
+        ret[ref.sheetId][ref.name] = ref;
+      }
+      if (ref.arrayId) {
+        ret[ref.arrayId][ref.index] = ref;
+      }
     });
     return ret;
   },
