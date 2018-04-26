@@ -29,6 +29,31 @@
   z-index: 1;
   margin-right: -1px;
   margin-bottom: -1px;
+  position: relative;
+}
+
+.LastArrayCell::after {
+  box-shadow: inset 0px -2px 5px -3px #AAA;
+  display: block;
+  position: absolute;
+  top: 0px;
+  right: 0px;
+  bottom: 0px;
+  left: 0px;
+  pointer-events: none;
+  content: '';
+}
+
+.FirstArrayCell::after {
+  box-shadow: inset 0px 2px 5px -3px #AAA;
+  display: block;
+  position: absolute;
+  top: 0px;
+  right: 0px;
+  bottom: 0px;
+  left: 0px;
+  pointer-events: none;
+  content: '';
 }
 
 .CellSelected {

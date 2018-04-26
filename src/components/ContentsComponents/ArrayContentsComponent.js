@@ -54,6 +54,13 @@ class ArrayContentsComponent extends ContentsBaseComponent {
       if (!rangesOverlap(0, viewHeight * 2 - 1, visibleIndex, 1)) return;
 
       const cellSelected = viewSelected && selection.cellId === id;
+      const extraClasses = [];
+      if (visibleIndex === 0 && index !== 0) {
+        extraClasses.push('FirstArrayCell');
+      }
+      if (visibleIndex === viewHeight * 2 - 2 && index !== cells.length - 1) {
+        extraClasses.push('LastArrayCell');
+      }
       children[visibleIndex] = (
         <CellSelectionComponent
           x={viewOffsetX}
@@ -72,6 +79,7 @@ class ArrayContentsComponent extends ContentsBaseComponent {
             value={tableData.arr[index]}
             pushViewStack={pushViewStack}
             setSelection={this.setViewSelection}
+            extraClasses={extraClasses}
           />
         </CellSelectionComponent>
       );

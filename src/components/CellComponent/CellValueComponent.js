@@ -54,10 +54,11 @@ class CellValueComponent extends PureComponent {
   }
 
   render() {
-    const { x, y, width, height, setSelection } = this.props;
+    const { x, y, width, height, setSelection, extraClasses } = this.props;
     const { error, formattedValue, override } = this.getCellContents();
     const className = classNames(
       'CellValue',
+      ...(extraClasses || []),
       {
         CellValueError: error,
         CellValueOverride: override,
