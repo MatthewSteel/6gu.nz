@@ -49,10 +49,9 @@ export const deleteCell = cellId => ({
 export const loadFile = () => ({ type: 'LOAD_FILE' });
 
 const defaultCellForLocation = (context, y, x) => {
-  const contextRef = getRefsById(store.getState())[context];
-  if (contextRef.type === SHEET) {
+  if (context.type === SHEET) {
     return {
-      sheetId: context,
+      sheetId: context.id,
       id: uuidv4(),
       name: defaultCellName(y, x),
       formula: [{ value: '' }],
@@ -63,12 +62,12 @@ const defaultCellForLocation = (context, y, x) => {
       type: CELL,
     };
   }
-  if (contextRef.type !== ARRAY) {
-    throw new Error(`Unknown context type ${contextRef.type}`);
+  if (context.type !== ARRAY) {
+    throw new Error(`Unknown context type ${context.type}`);
   }
   return {
     id: uuidv4(),
-    arrayId: context,
+    arrayId: context.id,
     type: ARRAY_CELL,
     formula: [{ value: '' }],
     index: y,
@@ -93,6 +92,9 @@ const rootReducer = (state, action) => {
     const { selection, formulaStr } = action.payload;
     const newFormula = parseFormula(formulaStr, selection.context);
 
+    const contextRef = getRefsById(store.getState())[selection.context];
+    if (contextRef.type !== SHEET) delete newFormula.name;
+
     if (!newFormula.name && !newFormula.formula) {
       // Formula is like `name=formula`.
       // When one is blank and we have an existing cell, we use the
@@ -106,7 +108,7 @@ const rootReducer = (state, action) => {
 
     const baseCell = selection.cellId ?
       state.cells.find(({ id }) => id === selection.cellId) :
-      defaultCellForLocation(selection.context, selection.y, selection.x);
+      defaultCellForLocation(contextRef, selection.y, selection.x);
     const cell = {
       ...baseCell,
       ...newFormula,
