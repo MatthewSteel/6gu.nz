@@ -14,11 +14,14 @@ class SheetComponent extends Component {
     this.popStack = this.popStack.bind(this);
     this.pushStack = this.pushStack.bind(this);
     this.setFormulaSelection = this.setFormulaSelection.bind(this);
+    this.setWindowSelection = this.setWindowSelection.bind(this);
 
     this.formulaRef = null;
     this.state = {
       formulaHasFocus: false,
       formulaSelection: null,
+      selY: 0,
+      selX: 0,
     };
   }
 
@@ -40,9 +43,17 @@ class SheetComponent extends Component {
   }
 
   setFormulaSelection(newSelection) {
+    // Reference to cell or x/y coords
     const { formulaSelection } = this.state;
     if (selectionsEqual(formulaSelection, newSelection)) return;
     this.setState({ formulaSelection: newSelection });
+  }
+
+  setWindowSelection(y, x) {
+    const { selX, selY } = this.state;
+    if (y === selY && x === selX) return;
+    this.getFocus();
+    this.setState({ selY: y, selX: x });
   }
 
   // These two methods passed down to children so they can operate on the
@@ -71,7 +82,12 @@ class SheetComponent extends Component {
       depth,
       sheetId,
     } = this.props;
-    const { formulaHasFocus, formulaSelection } = this.state;
+    const {
+      formulaHasFocus,
+      formulaSelection,
+      selY,
+      selX,
+    } = this.state;
     const style = {
       gridTemplateColumns: `repeat(${width}, auto)`,
       gridTemplateRows: `repeat(${height * 2}, 2.5ex)`,
@@ -99,10 +115,12 @@ class SheetComponent extends Component {
             setFormulaSelection={this.setFormulaSelection}
             formulaHasFocus={formulaHasFocus}
             contextId={sheetId}
-            getViewFocus={this.getFocus}
             viewHeight={height}
             viewWidth={width}
             viewSelected={selected}
+            viewSelX={selX}
+            viewSelY={selY}
+            setViewSelection={this.setWindowSelection}
           />
         </div>
         <div className="SheetViewInputRow">

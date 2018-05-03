@@ -14,13 +14,13 @@ import { deleteCell } from '../../redux/store';
 class ArrayContentsComponent extends ContentsBaseComponent {
   maybeSelectedCell() {
     const { cells } = this.props;
-    const { selY } = this.state;
+    const { selY } = this.localSelection();
     return cells.find(({ index }) => index === selY);
   }
 
   // eslint-disable-next-line class-methods-use-this
   cellPosition(cell) {
-    return { y: cell.index, x: 1, width: 1, height: 1 };
+    return { y: cell.index, x: 0, width: 1, height: 1 };
   }
 
   bounds() {

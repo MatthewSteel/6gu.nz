@@ -16,7 +16,7 @@ import { deleteCell } from '../../redux/store';
 class SheetContentsComponent extends ContentsBaseComponent {
   maybeSelectedCell() {
     const { cells } = this.props;
-    const { selY, selX } = this.state;
+    const { selY, selX } = this.localSelection();
     return cells.find(cell => overlaps(selY, 1, selX, 1, cell));
   }
 
@@ -40,6 +40,9 @@ class SheetContentsComponent extends ContentsBaseComponent {
       viewSelected,
       viewWidth,
       viewHeight,
+      viewSelY,
+      viewSelX,
+      setViewSelection,
     } = this.props;
     const { scrollY, scrollX } = this.state;
     const selection = this.selectedCellId();
@@ -88,13 +91,15 @@ class SheetContentsComponent extends ContentsBaseComponent {
             popViewStack={this.props.popViewStack}
             readOnly={this.props.readOnly}
             setFormulaSelection={this.props.setFormulaSelection}
-            getViewFocus={this.props.getViewFocus}
             tableData={cellContents.value}
             viewHeight={truncYLen}
             viewWidth={truncXLen}
             viewOffsetX={truncX - scrollX}
             viewOffsetY={truncY - scrollY}
             viewSelected={cellSelected}
+            viewSelX={viewSelX}
+            viewSelY={viewSelY}
+            setViewSelection={setViewSelection}
           />
         );
       }

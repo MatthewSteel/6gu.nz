@@ -1,5 +1,5 @@
 import { Component } from 'react';
-import { clampValue, clampOverlap } from '../../selectors/geom/geom';
+import { clampValue, clampOverlap, rangesOverlap } from '../../selectors/geom/geom';
 
 // For moving the cursor out of a large cell
 const maybeBreakOut = (curr, move, start, length) => {
@@ -17,12 +17,7 @@ export default class ContentsBaseComponent extends Component {
     this.setChildSelectionTableRef = this.setChildSelectionTableRef.bind(this);
 
     this.childSelectionTableRef = null;
-    this.state = {
-      selY: 0,
-      selX: 0,
-      scrollX: 0,
-      scrollY: 0,
-    };
+    this.state = { scrollX: 0, scrollY: 0 };
     this.updateSelection();
   }
 
@@ -41,20 +36,16 @@ export default class ContentsBaseComponent extends Component {
 
   setSelection(selY, selX) {
     const { scrollX, scrollY } = this.state;
-    const { getViewFocus, viewWidth, viewHeight } = this.props;
+    const { setViewSelection, viewWidth, viewHeight } = this.props;
 
     const localScale = this.localScale();
     const localViewHeight = viewHeight * localScale.y - localScale.yOffset;
     const localViewWidth = viewWidth * localScale.x - localScale.xOffset;
     const newScrollY = clampOverlap(scrollY, localViewHeight, selY, selY + 1);
     const newScrollX = clampOverlap(scrollX, localViewWidth, selX, selX + 1);
-    this.setState({
-      selY,
-      selX,
-      scrollY: newScrollY,
-      scrollX: newScrollX,
-    });
-    getViewFocus();
+    this.setState({ scrollY: newScrollY, scrollX: newScrollX });
+    const worldCoords = this.localToWorld({ y: selY, x: selX });
+    setViewSelection(worldCoords.y, worldCoords.x);
     this.updateSelection();
   }
 
@@ -68,8 +59,8 @@ export default class ContentsBaseComponent extends Component {
     // "offset from top-left elem" in elements.
     // Add an offset in case we have special header rows etc.
     const localScale = this.localScale();
-    const elemsIntoWindowY = localScale.y * windowY - localScale.yOffset;
-    const elemsIntoWindowX = localScale.x * windowX - localScale.xOffset;
+    const elemsIntoWindowY = Math.max(0, localScale.y * windowY - localScale.yOffset);
+    const elemsIntoWindowX = Math.max(0, localScale.x * windowX - localScale.xOffset);
 
     // Turn "offset from top-left elem" into "offset from very start"
     // Always truncate in case someone sends us a fractional world coord
@@ -79,22 +70,28 @@ export default class ContentsBaseComponent extends Component {
     const { scrollY, scrollX } = this.state;
     const { yLB, yUB, xLB, xUB } = this.bounds();
     return {
-      y: clampValue(Math.floor(elemsIntoWindowY + scrollY), yLB, yUB),
-      x: clampValue(Math.floor(elemsIntoWindowX + scrollX), xLB, xUB),
+      y: clampValue(Math.floor(elemsIntoWindowY + scrollY), yLB, yUB - 1),
+      x: clampValue(Math.floor(elemsIntoWindowX + scrollX), xLB, xUB - 1),
     };
+  }
+
+  localSelection() {
+    const { viewSelY: y, viewSelX: x } = this.props;
+    const { y: selY, x: selX } = this.worldToLocal({ y, x });
+    return { selX, selY };
   }
 
   localToWorld(local) {
     // Turn "Local elem position" into "offset position from own corner"
     const { scrollY, scrollX } = this.state;
     const elemsIntoWindowY = local.y - scrollY;
-    const elemsIntoWindowX = local.y - scrollX;
+    const elemsIntoWindowX = local.x - scrollX;
 
     // Turn "elem position from our top left" into "global coords from our
     // top left".
     const localScale = this.localScale();
-    const windowY = elemsIntoWindowY / localScale.y;
-    const windowX = elemsIntoWindowX / localScale.x;
+    const windowY = (elemsIntoWindowY + localScale.yOffset) / localScale.y;
+    const windowX = (elemsIntoWindowX + localScale.xOffset) / localScale.x;
 
     // Turn "coords from top left of window" into "coords from top left of
     // sheet. Possibly ends up fractional :-)
@@ -111,7 +108,7 @@ export default class ContentsBaseComponent extends Component {
   }
 
   selectedCellId() {
-    const { selY, selX } = this.state;
+    const { selY, selX } = this.localSelection();
     const selectedCell = this.maybeSelectedCell();
     const { contextId } = this.props;
     return {
@@ -132,7 +129,9 @@ export default class ContentsBaseComponent extends Component {
   }
 
   move(dy, dx, event) {
-    const { selY, selX } = this.state;
+    // All coords are "local", scaled for our data and relative to the
+    // start of our data.
+    const { selY, selX } = this.localSelection();
     const selectedCell = this.maybeSelectedCell();
 
     // Speed past "big" cells -- move multiple "spaces"
@@ -147,9 +146,14 @@ export default class ContentsBaseComponent extends Component {
     const newY = clampOverlap(wantedNewY, 1, yLB, yUB);
     const newX = clampOverlap(wantedNewX, 1, xLB, xUB);
 
-    // Only move (and swallow event) if we actually move somewhere.
-    // In particular, send the event to our parent if we hit a wall.
-    if (newY === selY && newX === selX) return;
+    if (
+      rangesOverlap(newY, 1, selBox.y, selBox.height) &&
+      rangesOverlap(newX, 1, selBox.x, selBox.width)
+    ) {
+      // Only move (and swallow event) if we actually move somewhere.
+      // In particular, send the event to our parent if we hit a wall.
+      return;
+    }
     this.setSelection(newY, newX);
     event.preventDefault();
   }
