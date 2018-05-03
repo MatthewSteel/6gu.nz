@@ -4,6 +4,7 @@ import { connect } from 'react-redux';
 import CellNameComponent from '../CellComponent/CellNameComponent';
 import CellValueComponent from '../CellComponent/CellValueComponent';
 import CellSelectionComponent from '../CellComponent/CellSelectionComponent';
+import EmptyCellComponent from '../CellComponent/EmptyCellComponent';
 import ContentsBaseComponent from './ContentsBaseComponent';
 
 import { getRefsById, getChildrenByParentId } from '../../selectors/formulas/selectors';
@@ -25,7 +26,7 @@ class ArrayContentsComponent extends ContentsBaseComponent {
 
   bounds() {
     const { cells } = this.props;
-    return { xLB: 0, yLB: 0, xUB: 1, yUB: cells.length };
+    return { xLB: 0, yLB: 0, xUB: 1, yUB: cells.length + 1 };
   }
 
   // eslint-disable-next-line class-methods-use-this
@@ -48,17 +49,18 @@ class ArrayContentsComponent extends ContentsBaseComponent {
     const selection = this.selectedCellId();
 
     const children = new Array(viewHeight);
+    const numVisibleCells = viewHeight * 2 - 1;
     cells.forEach((cell) => {
       const { id, index } = cell;
       const visibleIndex = index - scrollY;
-      if (!rangesOverlap(0, viewHeight * 2 - 1, visibleIndex, 1)) return;
+      if (!rangesOverlap(0, numVisibleCells, visibleIndex, 1)) return;
 
       const cellSelected = viewSelected && selection.cellId === id;
       const extraClasses = [];
       if (visibleIndex === 0 && index !== 0) {
         extraClasses.push('FirstArrayCell');
       }
-      if (visibleIndex === viewHeight * 2 - 2 && index !== cells.length - 1) {
+      if (visibleIndex === numVisibleCells - 1 && index !== cells.length - 1) {
         extraClasses.push('LastArrayCell');
       }
       children[visibleIndex] = (
@@ -84,6 +86,23 @@ class ArrayContentsComponent extends ContentsBaseComponent {
         </CellSelectionComponent>
       );
     });
+
+    const lastIndex = cells.length;
+    const visibleIndex = lastIndex - scrollY;
+    if (rangesOverlap(0, numVisibleCells, visibleIndex, 1)) {
+      const cellSelected = viewSelected && selection.y === lastIndex;
+      children.push((
+        <EmptyCellComponent
+          key="blankCell"
+          x={viewOffsetX}
+          width={1}
+          y={viewOffsetY + 0.5 + visibleIndex / 2}
+          height={0.5}
+          selected={cellSelected}
+          setSelection={this.setViewSelection}
+        />
+      ));
+    }
 
     return (
       <Fragment>

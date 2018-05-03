@@ -48,17 +48,32 @@ export const deleteCell = cellId => ({
 
 export const loadFile = () => ({ type: 'LOAD_FILE' });
 
-const defaultCellForLocation = (context, y, x) => ({
-  sheetId: context,
-  id: uuidv4(),
-  name: defaultCellName(y, x),
-  formula: [{ value: '' }],
-  x,
-  y,
-  width: 1,
-  height: 1,
-  type: CELL,
-});
+const defaultCellForLocation = (context, y, x) => {
+  const contextRef = getRefsById(store.getState())[context];
+  if (contextRef.type === SHEET) {
+    return {
+      sheetId: context,
+      id: uuidv4(),
+      name: defaultCellName(y, x),
+      formula: [{ value: '' }],
+      x,
+      y,
+      width: 1,
+      height: 1,
+      type: CELL,
+    };
+  }
+  if (contextRef.type !== ARRAY) {
+    throw new Error(`Unknown context type ${contextRef.type}`);
+  }
+  return {
+    id: uuidv4(),
+    arrayId: context,
+    type: ARRAY_CELL,
+    formula: [{ value: '' }],
+    index: y,
+  };
+};
 
 const scheduleSave = () => {
   const updateId = uuidv4();
