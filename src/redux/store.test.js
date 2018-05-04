@@ -84,8 +84,10 @@ describe('actions/the store', () => {
     const y1 = getCells(store.getState()).find(({ y }) => y === 2);
     const x2 = getCells(store.getState()).find(({ y }) => y === 3);
 
-    expect(stringFormula(y1.id)).toBe('y = x');
-    expect(stringFormula(x2.id)).toBe(`x = ${s1Name}.y(x=10)`);
+    // "Broken" references become lookups by name on parent refs. We end
+    // up with the parent name in the cell.
+    expect(stringFormula(y1.id)).toBe('y = s1.x');
+    expect(stringFormula(x2.id)).toBe(`x = ${s1Name}.y(${s1Name}.x=10)`);
 
     expect(getCellValue(y1)).toEqual({
       error: 'Error: x does not exist.',

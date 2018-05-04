@@ -188,7 +188,7 @@ const translateCall = (term, contextId, f) => {
   const callRef = call.ref || term.call.ref;
   const callContextId = getContextIdForRefId(callRef, contextId);
   const translatedArgs = term.args.map(({ ref, expr }) => ({
-    ref: f(ref, callContextId),
+    ref: translateTerm(ref, callContextId, f),
     expr: translateExpr(expr, contextId, f),
   }));
   return f(
@@ -339,6 +339,9 @@ const expandPopItem = k => `globals[${JSON.stringify(k)}].pop();`;
 
 const expandCall = (callTerm) => {
   const signature = callSignature(callTerm);
+  if (!callTerm.args.every(({ ref }) => ref.ref)) {
+    return 'pleaseThrow("Call arguments must be plain references")';
+  }
   const customArgs = callTerm.args.map(({ expr }) =>
     expandExpr(expr));
   const allArgs = [
