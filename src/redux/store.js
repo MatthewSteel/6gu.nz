@@ -1,11 +1,16 @@
 import { createStore } from 'redux';
 import uuidv4 from 'uuid-v4';
 import {
+  getContextIdForRefId,
+  getFormulaGraphs,
   getRefsById,
-  flattenExpr,
+  rewriteRefTermToParentLookup,
   translateExpr,
 } from '../selectors/formulas/selectors';
-import { parseFormula } from '../selectors/formulas/parser';
+import {
+  parseFormula,
+  translateLookups,
+} from '../selectors/formulas/parser';
 import defaultCellName from '../selectors/formulas/defaultCellName';
 
 export const SHEET = 'sheet';
@@ -21,7 +26,6 @@ export const selectionsEqual = (sel1, sel2) => {
   const { y, x, context } = sel1;
   return y === sel2.y && x === sel2.x && context === sel2.context;
 };
-
 
 const initialState = {
   sheets: [{
@@ -87,7 +91,63 @@ const scheduleSave = () => {
   return updateId;
 };
 
+
+const translateTermForDeletions = deletedRefIds => (
+  (term) => {
+    const outer = { on: term };
+    let inner = outer;
+    while (deletedRefIds.has(inner.on.ref)) {
+      inner.on = rewriteRefTermToParentLookup(inner.on);
+      inner = inner.on;
+    }
+    return outer.on;
+  }
+);
+
+
+const translateDeletions = (newState, deletedRefIds) => {
+  const { backwardsGraph } = getFormulaGraphs(store.getState());
+  const refsById = getRefsById(store.getState());
+  const deletedRefsArr = Array.from(deletedRefIds);
+  const refIdsToRewrite = new Set([].concat(...deletedRefsArr.map(id => (
+    backwardsGraph[id].filter(predId => refsById[predId].formula)
+  ))));
+
+  return {
+    ...newState,
+    cells: newState.cells.map((cell) => {
+      if (!refIdsToRewrite.has(cell.id)) return cell;
+      return {
+        ...cell,
+        formula: translateExpr(cell.formula, undefined, translateTermForDeletions(deletedRefIds)),
+      };
+    }),
+  };
+};
+
+const rewireFormula = (cell, updatedRef) => {
+  const { formula } = cell;
+  if (!formula) return cell;
+
+  const contextId = getContextIdForRefId(cell.id);
+  const translatedFormula = translateExpr(
+    formula,
+    contextId,
+    translateLookups(updatedRef),
+  );
+  return { ...cell, formula: translatedFormula };
+};
+
+const rewireBadRefs = (newState, updatedRef) => ({
+  ...newState,
+  cells: newState.cells.map(cell => rewireFormula(cell, updatedRef)),
+});
+
 const rootReducer = (state, action) => {
+  if (action.type === 'LOAD_FILE') {
+    return JSON.parse(localStorage.getItem('onlyFile'));
+  }
+
   if (action.type === 'SET_CELL_FORMULA') {
     const { selection, formulaStr } = action.payload;
     const newFormula = parseFormula(formulaStr, selection.context);
@@ -114,46 +174,15 @@ const rootReducer = (state, action) => {
       ...newFormula,
     };
 
-    const rewireBadRefs = (otherCell) => {
-      if (!otherCell.formula) return otherCell;
-      let somethingDifferent = false;
-      const translatedFormula = translateExpr(
-        otherCell.formula,
-        otherCell.sheetId,
-        (term, termSheetId) => {
-          // ref is `sheetId.cellName`
-          if (
-            term.lookup &&
-            term.on.ref === cell.sheetId &&
-            term.lookup === cell.name
-          ) {
-            somethingDifferent = true;
-            return { ref: cell.id };
-          }
-          // ref is `cellName` for a cell in the same sheet
-          if (
-            cell.sheetId === termSheetId &&
-            term.name &&
-            term.name === cell.name
-          ) {
-            somethingDifferent = true;
-            return { ref: cell.id };
-          }
-          return term;
-        },
-      );
-      if (!somethingDifferent) return otherCell;
-      return { ...otherCell, formula: translatedFormula };
-    };
-
-    return {
+    const stateWithCell = {
       ...state,
       cells: [
-        ...state.cells.filter(({ id }) => id !== selection.cellId).map(rewireBadRefs),
+        ...state.cells.filter(({ id }) => id !== selection.cellId),
         cell,
       ],
       updateId: scheduleSave(),
     };
+    return rewireBadRefs(stateWithCell, cell);
   }
 
   if (action.type === 'DELETE_CELL') {
@@ -166,35 +195,12 @@ const rootReducer = (state, action) => {
     const existingCell = getRefsById(state)[cellId];
     if (!existingCell) return state;
 
-    const translateFormula = (cell) => {
-      if (!cell.formula) return cell;
-      if (!flattenExpr(cell.formula).some(({ ref }) => ref === cellId)) {
-        return cell;
-      }
-      return {
-        ...cell,
-        formula: translateExpr(cell.formula, cell.sheetId, (term, sheetId) => {
-          if (term.ref !== cellId) return term;
-          if (existingCell.sheetId === sheetId) {
-            return { name: existingCell.name };
-          }
-          return {
-            lookup: existingCell.name,
-            on: { ref: existingCell.sheetId },
-          };
-        }),
-      };
-    };
-
-    return {
+    const stateMinusDeletions = {
       ...state,
-      cells: state.cells.filter(({ id }) => id !== cellId).map(translateFormula),
+      cells: state.cells.filter(({ id }) => id !== cellId),
       updateId: scheduleSave(),
     };
-  }
-
-  if (action.type === 'LOAD_FILE') {
-    return JSON.parse(localStorage.getItem('onlyFile'));
+    return translateDeletions(stateMinusDeletions, new Set([cellId]));
   }
 
   return state;

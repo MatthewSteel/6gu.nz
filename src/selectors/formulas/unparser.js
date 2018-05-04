@@ -52,7 +52,7 @@ export const stringFormula = (refId) => {
     retToJoin.push(ref.name);
   }
   retToJoin.push('=');
-  const refParent = refParentId(ref.id);
+  const refParent = refParentId(ref);
   const lookupTerms = translateExpr(
     ref.formula,
     getContextIdForRefId(refParent, refParent),

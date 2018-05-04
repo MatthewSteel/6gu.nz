@@ -6,6 +6,7 @@ import {
   getRefsById,
   getRefsByNameForContextId,
   getSheetsByName,
+  refIdParentId,
   refParentId,
   translateExpr,
 } from './selectors';
@@ -209,6 +210,24 @@ const getNameFromTokens = (tokens) => {
 // Post-processing: turn string names into refs. Hopefully in the future
 // a good ref-suggestion tab-completion engine will avoid us having to
 // rely on this so much.
+
+export const translateLookups = newRef => (existingTerm) => {
+  // D'oh, we can't run `subNamesFor...` in reducers because everything
+  // relies on selectors which are built on the global (previous) state.
+  // FIXME.
+  const parentId = refParentId(newRef);
+  if (existingTerm.on && existingTerm.on.ref !== parentId) {
+    return existingTerm;
+  }
+  if (existingTerm.lookup && existingTerm.lookup === newRef.name) {
+    return { ref: newRef.id };
+  }
+  if ('lookupIndex' in existingTerm && existingTerm.lookupIndex === newRef.index) {
+    return { ref: newRef.id };
+  }
+  return existingTerm;
+};
+
 const subNamesForRefsInName = (term, contextId) => {
   // Check cols in table, cells in sheet.
   let thisContextId = contextId;
@@ -218,7 +237,7 @@ const subNamesForRefsInName = (term, contextId) => {
       thisContextId,
     )[term.name];
     if (maybeMyRef) return { ref: maybeMyRef.id };
-    thisContextId = getContextIdForRefId(refParentId(thisContextId));
+    thisContextId = getContextIdForRefId(refIdParentId(thisContextId));
   }
 
   // Check sheets in book
@@ -258,7 +277,7 @@ const subNamesForRefsInLookupIndex = (term) => {
   return term;
 };
 
-const subNamesForRefsInTerm = (term, contextId) => {
+export const subNamesForRefsInTerm = (term, contextId) => {
   if (term.name) return subNamesForRefsInName(term, contextId);
   if (term.lookup) return subNamesForRefsInLookup(term);
   if (term.lookupIndex) return subNamesForRefsInLookupIndex(term);
