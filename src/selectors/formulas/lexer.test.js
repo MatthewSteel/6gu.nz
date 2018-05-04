@@ -34,4 +34,12 @@ describe('lexFormula', () => {
       { name: 'value' },
     ]);
   });
+
+  it('handles literal bools', () => {
+    expect(lexFormula('true||false')).toEqual([
+      { value: true },
+      { op: '||' },
+      { value: false },
+    ]);
+  });
 });

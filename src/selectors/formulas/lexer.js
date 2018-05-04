@@ -1,10 +1,15 @@
 const canStartName = c => c.match(/^[a-zA-Z_]$/u);
 const isNameChar = c => c.match(/^[0-9a-zA-Z_]$/u);
+const literalValues = new Set(['true', 'false']);
 
 const lexName = (input, i) => {
   let j;
   for (j = i; j < input.length && isNameChar(input.charAt(j)); ++j);
-  return { matchEnd: j, token: { name: input.substring(i, j) } };
+  const str = input.substring(i, j);
+  const token = literalValues.has(str) ?
+    { value: JSON.parse(str) } :
+    { name: str };
+  return { matchEnd: j, token };
 };
 
 const lexNumber = (input, i) => {
@@ -40,7 +45,7 @@ const chompWhitespace = (input, i) => {
 };
 
 const lexOp = (input, i) => {
-  const twoCharOps = new Set('**', '>=', '<=', '>>', '<<', '&&', '||');
+  const twoCharOps = new Set(['**', '>=', '<=', '>>', '<<', '&&', '||']);
   if (i + 1 !== input.length) {
     const maybeOp = input.charAt(i) + input.charAt(i + 1);
     if (twoCharOps.has(maybeOp)) {
