@@ -51,8 +51,8 @@ class SheetComponent extends Component {
 
   setWindowSelection(y, x) {
     const { selX, selY } = this.state;
-    if (y === selY && x === selX) return;
     this.getFocus();
+    if (y === selY && x === selX) return;
     this.setState({ selY: y, selX: x });
   }
 
