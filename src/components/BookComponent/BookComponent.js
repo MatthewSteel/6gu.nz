@@ -6,7 +6,7 @@ import {
   getSheetsById,
   getRefsById,
 } from '../../selectors/formulas/selectors';
-import { loadFile } from '../../redux/store';
+import store, { createSheet, loadFile } from '../../redux/store';
 import SheetComponent from '../SheetComponent/SheetComponent';
 import FileComponent from '../FileComponent/FileComponent';
 
@@ -19,6 +19,7 @@ const mapStateToProps = state => ({
 
 const mapDispatchToProps = dispatch => ({
   loadFileProp: () => dispatch(loadFile()),
+  createSheetProp: () => dispatch(createSheet()),
 });
 
 class BookComponent extends PureComponent {
@@ -50,6 +51,20 @@ class BookComponent extends PureComponent {
 
   changeSheetViewSheet(ev) {
     const targetSheetId = ev.target.value;
+    if (targetSheetId === 'new') {
+      const { createSheetProp } = this.props;
+      createSheetProp();
+
+      // Is this bad practice? The sheet will not be in our props...
+      const allSheets = getSheets(store.getState());
+      const createdSheet = allSheets[allSheets.length - 1];
+      this.setState({
+        selectedViewId: ev.target.name,
+        views: this.updateView(this.state.views, ev.target.name, () => (
+          { sheetId: createdSheet.id, stack: [] })),
+      });
+      return;
+    }
     this.setState({
       selectedViewId: ev.target.name,
       views: this.updateView(this.state.views, ev.target.name, () => (
@@ -164,6 +179,12 @@ class BookComponent extends PureComponent {
                 {sheet.name}
               </option>
             ))}
+            <option
+              key="new"
+              value="new"
+            >
+              {'{New sheet}'}
+            </option>
           </select>
         </SheetComponent>
       ));

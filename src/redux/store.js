@@ -4,6 +4,7 @@ import {
   getContextIdForRefId,
   getFormulaGraphs,
   getRefsById,
+  getSheetsByName,
   rewriteRefTermToParentLookup,
   translateExpr,
 } from '../selectors/formulas/selectors';
@@ -39,6 +40,8 @@ const initialState = {
   }],
   cells: [],
 };
+
+export const createSheet = () => ({ type: 'CREATE_SHEET' });
 
 export const setFormula = (selection, formula) => ({
   type: 'SET_CELL_FORMULA',
@@ -91,6 +94,19 @@ const scheduleSave = () => {
   return updateId;
 };
 
+const newSheet = () => {
+  const sheetsByName = getSheetsByName(store.getState());
+  for (let i = 1; ; ++i) {
+    const maybeName = `s${i}`;
+    if (!sheetsByName[maybeName]) {
+      return {
+        id: uuidv4(),
+        name: maybeName,
+        type: SHEET,
+      };
+    }
+  }
+};
 
 const translateTermForDeletions = deletedRefIds => (
   (term) => {
@@ -146,6 +162,15 @@ const rewireBadRefs = (newState, updatedRef) => ({
 const rootReducer = (state, action) => {
   if (action.type === 'LOAD_FILE') {
     return JSON.parse(localStorage.getItem('onlyFile'));
+  }
+
+  if (action.type === 'CREATE_SHEET') {
+    // Re-wire? Dunno...
+    return {
+      ...state,
+      sheets: [...state.sheets, newSheet()],
+      updateId: scheduleSave(),
+    };
   }
 
   if (action.type === 'SET_CELL_FORMULA') {
