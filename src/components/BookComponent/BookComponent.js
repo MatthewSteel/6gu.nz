@@ -107,6 +107,7 @@ class BookComponent extends PureComponent {
     const newStack = [];
     stack.forEach((stackRef) => {
       if (sheetData && sheetData.byId[stackRef]) {
+        sheetData = sheetData.byId[stackRef].value;
         newStack.push(stackRef);
       } else {
         sheetData = null;
