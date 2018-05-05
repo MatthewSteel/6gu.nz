@@ -120,7 +120,8 @@ export default class ContentsBaseComponent extends Component {
   }
 
   updateSelection() {
-    const { setFormulaSelection } = this.props;
+    const { setFormulaSelection, viewSelected } = this.props;
+    if (!viewSelected) return;
     const selectedCell = this.maybeSelectedCell();
     // If we've selected a table or something we should let them update
     // the formula box.
