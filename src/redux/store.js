@@ -6,6 +6,7 @@ import {
   getRefsById,
   getSheetsByName,
   rewriteRefTermToParentLookup,
+  transitiveChildren,
   translateExpr,
 } from '../selectors/formulas/selectors';
 import {
@@ -48,9 +49,9 @@ export const setFormula = (selection, formula) => ({
   payload: { selection, formulaStr: formula },
 });
 
-export const deleteCell = cellId => ({
-  type: 'DELETE_CELL',
-  payload: { cellId },
+export const deleteThing = refId => ({
+  type: 'DELETE_THING',
+  payload: { refId },
 });
 
 export const loadFile = () => ({ type: 'LOAD_FILE' });
@@ -210,22 +211,20 @@ const rootReducer = (state, action) => {
     return rewireBadRefs(stateWithCell, cell);
   }
 
-  if (action.type === 'DELETE_CELL') {
-    // We're going to reset everything here. In the future we will want to
-    // be less destructive. That is to say, if a cell is not referred to
-    // in a sheet, don't modify that sheet.
-    // I think "in the future" we will have a lot of state to keep track
-    // of :-/
-    const { cellId } = action.payload;
-    const existingCell = getRefsById(state)[cellId];
-    if (!existingCell) return state;
+  if (action.type === 'DELETE_THING') {
+    const { refId } = action.payload;
+    const existingRef = getRefsById(state)[refId];
+    if (!existingRef) return state;
+
+    const idsToDelete = transitiveChildren(refId);
 
     const stateMinusDeletions = {
       ...state,
-      cells: state.cells.filter(({ id }) => id !== cellId),
+      sheets: state.sheets.filter(({ id }) => !idsToDelete.has(id)),
+      cells: state.cells.filter(({ id }) => !idsToDelete.has(id)),
       updateId: scheduleSave(),
     };
-    return translateDeletions(stateMinusDeletions, new Set([cellId]));
+    return translateDeletions(stateMinusDeletions, idsToDelete);
   }
 
   return state;

@@ -36,6 +36,25 @@ export const getChildrenByParentId = createSelector(
   },
 );
 
+export const transitiveChildren = (refId) => {
+  // Sheet -> table -> cell etc. Not formula references.
+  let frontier = [refId];
+  const seen = new Set(frontier);
+  const childrenByParentId = getChildrenByParentId(store.getState());
+  while (frontier.length > 0) {
+    const newFrontier = [];
+    frontier.forEach((id) => {
+      childrenByParentId[id].forEach((child) => {
+        if (seen.has(child.id)) return;
+        newFrontier.push(child.id);
+        seen.add(child.id);
+      });
+    });
+    frontier = newFrontier;
+  }
+  return seen;
+};
+
 export const getCellsById = createSelector(
   getCells,
   (cells) => {

@@ -210,8 +210,8 @@ export default class ContentsBaseComponent extends Component {
       if (!readOnly) {
         // Careful: swallow the event so a parent doesn't get it.
         const selection = this.selectedCellId();
-        const { deleteCellProp } = this.props;
-        if (selection.cellId) deleteCellProp(selection.cellId);
+        const { deleteCell } = this.props;
+        if (selection.cellId) deleteCell(selection.cellId);
         if (realFormulaRef) realFormulaRef.resetValue();
       }
     }

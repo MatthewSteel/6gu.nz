@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import { connect } from 'react-redux';
 
 import { stringFormula } from '../../selectors/formulas/unparser';
-import { deleteCell, selectionsEqual, setFormula } from '../../redux/store';
+import { deleteThing, selectionsEqual, setFormula } from '../../redux/store';
 import './FormulaComponent.css';
 
 
@@ -37,7 +37,7 @@ class FormulaComponent extends Component {
 
   setFormula(formulaStr) {
     const {
-      deleteCellProp,
+      deleteCell,
       selection,
       setCellFormula,
       readOnly,
@@ -46,7 +46,7 @@ class FormulaComponent extends Component {
     if (formulaStr !== '') {
       setCellFormula(selection, formulaStr);
     } else if (selection.cellId) {
-      deleteCellProp(selection.cellId);
+      deleteCell(selection.cellId);
     }
   }
 
@@ -110,7 +110,7 @@ class FormulaComponent extends Component {
 }
 
 const mapDispatchToProps = dispatch => ({
-  deleteCellProp: cellId => dispatch(deleteCell(cellId)),
+  deleteCell: cellId => dispatch(deleteThing(cellId)),
   setCellFormula: (context, cellId, formula) => dispatch(setFormula(context, cellId, formula)),
 });
 

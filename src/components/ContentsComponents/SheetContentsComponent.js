@@ -10,7 +10,7 @@ import ArrayContentsComponent from './ArrayContentsComponent';
 import { getChildrenByParentId } from '../../selectors/formulas/selectors';
 import { overlaps, truncateOverlap } from '../../selectors/geom/geom';
 import { getType } from '../../selectors/formulas/tables';
-import { deleteCell } from '../../redux/store';
+import { deleteThing } from '../../redux/store';
 
 
 class SheetContentsComponent extends ContentsBaseComponent {
@@ -171,7 +171,7 @@ const mapStateToProps = (state, ownProps) => ({
 });
 
 const mapDispatchToProps = dispatch => ({
-  deleteCellProp: cellId => dispatch(deleteCell(cellId)),
+  deleteCell: cellId => dispatch(deleteThing(cellId)),
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(SheetContentsComponent);

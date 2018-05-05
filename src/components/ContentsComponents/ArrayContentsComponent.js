@@ -9,7 +9,7 @@ import ContentsBaseComponent from './ContentsBaseComponent';
 
 import { getRefsById, getChildrenByParentId } from '../../selectors/formulas/selectors';
 import { rangesOverlap } from '../../selectors/geom/geom';
-import { deleteCell } from '../../redux/store';
+import { deleteThing } from '../../redux/store';
 
 
 class ArrayContentsComponent extends ContentsBaseComponent {
@@ -126,7 +126,7 @@ const mapStateToProps = (state, ownProps) => ({
 });
 
 const mapDispatchToProps = dispatch => ({
-  deleteCellProp: cellId => dispatch(deleteCell(cellId)),
+  deleteCell: cellId => dispatch(deleteThing(cellId)),
 });
 
 export default connect(
