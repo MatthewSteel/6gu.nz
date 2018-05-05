@@ -58,10 +58,10 @@
 
 .CellSelected {
   position: relative;
-  z-index: 2;
 }
 
 .CellSelected::after {
+  z-index: 2;
   display: block;
   position: absolute;
   top: 1px;
