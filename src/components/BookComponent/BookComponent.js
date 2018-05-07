@@ -6,7 +6,11 @@ import {
   getSheetsById,
   getRefsById,
 } from '../../selectors/formulas/selectors';
-import store, { createSheet, loadFile } from '../../redux/store';
+import store, {
+  createSheet,
+  deleteThing,
+  loadFile,
+} from '../../redux/store';
 import SheetComponent from '../SheetComponent/SheetComponent';
 import FileComponent from '../FileComponent/FileComponent';
 
@@ -20,6 +24,7 @@ const mapStateToProps = state => ({
 const mapDispatchToProps = dispatch => ({
   loadFileProp: () => dispatch(loadFile()),
   createSheetProp: () => dispatch(createSheet()),
+  deleteSheet: (sheetId) => dispatch(deleteThing(sheetId)),
 });
 
 class BookComponent extends PureComponent {
@@ -29,8 +34,7 @@ class BookComponent extends PureComponent {
     this.popStack = this.popStack.bind(this);
     this.setViewSelection = this.setViewSelection.bind(this);
     this.changeSheetViewSheet = this.changeSheetViewSheet.bind(this);
-    this.updateView = this.updateView.bind(this);
-    this.normaliseView = this.normaliseView.bind(this);
+    this.deleteSelectedSheet = this.deleteSelectedSheet.bind(this);
     this.state = {
       selectedViewId: '0',
       views: [{
@@ -49,52 +53,17 @@ class BookComponent extends PureComponent {
     this.setState({ selectedViewId: viewId });
   }
 
-  changeSheetViewSheet(ev) {
-    const targetSheetId = ev.target.value;
-    if (targetSheetId === 'new') {
-      const { createSheetProp } = this.props;
-      createSheetProp();
-
-      // Is this bad practice? The sheet will not be in our props...
-      const allSheets = getSheets(store.getState());
-      const createdSheet = allSheets[allSheets.length - 1];
-      this.setState({
-        selectedViewId: ev.target.name,
-        views: this.updateView(this.state.views, ev.target.name, () => (
-          { sheetId: createdSheet.id, stack: [] })),
-      });
-      return;
-    }
-    this.setState({
-      selectedViewId: ev.target.name,
-      views: this.updateView(this.state.views, ev.target.name, () => (
-        { sheetId: targetSheetId, stack: [] })),
-    });
+  getView(viewId) {
+    const view = this.state.views.find(({ id }) => id === viewId);
+    return this.normaliseView(view);
   }
 
-  pushStack(viewId, cellId) {
+  updateView(newView) {
     this.setState({
-      selectedViewId: viewId,
-      views: this.updateView(this.state.views, viewId, view => (
-        { stack: [...view.stack, cellId] })),
+      selectedViewId: newView.id,
+      views: this.state.views.map(view => (
+        view.id === newView.id ? newView : view)),
     });
-  }
-
-  popStack(viewId, n = 1) {
-    this.setState({
-      selectedViewId: viewId,
-      views: this.updateView(this.state.views, viewId, view => (
-        { stack: view.stack.slice(0, view.stack.length - n) })),
-    });
-  }
-
-  updateView(views, viewId, f) {
-    return [
-      ...views.map((view) => {
-        if (view.id !== viewId) return view;
-        return { ...view, ...f(this.normaliseView(view)) };
-      }),
-    ];
   }
 
   normaliseView(view) {
@@ -119,6 +88,50 @@ class BookComponent extends PureComponent {
     };
   }
 
+  changeSheetViewSheet(ev) {
+    const targetSheetId = ev.target.value;
+    const viewId = ev.target.name;
+    if (targetSheetId !== 'new') {
+      this.updateView({ id: viewId, sheetId: targetSheetId, stack: [] });
+      return;
+    }
+    // new sheet
+    const { createSheetProp } = this.props;
+    createSheetProp();
+
+    // Is this bad practice? The sheet will not be in our props...
+    const allSheets = getSheets(store.getState());
+    const createdSheet = allSheets[allSheets.length - 1];
+    this.updateView({ id: viewId, sheetId: createdSheet.id, stack: [] });
+  }
+
+  pushStack(viewId, cellId) {
+    const view = this.getView(viewId);
+    const newStack = [...view.stack, cellId];
+    this.updateView({ ...view, stack: newStack });
+  }
+
+  popStack(viewId, n = 1) {
+    const view = this.getView(viewId);
+    const newStack = view.stack.slice(0, view.stack.length - n);
+    this.updateView({ ...view, stack: newStack });
+  }
+
+  deleteSelectedSheet(viewId) {
+    const view = this.getView(viewId);
+    const { createSheetProp, deleteSheet, sheets } = this.props;
+    if (sheets.length === 1) createSheetProp();
+
+    // Possible new sheet may not be in `sheets`.
+    const allSheets = getSheets(store.getState());
+
+    const sheetIndex = allSheets.findIndex(({ id }) => id === view.sheetId);
+    const newViewSheetIndex = sheetIndex + (sheetIndex === allSheets.length - 1 ? -1 : 1);
+    const newViewSheetId = allSheets[newViewSheetIndex].id;
+    this.updateView({ id: viewId, stack: [], sheetId: newViewSheetId });
+    deleteSheet(allSheets[sheetIndex].id);
+  }
+
   render() {
     const {
       refsById,
@@ -130,9 +143,10 @@ class BookComponent extends PureComponent {
     const { selectedViewId, views } = this.state;
 
     const sheetComponents = views.map(({ id, stack, sheetId }) => {
-      const sheetName = sheetsById[sheetId].name;
+      const selectedSheet = sheetsById[sheetId] || sheets[0];
+      const sheetName = selectedSheet.name;
       const viewData = [{
-        ...cellValuesById[sheetId],
+        ...cellValuesById[selectedSheet.id],
         path: sheetName,
       }];
       let pathStillValid = true;
@@ -160,6 +174,7 @@ class BookComponent extends PureComponent {
           selected={selectedViewId === id && i === viewData.length - 1}
           setViewSelection={this.setViewSelection}
           isChild={i !== 0}
+          deleteSheet={this.deleteSelectedSheet}
           popViewStack={this.popStack}
           pushViewStack={this.pushStack}
           height={5}
@@ -169,7 +184,7 @@ class BookComponent extends PureComponent {
           <select
             className="ViewSelect"
             name={id}
-            value={sheetId}
+            value={selectedSheet.id}
             onChange={this.changeSheetViewSheet}
           >
             {sheets.map(sheet => (

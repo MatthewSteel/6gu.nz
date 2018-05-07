@@ -12,6 +12,7 @@ class SheetComponent extends Component {
     this.setFormulaFocus = this.setFormulaFocus.bind(this);
     this.setFormulaRef = this.setFormulaRef.bind(this);
     this.popStack = this.popStack.bind(this);
+    this.deleteSheet = this.deleteSheet.bind(this);
     this.pushStack = this.pushStack.bind(this);
     this.setFormulaSelection = this.setFormulaSelection.bind(this);
     this.setWindowSelection = this.setWindowSelection.bind(this);
@@ -69,6 +70,11 @@ class SheetComponent extends Component {
     popViewStack(viewId);
   }
 
+  deleteSheet() {
+    const { deleteSheet, viewId } = this.props;
+    deleteSheet(viewId);
+  }
+
   render() {
     const {
       cellValuesById,
@@ -99,7 +105,20 @@ class SheetComponent extends Component {
         <div className="SheetTitle">
           {path}
           {isChild && (
-            <button onClick={this.popStack} className="StackButton">&times;</button>
+            <button
+              onClick={this.popStack}
+              className="StackButton"
+            >
+              &minus;
+            </button>
+          )}
+          {!isChild && (
+            <button
+              onClick={this.deleteSheet}
+              className="DeleteSheetButton"
+            >
+              &times;
+            </button>
           )}
         </div>
         <div

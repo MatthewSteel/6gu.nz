@@ -38,3 +38,12 @@
   background-color: #EFEFEF;
   border: 1px solid #EAEAEA;
 }
+
+.DeleteSheetButton {
+  position: absolute;
+  left: 0px;
+  top: 0px;
+  bottom: 0px;
+  background-color: #EFEFEF;
+  border: 1px solid #EAEAEA;
+}
