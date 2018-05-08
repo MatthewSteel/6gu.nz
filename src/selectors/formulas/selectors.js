@@ -268,8 +268,10 @@ export const flattenExpr = (expr) => {
 
 const refEdges = (ref) => {
   if (ref.formula) {
+    const refErrors = flattenExpr(ref.formula).filter(refError);
+    if (refErrors.length) return [];
     return flattenExpr(ref.formula)
-      .filter(term => term.ref && !refError(term))
+      .filter(term => term.ref)
       .map(term => term.ref);
   }
   const children = getChildrenByParentId(store.getState())[ref.id];
@@ -474,6 +476,7 @@ const pleaseThrow = (s) => { throw new Error(s); };
 const refError = (term) => {
   if (term.badFormula) return 'Bad formula';
   if (term.name) return refErrorMessage(term.name);
+  if (term.lookup && term.on.ref) return refErrorMessage(term.lookup);
   return false;
 };
 

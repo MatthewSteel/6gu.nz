@@ -1,4 +1,4 @@
-import store, { CELL, deleteCell, setFormula } from './store';
+import store, { CELL, deleteThing, setFormula } from './store';
 import { getCells, getSheets, getCellValuesById } from '../selectors/formulas/selectors';
 import { stringFormula } from '../selectors/formulas/unparser';
 
@@ -7,7 +7,7 @@ const getCellValue = cell => getCellValuesById(store.getState())[cell.id];
 describe('actions/the store', () => {
   beforeEach(() => {
     getCells(store.getState()).forEach((cell) => {
-      store.dispatch(deleteCell(cell.id));
+      store.dispatch(deleteThing(cell.id));
     });
   });
 
@@ -77,7 +77,7 @@ describe('actions/the store', () => {
     store.dispatch(setFormula({ context: sheet2.id, y: 3, x: 0 }, `x=${s1Name}.y(x=10)`));
 
     const x1 = getCells(store.getState()).find(({ y }) => y === 1);
-    store.dispatch(deleteCell(x1.id));
+    store.dispatch(deleteThing(x1.id));
 
     expect(getCellValue(x1)).toBe(undefined);
 
@@ -108,6 +108,17 @@ describe('actions/the store', () => {
 
     expect(stringFormula(y1.id)).toBe('y = x');
     expect(stringFormula(x2.id)).toBe(`x = ${s1Name}.y(x=10)`);
+  });
+
+  it('deletes sheets ok', () => {
+    const [sheet1, sheet2] = getSheets(store.getState());
+    store.dispatch(setFormula({ context: sheet1.id, y: 1, x: 0 }, '0'));
+    store.dispatch(setFormula({ context: sheet2.id, y: 2, x: 0 }, '1'));
+
+    store.dispatch(deleteThing(sheet1.id));
+    store.dispatch(deleteThing(sheet2.id));
+    expect(getCells(store.getState())).toEqual([]);
+    expect(getSheets(store.getState())).toEqual([]);
   });
 });
 

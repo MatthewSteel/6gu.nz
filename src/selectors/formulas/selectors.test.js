@@ -1,4 +1,4 @@
-import store, { deleteCell, setFormula } from '../../redux/store';
+import store, { deleteThing, setFormula } from '../../redux/store';
 import { getCells, getSheets, lookupExpression } from './selectors';
 
 const getCell = cellName =>
@@ -7,7 +7,7 @@ const getCell = cellName =>
 describe('formula selectors', () => {
   beforeEach(() => {
     getCells(store.getState()).forEach((cell) => {
-      store.dispatch(deleteCell(cell.id));
+      store.dispatch(deleteThing(cell.id));
     });
   });
 
