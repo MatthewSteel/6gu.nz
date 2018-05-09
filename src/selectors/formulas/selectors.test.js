@@ -3,6 +3,7 @@ import { getCells, getSheets, lookupExpression } from './selectors';
 
 const getCell = cellName =>
   getCells(store.getState()).find(({ name }) => name === cellName);
+const getCellValue = cell => getCellValuesById(store.getState())[cell.id];
 
 describe('formula selectors', () => {
   beforeEach(() => {
@@ -23,5 +24,16 @@ describe('formula selectors', () => {
     });
 
     expect(lookupExpression(s2.id, s1.id)).toEqual({ ref: s1.id });
+  });
+
+  it('gives good errors for bad formulas', () => {
+    const s1 = getSheets(store.getState())[0];
+    store.dispatch(setFormula({ context: s1.id, y: 0, x: 0 }, 'x=('));
+
+    // FIXME: should be `x`, not `a1`.
+    const cell = getCell('x');
+    expect(getCellValue(cell)).toEqual({
+      error: 'Error: Bad formula',
+    });
   });
 });

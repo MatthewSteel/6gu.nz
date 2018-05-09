@@ -474,7 +474,7 @@ const arrayValue = (arrayId, globals) => {
 const pleaseThrow = (s) => { throw new Error(s); };
 
 const refError = (term) => {
-  if (term.badFormula) return 'Bad formula';
+  if (term.badFormula) return '"Bad formula"';
   if (term.name) return refErrorMessage(term.name);
   if (term.lookup && term.on.ref) return refErrorMessage(term.lookup);
   return false;
