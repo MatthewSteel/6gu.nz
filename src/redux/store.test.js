@@ -1,20 +1,24 @@
-import store, { CELL, deleteThing, setFormula } from './store';
+import store, { CELL, createSheet, deleteThing, setFormula } from './store';
 import { getCells, getSheets, getCellValuesById } from '../selectors/formulas/selectors';
 import { stringFormula } from '../selectors/formulas/unparser';
 
+const allCells = () => getCells(store.getState());
+const find = f => allCells().find(f);
 const getCellValue = cell => getCellValuesById(store.getState())[cell.id];
 
 describe('actions/the store', () => {
   beforeEach(() => {
-    getCells(store.getState()).forEach((cell) => {
-      store.dispatch(deleteThing(cell.id));
+    getSheets(store.getState()).forEach((sheet) => {
+      store.dispatch(deleteThing(sheet.id));
     });
+    store.dispatch(createSheet());
+    store.dispatch(createSheet());
   });
 
   it('sets up simple cells and calculates their values ok', () => {
     const [sheet] = getSheets(store.getState());
     store.dispatch(setFormula({ context: sheet.id, y: 1, x: 0 }, 'x=12'));
-    const cells = getCells(store.getState());
+    const cells = allCells();
     expect(cells.length).toBe(1);
     expect({ ...cells[0], id: undefined }).toEqual({
       sheetId: sheet.id,
@@ -30,7 +34,7 @@ describe('actions/the store', () => {
 
     // test changing the name
     store.dispatch(setFormula({ context: sheet.id, cellId: cells[0].id }, 'y='));
-    const newCells = getCells(store.getState());
+    const newCells = allCells();
     expect(newCells.length).toBe(1);
     expect(newCells[0].name).toBe('y');
     expect({ ...newCells[0], name: 'x' }).toEqual(cells[0]);
@@ -42,7 +46,7 @@ describe('actions/the store', () => {
     expect(stringFormula(cells[0].id)).toBe('y = 12');
 
     store.dispatch(setFormula({ context: sheet.id, y: 2, x: 0 }, '="hi"'));
-    const newCell = getCells(store.getState()).find(({ y }) => y === 2);
+    const newCell = find(({ y }) => y === 2);
     expect(newCell.name).toBe('a3');
     expect(stringFormula(newCell.id)).toBe('a3 = "hi"');
   });
@@ -54,7 +58,7 @@ describe('actions/the store', () => {
     store.dispatch(setFormula({ context: sheet1.id, y: 2, x: 0 }, 'y=x'));
     store.dispatch(setFormula({ context: sheet2.id, y: 3, x: 0 }, `x=${s1Name}.y(x=10)`));
 
-    const x2 = getCells(store.getState()).find(({ y }) => y === 3);
+    const x2 = find(({ y }) => y === 3);
     expect(getCellValue(x2)).toEqual({
       value: 10,
       override: false,
@@ -62,7 +66,7 @@ describe('actions/the store', () => {
     expect(stringFormula(x2.id)).toBe(`x = ${s1Name}.y(x=10)`);
 
     store.dispatch(setFormula({ context: sheet2.id, y: 4, x: 0 }, `y=${s1Name}.y`));
-    const y2 = getCells(store.getState()).find(({ y }) => y === 4);
+    const y2 = find(({ y }) => y === 4);
     expect(getCellValue(y2)).toEqual({
       value: 12,
       override: false,
@@ -76,13 +80,13 @@ describe('actions/the store', () => {
     store.dispatch(setFormula({ context: sheet1.id, y: 2, x: 0 }, 'y=x'));
     store.dispatch(setFormula({ context: sheet2.id, y: 3, x: 0 }, `x=${s1Name}.y(x=10)`));
 
-    const x1 = getCells(store.getState()).find(({ y }) => y === 1);
+    const x1 = find(({ y }) => y === 1);
     store.dispatch(deleteThing(x1.id));
 
     expect(getCellValue(x1)).toBe(undefined);
 
-    const y1 = getCells(store.getState()).find(({ y }) => y === 2);
-    const x2 = getCells(store.getState()).find(({ y }) => y === 3);
+    const y1 = find(({ y }) => y === 2);
+    const x2 = find(({ y }) => y === 3);
 
     // "Broken" references become lookups by name on parent refs. We end
     // up with the parent name in the cell.
@@ -117,8 +121,24 @@ describe('actions/the store', () => {
 
     store.dispatch(deleteThing(sheet1.id));
     store.dispatch(deleteThing(sheet2.id));
-    expect(getCells(store.getState())).toEqual([]);
+    expect(allCells()).toEqual([]);
     expect(getSheets(store.getState())).toEqual([]);
+  });
+
+  it('gives us good formula errors when sheets are deleted', () => {
+    const [sheet1, sheet2] = getSheets(store.getState());
+    const s1Name = sheet1.name;
+    store.dispatch(setFormula(
+      {
+        context: sheet2.id,
+        y: 0,
+        x: 0,
+      },
+      `x=${s1Name}`,
+    ));
+    const x = find(() => true);
+    store.dispatch(deleteThing(sheet1.id));
+    expect(getCellValue(x)).toEqual({ error: `Error: ${s1Name} does not exist.` });
   });
 });
 

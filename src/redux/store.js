@@ -130,17 +130,25 @@ const newSheet = () => {
   }
 };
 
-const translateTermForDeletions = deletedRefIds => (
-  (term) => {
-    const outer = { on: term };
-    let inner = outer;
-    while (deletedRefIds.has(inner.on.ref)) {
-      inner.on = rewriteRefTermToParentLookup(inner.on);
-      inner = inner.on;
+const translateTermForDeletions = (deletedRefIds) => {
+  const refsById = getRefsById(store.getState());
+  return (
+    (term) => {
+      const outer = { on: term };
+      let inner = outer;
+      while (deletedRefIds.has(inner.on.ref)) {
+        const ref = refsById[inner.on.ref];
+        if (ref.type === SHEET) {
+          inner.on = { name: ref.name };
+          break;
+        }
+        inner.on = rewriteRefTermToParentLookup(inner.on);
+        inner = inner.on;
+      }
+      return outer.on;
     }
-    return outer.on;
-  }
-);
+  );
+};
 
 
 const translateDeletions = (newState, deletedRefIds) => {
