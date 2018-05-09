@@ -20,7 +20,7 @@ const parseOperators = (tokens, i) => {
   let j;
   for ( // any number of unary pluses and minuses after first binary op
     j = i + 1;
-    j < tokens.length && tokens[j].op && '+-'.includes(tokens[j].op);
+    j < tokens.length && tokens[j].op && '+-!~'.includes(tokens[j].op);
     ++j
   );
   return tokens.slice(i, j);
@@ -162,7 +162,7 @@ const parseTerm = (tokens, i) => {
 
 const parseExpression = (tokens, i) => {
   const elements = [];
-  for (let j = i; j < tokens.length; ++j) {
+  for (let j = i; j < tokens.length;) {
     // Precondition: We should be looking at the start of a term.
     const { term, newIndex } = parseTerm(tokens, j);
     elements.push(term);
@@ -175,6 +175,7 @@ const parseExpression = (tokens, i) => {
     }
     parseOperators(tokens, j).forEach((op) => {
       elements.push(op);
+      ++j;
     });
   }
   throw new Error('Unexpected end of expression');
