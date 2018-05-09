@@ -88,12 +88,11 @@ class SheetContentsComponent extends ContentsBaseComponent {
   }
 
   drop() {
-    // dragEnd clears the drag state, not us.
-    // Not updating drag position with y/x, it's annoying.
     const {
       dragRefId,
       dragGeom,
       moveCell,
+      clearDragProp,
     } = this.props;
     if (!dragGeom) return;
     const { y, x, height, width } = dragGeom;
@@ -102,6 +101,8 @@ class SheetContentsComponent extends ContentsBaseComponent {
       moveCell(dragRefId, y, x, height, width);
       this.setSelection(y, x);
     }
+    // Just in case -- the dragged thing might cease to exist or something.
+    clearDragProp();
   }
 
   finishDrag() {
@@ -174,6 +175,8 @@ class SheetContentsComponent extends ContentsBaseComponent {
             viewSelX={viewSelX}
             viewSelY={viewSelY}
             setViewSelection={setViewSelection}
+            startDragCallback={this.startDragForRef}
+            endDragCallback={this.finishDrag}
           />
         );
       }
@@ -243,14 +246,16 @@ class SheetContentsComponent extends ContentsBaseComponent {
       }
       if (dragGeom) {
         const dragValid = this.canPlaceWithoutConflict();
-        const maxHeight = viewHeight - dragGeom.y + 1;
-        const maxWidth = viewWidth - dragGeom.x + 1;
+        const windowY = dragGeom.y - scrollY;
+        const windowX = dragGeom.x - scrollX;
+        const maxHeight = viewHeight - windowY + 1;
+        const maxWidth = viewWidth - windowX + 1;
         dragOverCells.push((
           <DragOutlineComponent
             key="dragOutline"
             valid={dragValid}
-            y={dragGeom.y - scrollY}
-            x={dragGeom.x - scrollX}
+            y={windowY}
+            x={windowX}
             height={Math.min(maxHeight, dragGeom.height)}
             width={Math.min(maxWidth, dragGeom.width)}
           />

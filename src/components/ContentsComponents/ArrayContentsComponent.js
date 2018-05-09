@@ -9,10 +9,25 @@ import ContentsBaseComponent from './ContentsBaseComponent';
 
 import { getRefsById, getChildrenByParentId } from '../../selectors/formulas/selectors';
 import { rangesOverlap } from '../../selectors/geom/geom';
+import { DRAG_MOVE } from '../../selectors/geom/dragGeom';
 import { deleteThing } from '../../redux/store';
 
 
 class ArrayContentsComponent extends ContentsBaseComponent {
+  constructor(props) {
+    super(props);
+    this.onNameDragStart = this.onNameDragStart.bind(this);
+  }
+
+  onNameDragStart(ev) {
+    ev.dataTransfer.setData(
+      'text/plain',
+      JSON.stringify({ spreadSheetData: true }),
+    );
+    const { contextId, startDragCallback } = this.props;
+    startDragCallback(contextId, DRAG_MOVE);
+  }
+
   maybeSelectedCell() {
     const { cells } = this.props;
     const { selY } = this.localSelection();
@@ -39,6 +54,7 @@ class ArrayContentsComponent extends ContentsBaseComponent {
       name,
       cells,
       tableData,
+      endDragCallback,
       pushViewStack,
       viewSelected,
       viewHeight,
@@ -113,6 +129,8 @@ class ArrayContentsComponent extends ContentsBaseComponent {
           width={1}
           height={0.5}
           setSelection={this.setViewSelection}
+          onDragStart={this.onNameDragStart}
+          onDragEnd={endDragCallback}
         />
         {children}
       </Fragment>
