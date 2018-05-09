@@ -26,6 +26,8 @@ class BaseCellComponent extends PureComponent {
       children,
       className,
       title,
+      onDragStart,
+      onDragEnd,
     } = this.props;
     const style = this.bounds();
     return (
@@ -33,7 +35,10 @@ class BaseCellComponent extends PureComponent {
         className={className}
         style={style}
         onClick={this.onClick}
+        onDragStart={onDragStart}
+        onDragEnd={onDragEnd}
         title={title}
+        draggable={!!(onDragStart && onDragEnd)}
       >
         {children}
       </div>

@@ -24,7 +24,7 @@ const mapStateToProps = state => ({
 const mapDispatchToProps = dispatch => ({
   loadFileProp: () => dispatch(loadFile()),
   createSheetProp: () => dispatch(createSheet()),
-  deleteSheet: (sheetId) => dispatch(deleteThing(sheetId)),
+  deleteSheet: sheetId => dispatch(deleteThing(sheetId)),
 });
 
 class BookComponent extends PureComponent {

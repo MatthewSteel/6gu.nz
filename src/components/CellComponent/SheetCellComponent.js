@@ -2,9 +2,26 @@ import React, { PureComponent } from 'react';
 import CellNameComponent from './CellNameComponent';
 import CellValueComponent from './CellValueComponent';
 import CellSelectionComponent from './CellSelectionComponent';
+
+import { DRAG_MOVE } from '../../selectors/geom/dragGeom';
+
 import './CellComponent.css';
 
 class SheetCellComponent extends PureComponent {
+  constructor(props) {
+    super(props);
+    this.onNameDragStart = this.onNameDragStart.bind(this);
+  }
+
+  onNameDragStart(ev) {
+    ev.dataTransfer.setData(
+      'text/plain',
+      JSON.stringify({ spreadSheetData: true }),
+    );
+    const { id, startDragCallback } = this.props;
+    startDragCallback(id, DRAG_MOVE);
+  }
+
   render() {
     const {
       id,
@@ -17,6 +34,7 @@ class SheetCellComponent extends PureComponent {
       selected,
       setSelection,
       value,
+      endDragCallback,
     } = this.props;
 
     return (
@@ -35,6 +53,8 @@ class SheetCellComponent extends PureComponent {
           height={0.5}
           selected={selected}
           setSelection={setSelection}
+          onDragStart={this.onNameDragStart}
+          onDragEnd={endDragCallback}
         />
         <CellValueComponent
           x={x}

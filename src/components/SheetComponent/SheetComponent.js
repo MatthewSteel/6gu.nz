@@ -87,6 +87,7 @@ class SheetComponent extends Component {
       height,
       depth,
       sheetId,
+      viewId,
     } = this.props;
     const {
       formulaHasFocus,
@@ -139,6 +140,7 @@ class SheetComponent extends Component {
             viewSelected={selected}
             viewSelX={selX}
             viewSelY={selY}
+            viewId={viewId}
             setViewSelection={this.setWindowSelection}
           />
         </div>

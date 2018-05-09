@@ -1,5 +1,6 @@
 import { createStore } from 'redux';
 import uuidv4 from 'uuid-v4';
+import equal from 'fast-deep-equal';
 import {
   getContextIdForRefId,
   getFormulaGraphs,
@@ -13,6 +14,7 @@ import {
   parseFormula,
   translateLookups,
 } from '../selectors/formulas/parser';
+import { DRAG_RESIZE } from '../selectors/geom/dragGeom';
 import defaultCellName from '../selectors/formulas/defaultCellName';
 
 export const SHEET = 'sheet';
@@ -54,6 +56,25 @@ export const deleteThing = refId => ({
   payload: { refId },
 });
 
+// Maybe deal with re-parenting and re-typing? "Cut-paste from table cell
+// into a sheet" etc.
+export const moveThing = (refId, y, x, height, width) => ({
+  type: 'MOVE_THING',
+  payload: { refId, y, x, height, width },
+});
+
+export const startDrag = (sourceViewId, refId, type) => ({
+  type: 'START_DRAG',
+  payload: { sourceViewId, refId, type },
+});
+
+export const updateDrag = (targetViewId, targetSheetId, y, x) => ({
+  type: 'UPDATE_DRAG',
+  payload: { targetViewId, targetSheetId, y, x },
+});
+
+export const clearDrag = () => ({ type: 'CLEAR_DRAG' });
+
 export const loadFile = () => ({ type: 'LOAD_FILE' });
 
 const defaultCellForLocation = (context, y, x) => {
@@ -86,9 +107,9 @@ const scheduleSave = () => {
   const updateId = uuidv4();
 
   setTimeout(() => {
-    const state = store.getState();
+    const { sheets, cells } = store.getState();
     if (store.getState().updateId === updateId) {
-      localStorage.setItem('onlyFile', JSON.stringify(state));
+      localStorage.setItem('onlyFile', JSON.stringify({ sheets, cells }));
     }
   }, 1000);
 
@@ -162,7 +183,10 @@ const rewireBadRefs = (newState, updatedRef) => ({
 
 const rootReducer = (state, action) => {
   if (action.type === 'LOAD_FILE') {
-    return JSON.parse(localStorage.getItem('onlyFile'));
+    return {
+      uistate: { dragState: {} },
+      ...JSON.parse(localStorage.getItem('onlyFile')),
+    };
   }
 
   if (action.type === 'CREATE_SHEET') {
@@ -225,6 +249,58 @@ const rootReducer = (state, action) => {
       updateId: scheduleSave(),
     };
     return translateDeletions(stateMinusDeletions, idsToDelete);
+  }
+
+  if (action.type === 'MOVE_THING') {
+    const { refId, ...newGeometry } = action.payload;
+    const existingRef = getRefsById(state)[refId];
+    if (!existingRef) return state;
+    if (!existingRef.sheetId) {
+      throw new Error('Can only move/resize things in sheets');
+    }
+
+    return {
+      ...state,
+      cells: [
+        ...state.cells.filter(({ id }) => id !== refId),
+        { ...existingRef, ...newGeometry },
+      ],
+      updateId: scheduleSave(),
+    };
+  }
+
+  if (action.type === 'START_DRAG') {
+    return {
+      ...state,
+      uistate: { ...state.uistate, dragState: action.payload },
+    };
+  }
+
+  if (action.type === 'UPDATE_DRAG') {
+    const { targetViewId } = action.payload;
+    const { sourceViewId, type } = state.uistate.dragState;
+    if (type === DRAG_RESIZE && sourceViewId !== targetViewId) {
+      return state;
+    }
+    const { dragState } = state.uistate;
+    const newDragState = { ...dragState, ...action.payload };
+    if (equal(dragState, newDragState)) {
+      return state;
+    }
+    return {
+      ...state,
+      uistate: {
+        ...state.uistate,
+        dragState: newDragState,
+      },
+    };
+  }
+
+  if (action.type === 'CLEAR_DRAG') {
+    return {
+      ...state,
+      uistate: { ...state.uistate, dragState: {} },
+    };
   }
 
   return state;
