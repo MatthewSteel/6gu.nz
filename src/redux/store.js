@@ -42,6 +42,7 @@ const initialState = {
     type: SHEET,
   }],
   cells: [],
+  uistate: { dragState: {} },
 };
 
 export const createSheet = () => ({ type: 'CREATE_SHEET' });
