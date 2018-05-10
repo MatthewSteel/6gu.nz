@@ -211,22 +211,11 @@ export const getCellValuesById = createSelector(
   },
 );
 
-
-const getGlobalValue = (globals, ref) => {
-  if (ref.formula) return getRef(globals, ref.id);
-  // A bit of a hack: we should try to re-insert sheets that contain
-  // circular-ref cells into the topological order, probably.
-  // There's no _real_ need to re-evaluate these.
-  if (ref.type === ARRAY) return arrayValue(ref.id, globals);
-  if (ref.type !== SHEET) throw new Error(`unknown type ${ref.type}`);
-  return sheetValue(ref.id, globals);
-};
-
 // Translates the computation data into something more palatable for UI
 // consumption. No more stacks, mostly.
 const getGlobalValues = (globals, refs) => {
   const ret = {};
-  refs.forEach((ref) => { ret[ref.id] = getGlobalValue(globals, ref); });
+  refs.forEach(({ id }) => { ret[id] = getRef(globals, id) });
   return ret;
 };
 

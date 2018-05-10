@@ -1,5 +1,9 @@
 import { createSelector } from 'reselect';
-import { topologicalOrdering, transitiveClosure } from '../algorithms/algorithms';
+import {
+  topologicalOrdering,
+  transitiveClosure,
+  nodesInLargeStronglyConnectedComponents,
+} from '../algorithms/algorithms';
 import store, { ARRAY, ARRAY_CELL, SHEET, CELL } from '../../redux/store';
 
 // Simple "get raw state" selectors (for the moment?)
@@ -309,11 +313,32 @@ export const getFormulaGraphs = createSelector(
 );
 
 
+const circularRefs = createSelector(
+  getRefsById,
+  getFormulaGraphs,
+  (refsById, { backwardsGraph, forwardsGraph }) => {
+    const circularRefRefIds = nodesInLargeStronglyConnectedComponents(
+      forwardsGraph,
+      backwardsGraph,
+    );
+    const ret = new Set();
+    circularRefRefIds.forEach((refId) => {
+      if (refsById[refId].formula) ret.add(refId);
+    });
+    return ret;
+  },
+);
+
+
 // Array of thing-ids in "compute-order". Things involved in circular ref
 // problems are omitted for now.
 export const getTopoSortedRefIds = createSelector(
   getFormulaGraphs,
-  ({ backwardsGraph }) => topologicalOrdering(backwardsGraph),
+  circularRefs,
+  ({ backwardsGraph }, badRefs) => topologicalOrdering(
+    backwardsGraph,
+    badRefs,
+  ),
 );
 
 // id -> order location. If ret[myId] < ret[yourId], your object definitely

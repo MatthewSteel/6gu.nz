@@ -1,28 +1,13 @@
-export const topologicalOrdering = (backwardsGraph) => {
-  // Count numInArcs
-  const numInArcsByNode = {};
-  Object.keys(backwardsGraph).forEach((id) => {
-    numInArcsByNode[id] = 0;
+export const topologicalOrdering = (graph, badNodes) => {
+  const graphWithOmissions = {};
+  Object.entries(graph).forEach(([iNode, jNodes]) => {
+    if (badNodes.has(iNode)) {
+      graphWithOmissions[iNode] = [];
+    } else {
+      graphWithOmissions[iNode] = jNodes;
+    }
   });
-  Object.values(backwardsGraph).forEach((jIds) => {
-    jIds.forEach((jId) => { numInArcsByNode[jId] += 1; });
-  });
-
-  // Get all the "leaf" formulas
-  const ordering = Object.entries(numInArcsByNode)
-    .map(([id, numInArcs]) => numInArcs === 0 && id)
-    .filter(Boolean);
-
-  // Append anything only feeds leaf formulas
-  for (let i = 0; i < ordering.length; ++i) {
-    backwardsGraph[ordering[i]].forEach((jId) => {
-      numInArcsByNode[jId] -= 1;
-      if (numInArcsByNode[jId] === 0) {
-        ordering.push(jId);
-      }
-    });
-  }
-  return ordering;
+  return dfsOrder(graphWithOmissions).filter(id => !badNodes.has(id));
 };
 
 export const transitiveClosure = (ids, graph) => {
@@ -53,4 +38,49 @@ export const setIntersection = (setA, setB) => {
     if (setB.has(value)) intersection.add(value);
   });
   return intersection;
+};
+
+
+// Depth first search
+
+const maybeDfsExpand = (graph, node, marked, postOrderCallback, prev) => {
+  if (marked.has(node)) return;
+  marked.add(node);
+  graph[node].forEach((jNode) => {
+    maybeDfsExpand(graph, jNode, marked, postOrderCallback, node);
+  });
+  postOrderCallback(node, prev);
+};
+
+const dfs = (graph, order, postOrderCallback) => {
+  const marked = new Set();
+  order.forEach((node) => {
+    maybeDfsExpand(graph, node, marked, postOrderCallback);
+  });
+};
+
+const dfsOrder = (graph) => {
+  const ret = [];
+  dfs(graph, Object.keys(graph), node => ret.push(node));
+  return ret.reverse();
+};
+
+export const nodesInLargeStronglyConnectedComponents = (
+  forwardsGraph,
+  backwardsGraph,
+) => {
+  // Kosaraju's algorithm, more or less.
+  const forwardsOrder = dfsOrder(forwardsGraph);
+  const ret = new Set();
+  dfs(
+    backwardsGraph,
+    forwardsOrder,
+    (node, prev) => {
+      if (prev !== undefined) {
+        ret.add(prev);
+        ret.add(node);
+      }
+    },
+  );
+  return ret;
 };

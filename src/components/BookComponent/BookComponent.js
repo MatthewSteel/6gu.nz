@@ -68,7 +68,7 @@ class BookComponent extends PureComponent {
     // but pushing/popping on a broken stack is no good. Fix it up before
     // working on it.
     const { stack, sheetId } = view;
-    let sheetData = this.props.cellValuesById[sheetId];
+    let sheetData = this.props.cellValuesById[sheetId].value;
     const newStack = [];
     stack.forEach((stackRef) => {
       if (sheetData && sheetData.byId[stackRef]) {
@@ -142,7 +142,7 @@ class BookComponent extends PureComponent {
       const selectedSheet = sheetsById[sheetId] || sheets[0];
       const sheetName = selectedSheet.name;
       const viewData = [{
-        ...cellValuesById[selectedSheet.id],
+        ...cellValuesById[selectedSheet.id].value,
         path: sheetName,
       }];
       let pathStillValid = true;
