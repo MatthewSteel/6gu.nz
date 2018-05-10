@@ -1,5 +1,5 @@
 import React, { PureComponent } from 'react';
-import './CellComponent.css';
+import './DragComponents.css';
 
 
 class DragOverCellComponent extends PureComponent {

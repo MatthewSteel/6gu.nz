@@ -4,8 +4,8 @@ import { connect } from 'react-redux';
 import KeyboardListenerComponent from '../KeyboardListenerComponent/KeyboardListenerComponent';
 import SheetCellComponent from '../CellComponent/SheetCellComponent';
 import EmptyCellComponent from '../CellComponent/EmptyCellComponent';
-import DragOverCellComponent from '../CellComponent/DragOverCellComponent';
-import DragOutlineComponent from '../CellComponent/DragOutlineComponent';
+import DragOverCellComponent from '../DragComponents/DragOverCellComponent';
+import DragOutlineComponent from '../DragComponents/DragOutlineComponent';
 import ContentsBaseComponent from './ContentsBaseComponent';
 import ArrayContentsComponent from './ArrayContentsComponent';
 

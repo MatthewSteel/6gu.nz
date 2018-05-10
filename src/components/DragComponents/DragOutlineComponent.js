@@ -1,6 +1,6 @@
 import React, { PureComponent } from 'react';
 import classNames from 'classnames';
-import './CellComponent.css';
+import './DragComponents.css';
 
 
 class DragOutlineComponent extends PureComponent {
