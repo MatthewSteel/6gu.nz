@@ -89,6 +89,7 @@ class SheetContentsComponent extends ContentsBaseComponent {
 
   drop() {
     const {
+      contextId,
       dragRefId,
       dragGeom,
       moveCell,
@@ -101,7 +102,7 @@ class SheetContentsComponent extends ContentsBaseComponent {
     const { y, x, height, width } = dragGeom;
     if (this.canPlaceWithoutConflict()) {
       // Maybe later: Prompt for overwrite.
-      moveCell(dragRefId, y, x, height, width);
+      moveCell(dragRefId, contextId, y, x, height, width);
       this.setSelection(y, x);
     }
     // Just in case -- the dragged thing might cease to exist or something.
@@ -118,6 +119,7 @@ class SheetContentsComponent extends ContentsBaseComponent {
       cellValuesById,
       formulaHasFocus,
       pushViewStack,
+      readOnly,
       viewSelected,
       viewWidth,
       viewHeight,
@@ -167,7 +169,7 @@ class SheetContentsComponent extends ContentsBaseComponent {
             formulaRef={this.props.formulaRef}
             pushViewStack={pushViewStack}
             popViewStack={this.props.popViewStack}
-            readOnly={this.props.readOnly}
+            readOnly={readOnly}
             setFormulaSelection={this.props.setFormulaSelection}
             tableData={cellContents.value}
             viewHeight={truncYLen}
@@ -178,8 +180,8 @@ class SheetContentsComponent extends ContentsBaseComponent {
             viewSelX={viewSelX}
             viewSelY={viewSelY}
             setViewSelection={setViewSelection}
-            startDragCallback={this.startDragForRef}
-            endDragCallback={this.finishDrag}
+            startDragCallback={!readOnly ? this.startDragForRef : undefined}
+            endDragCallback={!readOnly ? this.finishDrag : undefined}
           />
         );
       }
@@ -196,8 +198,8 @@ class SheetContentsComponent extends ContentsBaseComponent {
           pushViewStack={pushViewStack}
           selected={cellSelected}
           setSelection={this.setViewSelection}
-          startDragCallback={this.startDragForRef}
-          endDragCallback={this.finishDrag}
+          startDragCallback={!readOnly ? this.startDragForRef : undefined}
+          endDragCallback={!readOnly ? this.finishDrag : undefined}
         />
       );
     }).filter(Boolean);
@@ -306,8 +308,8 @@ const mapDispatchToProps = dispatch => ({
   updateDragProp: (viewId, sheetId, dragY, dragX) => (
     dispatch(updateDrag(viewId, sheetId, dragY, dragX))),
   deleteCell: cellId => dispatch(deleteThing(cellId)),
-  moveCell: (cellId, y, x, width, height) => (
-    dispatch(moveThing(cellId, y, x, width, height))),
+  moveCell: (cellId, sheetId, y, x, width, height) => (
+    dispatch(moveThing(cellId, sheetId, y, x, width, height))),
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(SheetContentsComponent);

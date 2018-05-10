@@ -24,7 +24,7 @@ class ResizeHandleComponent extends PureComponent {
       position: 'relative',
       display: resizeRefId ? 'block' : 'none',
     };
-
+    if (!endDragCallback) return null;
     return (
       <div style={style}>
         <img

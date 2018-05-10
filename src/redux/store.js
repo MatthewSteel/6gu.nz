@@ -59,9 +59,9 @@ export const deleteThing = refId => ({
 
 // Maybe deal with re-parenting and re-typing? "Cut-paste from table cell
 // into a sheet" etc.
-export const moveThing = (refId, y, x, height, width) => ({
+export const moveThing = (refId, sheetId, y, x, height, width) => ({
   type: 'MOVE_THING',
-  payload: { refId, y, x, height, width },
+  payload: { refId, sheetId, y, x, height, width },
 });
 
 export const startDrag = (sourceViewId, refId, type) => ({
