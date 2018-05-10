@@ -11,12 +11,18 @@ const moveDragGeom = (cell, y, x) => ({
   width: cell.width,
 });
 
-const resizeDragGeom = (cell, y, x) => ({
-  y: cell.y,
-  x: cell.x,
-  height: Math.max(1, y - cell.y + 1),
-  width: Math.max(1, x - cell.x + 1),
-});
+const resizeDimension = (startX, endX) => {
+  if (endX >= startX) {
+    return [startX, endX - startX + 1];
+  }
+  return [endX, startX - endX];
+};
+
+const resizeDragGeom = (cell, y, x) => {
+  const [newY, height] = resizeDimension(cell.y, y);
+  const [newX, width] = resizeDimension(cell.x, x);
+  return { x: newX, y: newY, width, height };
+};
 
 export const getDragRefId = state => state.uistate.dragState.refId;
 

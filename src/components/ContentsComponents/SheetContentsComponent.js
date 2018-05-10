@@ -94,7 +94,10 @@ class SheetContentsComponent extends ContentsBaseComponent {
       moveCell,
       clearDragProp,
     } = this.props;
-    if (!dragGeom) return;
+    if (!dragGeom) {
+      clearDragProp();
+      return;
+    }
     const { y, x, height, width } = dragGeom;
     if (this.canPlaceWithoutConflict()) {
       // Maybe later: Prompt for overwrite.

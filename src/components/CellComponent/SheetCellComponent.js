@@ -2,6 +2,7 @@ import React, { PureComponent } from 'react';
 import CellNameComponent from './CellNameComponent';
 import CellValueComponent from './CellValueComponent';
 import CellSelectionComponent from './CellSelectionComponent';
+import ResizeHandleComponent from '../DragComponents/ResizeHandleComponent';
 
 import { DRAG_MOVE } from '../../selectors/geom/dragGeom';
 
@@ -34,6 +35,7 @@ class SheetCellComponent extends PureComponent {
       selected,
       setSelection,
       value,
+      startDragCallback,
       endDragCallback,
     } = this.props;
 
@@ -66,6 +68,13 @@ class SheetCellComponent extends PureComponent {
           value={value}
           pushViewStack={pushViewStack}
           id={id}
+        />
+        <ResizeHandleComponent
+          y={y + height - 1}
+          x={x + width - 1}
+          resizeRefId={selected && id}
+          startDragCallback={startDragCallback}
+          endDragCallback={endDragCallback}
         />
       </CellSelectionComponent>
     );

@@ -6,6 +6,7 @@ import CellValueComponent from '../CellComponent/CellValueComponent';
 import CellSelectionComponent from '../CellComponent/CellSelectionComponent';
 import EmptyCellComponent from '../CellComponent/EmptyCellComponent';
 import ContentsBaseComponent from './ContentsBaseComponent';
+import ResizeHandleComponent from '../DragComponents/ResizeHandleComponent';
 
 import { getRefsById, getChildrenByParentId } from '../../selectors/formulas/selectors';
 import { rangesOverlap } from '../../selectors/geom/geom';
@@ -53,11 +54,14 @@ class ArrayContentsComponent extends ContentsBaseComponent {
     const {
       name,
       cells,
+      contextId,
       tableData,
+      startDragCallback,
       endDragCallback,
       pushViewStack,
       viewSelected,
       viewHeight,
+      viewWidth,
       viewOffsetX,
       viewOffsetY,
     } = this.props;
@@ -133,6 +137,13 @@ class ArrayContentsComponent extends ContentsBaseComponent {
           onDragEnd={endDragCallback}
         />
         {children}
+        <ResizeHandleComponent
+          y={viewOffsetY + viewHeight - 1}
+          x={viewOffsetX + viewWidth - 1}
+          resizeRefId={viewSelected && contextId}
+          startDragCallback={startDragCallback}
+          endDragCallback={endDragCallback}
+        />
       </Fragment>
     );
   }
