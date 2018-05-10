@@ -246,11 +246,13 @@ export default class ContentsBaseComponent extends Component {
       if (realFormulaRef) realFormulaRef.submit(ev);
       const yMove = ev.shiftKey ? -1 : 1;
       this.move(yMove, 0, ev);
+      ev.preventDefault();
     }
     if (ev.key === 'Tab') {
       if (realFormulaRef) realFormulaRef.submit(ev);
       const xMove = ev.shiftKey ? -1 : 1;
       this.move(0, xMove, ev);
+      ev.preventDefault();
     }
   }
 
