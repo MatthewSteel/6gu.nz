@@ -34,6 +34,7 @@ export const unparseTerm = (term) => {
   if (term.ref) return unparseRef(term.ref);
   if (term.name) return term.name;
   if ('value' in term) return JSON.stringify(term.value);
+  if (term.unary) return `${term.unary}${term.on}`;
   throw new Error('Unknown term type');
 };
 

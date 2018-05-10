@@ -71,4 +71,36 @@ describe('parser', () => {
       formula: [{ badFormula: 'foo := bar +' }],
     });
   });
+
+  it('parses unary operators', () => {
+    const formula = '-!+~func(param=-arg)+- foo';
+    const expectedOutput = [{
+      unary: '-',
+      on: {
+        unary: '!',
+        on: {
+          unary: '+',
+          on: {
+            unary: '~',
+            on: {
+              call: { name: 'func' },
+              args: [{
+                ref: { name: 'param' },
+                expr: [{
+                  unary: '-',
+                  on: { name: 'arg' },
+                }],
+              }],
+            },
+          },
+        },
+      },
+    }, {
+      op: '+',
+    }, {
+      unary: '-',
+      on: { name: 'foo' },
+    }];
+    expect(parseTokens(lexFormula(formula), 0)).toEqual(expectedOutput);
+  });
 });

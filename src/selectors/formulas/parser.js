@@ -13,19 +13,6 @@ import {
 
 // A recursive-descent parser.
 
-const parseOperators = (tokens, i) => {
-  if (!tokens[i].op) {
-    throw new Error('Expected a binary operator somewhere');
-  }
-  let j;
-  for ( // any number of unary pluses and minuses after first binary op
-    j = i + 1;
-    j < tokens.length && tokens[j].op && '+-!~'.includes(tokens[j].op);
-    ++j
-  );
-  return tokens.slice(i, j);
-};
-
 const parseLookups = (tokens, i, lookupObj) => {
   if (tokens[i]) {
     const nextToken = tokens[i];
@@ -138,6 +125,13 @@ const parseTermFromName = (tokens, i) => {
 };
 
 const parseTerm = (tokens, i) => {
+  if ('+-!~'.includes(tokens[i].op)) {
+    const innerTerm = parseTerm(tokens, i + 1);
+    return {
+      term: { unary: tokens[i].op, on: innerTerm.term },
+      newIndex: innerTerm.newIndex,
+    };
+  }
   if (tokens[i].open) {
     const { term, newIndex } = parseExpression(tokens, i + 1);
     if (!tokens[newIndex] || !tokens[newIndex].close) {
@@ -162,7 +156,7 @@ const parseTerm = (tokens, i) => {
 
 const parseExpression = (tokens, i) => {
   const elements = [];
-  for (let j = i; j < tokens.length;) {
+  for (let j = i; j < tokens.length; j++) {
     // Precondition: We should be looking at the start of a term.
     const { term, newIndex } = parseTerm(tokens, j);
     elements.push(term);
@@ -173,10 +167,10 @@ const parseExpression = (tokens, i) => {
         newIndex: j,
       };
     }
-    parseOperators(tokens, j).forEach((op) => {
-      elements.push(op);
-      ++j;
-    });
+    if (!tokens[j].op) {
+      throw new Error('Expected a binary operator in expression');
+    }
+    elements.push(tokens[j]);
   }
   throw new Error('Unexpected end of expression');
 };

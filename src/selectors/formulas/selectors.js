@@ -231,13 +231,18 @@ const translateLookupIndex = (term, contextId, f) => {
   return f({ lookupIndex, on }, contextId);
 };
 
-
 export const translateTerm = (term, contextId, f) => {
   if (term.lookup) return translateLookup(term, contextId, f);
   if ('lookupIndex' in term) return translateLookupIndex(term, contextId, f);
   if (term.name || term.ref) return f(term, contextId);
   if ('value' in term || term.op) return f(term, contextId);
   if (term.call) return translateCall(term, contextId, f);
+  if (term.unary) {
+    return f(
+      { unary: term.unary, on: translateTerm(term.on, contextId, f) },
+      contextId,
+    );
+  }
   if (term.expression) {
     return f(
       { expression: translateExpr(term.expression, contextId, f) },
@@ -401,6 +406,7 @@ const expandTerm = (term) => {
   if (term.op) return term.op;
   if ('value' in term) return JSON.stringify(term.value);
   if (term.expression) return `(${expandExpr(term.expression)})`;
+  if (term.unary) return `${term.unary}${expandTerm(term.on)}`;
   throw new Error(`unknown term type ${JSON.stringify(term)}`);
 };
 

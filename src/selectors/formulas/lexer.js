@@ -57,7 +57,7 @@ const lexOp = (input, i) => {
 
 const lexOne = (input, i) => {
   const next = input.charAt(i);
-  if (next.match(/^[<>+\-*/%&|^]$/)) return lexOp(input, i);
+  if (next.match(/^[<>+\-*/%&|^!~]$/)) return lexOp(input, i);
   if (next === '(') return { matchEnd: i + 1, token: { open: '(' } };
   if (next === ')') return { matchEnd: i + 1, token: { close: ')' } };
   if (next === '[') return { matchEnd: i + 1, token: { openBracket: '[' } };
