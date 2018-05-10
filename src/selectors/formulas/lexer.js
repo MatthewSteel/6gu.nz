@@ -66,6 +66,10 @@ const lexOne = (input, i) => {
   if (next.match(/^[0-9]$/)) return lexNumber(input, i);
   if (next === '"') return lexString(input, i);
   if (next.match(/^\s$/)) return chompWhitespace(input, i);
+  if (next + input.charAt(i + 1) === '==') {
+    // TODO: Precendence parsing and a deep-equality check.
+    return { matchEnd: i + 2, token: { op: '==' } };
+  }
   if (next === '=') return { matchEnd: i + 1, token: { assignment: next } };
   if (next === '.') return { matchEnd: i + 1, token: { lookup: next } };
   if (next === ',') return { matchEnd: i + 1, token: { comma: next } };

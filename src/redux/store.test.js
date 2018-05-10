@@ -140,5 +140,22 @@ describe('actions/the store', () => {
     store.dispatch(deleteThing(sheet1.id));
     expect(getCellValue(x)).toEqual({ error: `Error: ${s1Name} does not exist.` });
   });
+
+  it('does simple equality checks', () => {
+    const [sheet] = getSheets(store.getState());
+    store.dispatch(setFormula(
+      { context: sheet.id, y: 1, x: 0 },
+      'x=1 == 2',
+    ));
+    store.dispatch(setFormula(
+      { context: sheet.id, y: 2, x: 0 },
+      'y="hi" == "hi"',
+    ));
+
+    const xCell = find(({ y }) => y === 1);
+    const yCell = find(({ y }) => y === 2);
+    expect(getCellValue(xCell).value).toBe(false);
+    expect(getCellValue(yCell).value).toBe(true);
+  });
 });
 
