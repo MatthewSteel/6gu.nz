@@ -1,5 +1,6 @@
 import store, { CELL, createSheet, deleteThing, setFormula } from './store';
-import { getCells, getSheets, getCellValuesById } from '../selectors/formulas/selectors';
+import { getCells, getSheets } from '../selectors/formulas/selectors';
+import { getCellValuesById } from '../selectors/formulas/codegen';
 import { stringFormula } from '../selectors/formulas/unparser';
 
 const allCells = () => getCells(store.getState());

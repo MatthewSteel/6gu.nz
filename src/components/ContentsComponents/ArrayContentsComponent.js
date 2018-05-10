@@ -8,7 +8,7 @@ import EmptyCellComponent from '../CellComponent/EmptyCellComponent';
 import ContentsBaseComponent from './ContentsBaseComponent';
 import ResizeHandleComponent from '../DragComponents/ResizeHandleComponent';
 
-import { getRefsById, getChildrenByParentId } from '../../selectors/formulas/selectors';
+import { getRefsById, getChildrenOfRef } from '../../selectors/formulas/selectors';
 import { rangesOverlap } from '../../selectors/geom/geom';
 import { DRAG_MOVE } from '../../selectors/geom/dragGeom';
 import { deleteThing } from '../../redux/store';
@@ -151,7 +151,7 @@ class ArrayContentsComponent extends ContentsBaseComponent {
 
 const mapStateToProps = (state, ownProps) => ({
   name: getRefsById(state)[ownProps.contextId].name,
-  cells: getChildrenByParentId(state)[ownProps.contextId],
+  cells: getChildrenOfRef(state, ownProps.contextId),
 });
 
 const mapDispatchToProps = dispatch => ({

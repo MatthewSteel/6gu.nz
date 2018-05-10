@@ -1,11 +1,7 @@
 import React, { PureComponent } from 'react';
 import { connect } from 'react-redux';
-import {
-  getCellValuesById,
-  getSheets,
-  getSheetsById,
-  getRefsById,
-} from '../../selectors/formulas/selectors';
+import { getSheets, getSheetsById, getRefsById } from '../../selectors/formulas/selectors';
+import { getCellValuesById } from '../../selectors/formulas/codegen';
 import store, {
   createSheet,
   deleteThing,

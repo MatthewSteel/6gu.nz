@@ -9,7 +9,7 @@ import DragOutlineComponent from '../DragComponents/DragOutlineComponent';
 import ContentsBaseComponent from './ContentsBaseComponent';
 import ArrayContentsComponent from './ArrayContentsComponent';
 
-import { getChildrenByParentId } from '../../selectors/formulas/selectors';
+import { getChildrenOfRef } from '../../selectors/formulas/selectors';
 import { overlaps, truncateOverlap } from '../../selectors/geom/geom';
 import getDragGeom, { getDragRefId } from '../../selectors/geom/dragGeom';
 import { getType } from '../../selectors/formulas/tables';
@@ -287,7 +287,7 @@ class SheetContentsComponent extends ContentsBaseComponent {
 }
 
 const mapStateToProps = (state, ownProps) => ({
-  cells: getChildrenByParentId(state)[ownProps.contextId],
+  cells: getChildrenOfRef(state, ownProps.contextId),
   dragRefId: getDragRefId(state),
   dragGeom: !ownProps.readOnly && getDragGeom(ownProps.contextId),
   viewOffsetX: 0,

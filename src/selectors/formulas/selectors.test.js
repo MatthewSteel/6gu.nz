@@ -1,5 +1,6 @@
 import store, { deleteThing, setFormula } from '../../redux/store';
-import { getCells, getSheets, getCellValuesById, lookupExpression } from './selectors';
+import { getCells, getSheets, lookupExpression } from './selectors';
+import { getCellValuesById } from './codegen';
 
 const getCell = cellName =>
   getCells(store.getState()).find(({ name }) => name === cellName);
