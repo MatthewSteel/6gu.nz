@@ -3,7 +3,7 @@ import { clampValue, clampOverlap, rangesOverlap } from '../../selectors/geom/ge
 
 // For moving the cursor out of a large cell
 const maybeBreakOut = (curr, move, start, length) => {
-  if (move < 0) return start - 1;
+  if (move < 0) return start - 0.5;
   if (move > 0) return start + length;
   return curr;
 };
@@ -41,8 +41,8 @@ export default class ContentsBaseComponent extends Component {
     const localScale = this.localScale();
     const localViewHeight = viewHeight * localScale.y - localScale.yOffset;
     const localViewWidth = viewWidth * localScale.x - localScale.xOffset;
-    const newScrollY = clampOverlap(scrollY, localViewHeight, selY, selY + 1);
-    const newScrollX = clampOverlap(scrollX, localViewWidth, selX, selX + 1);
+    const newScrollY = clampOverlap(scrollY, localViewHeight, selY, selY + 0.5);
+    const newScrollX = clampOverlap(scrollX, localViewWidth, selX, selX + 0.5);
     this.setState({ scrollY: newScrollY, scrollX: newScrollX });
     const worldCoords = this.localToWorld({ y: selY, x: selX });
     setViewSelection(worldCoords.y, worldCoords.x);
@@ -144,12 +144,16 @@ export default class ContentsBaseComponent extends Component {
 
     // Clamp wanted selection to navigable cells.
     const { yLB, yUB, xLB, xUB } = this.bounds();
-    const newY = clampOverlap(wantedNewY, 1, yLB, yUB);
-    const newX = clampOverlap(wantedNewX, 1, xLB, xUB);
+    const newY = clampOverlap(wantedNewY, 0.5, yLB, yUB);
+    const newX = clampOverlap(wantedNewX, 0.5, xLB, xUB);
 
+    // TODO: this should probably be something like "If the selection will
+    // be the same". Then we can update the world view selection
+    // coordinates with the location of the resulting selected cell, not
+    // just where we tried to put the selection.
     if (
-      rangesOverlap(newY, 1, selBox.y, selBox.height) &&
-      rangesOverlap(newX, 1, selBox.x, selBox.width)
+      rangesOverlap(newY, 0.5, selBox.y, selBox.height) &&
+      rangesOverlap(newX, 0.5, selBox.x, selBox.width)
     ) {
       // Only move (and swallow event) if we actually move somewhere.
       // In particular, send the event to our parent if we hit a wall.
