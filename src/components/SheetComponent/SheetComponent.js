@@ -1,8 +1,8 @@
 import React, { Component } from 'react';
+import equal from 'fast-deep-equal';
 import FormulaComponent from '../FormulaComponent/FormulaComponent';
 
 import SheetContentsComponent from '../ContentsComponents/SheetContentsComponent';
-import { selectionsEqual } from '../../redux/store';
 import './SheetComponent.css';
 
 class SheetComponent extends Component {
@@ -46,7 +46,7 @@ class SheetComponent extends Component {
   setFormulaSelection(newSelection) {
     // Reference to cell or x/y coords
     const { formulaSelection } = this.state;
-    if (selectionsEqual(formulaSelection, newSelection)) return;
+    if (equal(formulaSelection, newSelection)) return;
     this.setState({ formulaSelection: newSelection });
   }
 

@@ -15,10 +15,7 @@ class SheetCellComponent extends PureComponent {
   }
 
   onNameDragStart(ev) {
-    ev.dataTransfer.setData(
-      'text/plain',
-      JSON.stringify({ spreadSheetData: true }),
-    );
+    ev.dataTransfer.setData('text/plain', ' ');
     const { id, startDragCallback } = this.props;
     startDragCallback(id, DRAG_MOVE);
   }

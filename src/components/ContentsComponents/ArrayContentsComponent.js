@@ -9,7 +9,6 @@ import ContentsBaseComponent from './ContentsBaseComponent';
 import ResizeHandleComponent from '../DragComponents/ResizeHandleComponent';
 
 import { getRefsById, getChildrenOfRef } from '../../selectors/formulas/selectors';
-import { rangesOverlap } from '../../selectors/geom/geom';
 import { DRAG_MOVE } from '../../selectors/geom/dragGeom';
 import { deleteThing } from '../../redux/store';
 
@@ -21,10 +20,7 @@ class ArrayContentsComponent extends ContentsBaseComponent {
   }
 
   onNameDragStart(ev) {
-    ev.dataTransfer.setData(
-      'text/plain',
-      JSON.stringify({ spreadSheetData: true }),
-    );
+    ev.dataTransfer.setData('text/plain', ' ');
     const { contextId, startDragCallback } = this.props;
     startDragCallback(contextId, DRAG_MOVE);
   }
@@ -68,12 +64,12 @@ class ArrayContentsComponent extends ContentsBaseComponent {
     const { scrollY } = this.state;
     const selection = this.selectedCellId();
 
-    const children = new Array(viewHeight);
     const numVisibleCells = viewHeight * 2 - 1;
+    const children = new Array(numVisibleCells);
     cells.forEach((cell) => {
       const { id, index } = cell;
       const visibleIndex = index - scrollY;
-      if (!rangesOverlap(0, numVisibleCells, visibleIndex, 1)) return;
+      if (visibleIndex < 0 || visibleIndex >= numVisibleCells) return;
 
       const cellSelected = viewSelected && selection.cellId === id;
       const extraClasses = [];
@@ -109,7 +105,7 @@ class ArrayContentsComponent extends ContentsBaseComponent {
 
     const lastIndex = cells.length;
     const visibleIndex = lastIndex - scrollY;
-    if (rangesOverlap(0, numVisibleCells, visibleIndex, 1)) {
+    if (visibleIndex >= 0 && visibleIndex < numVisibleCells) {
       const cellSelected = viewSelected && selection.y === lastIndex;
       children.push((
         <EmptyCellComponent

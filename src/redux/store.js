@@ -23,14 +23,6 @@ export const ARRAY = 'array';
 export const ARRAY_CELL = 'array_cell';
 
 
-export const selectionsEqual = (sel1, sel2) => {
-  if (!sel1 && !sel2) return true;
-  if (!sel1 !== !sel2) return false;
-  if (sel1.cellId) return sel1.cellId === sel2.cellId;
-  const { y, x, context } = sel1;
-  return y === sel2.y && x === sel2.x && context === sel2.context;
-};
-
 const initialState = {
   sheets: [{
     id: 'sheet0',

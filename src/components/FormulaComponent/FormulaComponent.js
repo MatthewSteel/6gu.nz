@@ -2,7 +2,8 @@ import React, { Component } from 'react';
 import { connect } from 'react-redux';
 
 import { stringFormula } from '../../selectors/formulas/unparser';
-import { deleteThing, selectionsEqual, setFormula } from '../../redux/store';
+import { deleteThing, setFormula } from '../../redux/store';
+import equal from 'fast-deep-equal';
 import './FormulaComponent.css';
 
 
@@ -26,7 +27,7 @@ class FormulaComponent extends Component {
   }
 
   componentWillReceiveProps(nextProps) {
-    if (!selectionsEqual(nextProps.selection, this.props.selection)) {
+    if (!equal(nextProps.selection, this.props.selection)) {
       this.resetValue(nextProps.selection.cellId);
     }
   }
