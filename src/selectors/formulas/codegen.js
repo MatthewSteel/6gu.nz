@@ -14,15 +14,13 @@ import { getNamedMember, getNumberedMember, TableArray } from './tables';
 
 // Functions to translate into formulas into code to be evaluated
 
-const expandSetItem = (k, expr, override = false) =>
+const expandSetItem = (k, expr) =>
   `try {
-    globals[${JSON.stringify(k)}].push({
-      value: ${expr}, override: ${override} });
+    globals[${JSON.stringify(k)}] = {
+      value: ${expr}, override: false };
   } catch (e) {
-    globals[${JSON.stringify(k)}].push({ error: e.toString() });
+    globals[${JSON.stringify(k)}] = { error: e.toString() };
   }`;
-
-const expandPopItem = k => `globals[${JSON.stringify(k)}].pop();`;
 
 const expandCall = (callTerm) => {
   const signature = callSignature(callTerm);
@@ -97,15 +95,9 @@ const callSignature = (callTerm) => {
 //    are pushed/popped/used in "what-if" function calls.
 
 
-// Get the "top of stack" value/error for a ref
-const getRef = (globals, ref) => {
-  const values = globals[ref];
-  return values[values.length - 1];
-};
-
 // Unwrap a "ref at rest" into a "value in flight or exception"
 const formulaRef = (globals, ref) => {
-  const ret = getRef(globals, ref);
+  const ret = globals[ref];
   if ('value' in ret) return ret.value;
   throw new Error(ret.error);
 };
@@ -119,7 +111,7 @@ const sheetValue = (sheetId, globals) => {
     template: sheetId,
   };
   sheetCells.forEach(({ id, name }) => {
-    const cellContents = getRef(globals, id);
+    const cellContents = globals[id];
     ret.byId[id] = cellContents;
     ret.byName[name] = cellContents;
   });
@@ -130,7 +122,7 @@ const arrayValue = (arrayId, globals) => {
   const arrayCells = getChildrenOfRef(store.getState(), arrayId);
   const storage = new Array(arrayCells.length);
   arrayCells.forEach(({ index, id }) => {
-    storage[index] = getRef(globals, id);
+    storage[index] = globals[id];
   });
   return new TableArray(storage);
 };
@@ -186,7 +178,7 @@ export const getCellValuesById = createSelector(
 
     // Initialize circular refs and things that depend on them.
     refs.forEach(({ id }) => {
-      globals[id] = [{ error: 'Error: Circular reference (or depends on one)' }];
+      globals[id] = { error: 'Error: Circular reference (or depends on one)' };
     });
 
     // All expressions for cells and sheets
@@ -207,17 +199,9 @@ export const getCellValuesById = createSelector(
       // eslint-disable-next-line no-eval
       eval(expandSetItem(id, refExpressions[id]));
     });
-    return getGlobalValues(globals, refs);
+    return globals;
   },
 );
-
-// Translates the computation data into something more palatable for UI
-// consumption. No more stacks, mostly.
-const getGlobalValues = (globals, refs) => {
-  const ret = {};
-  refs.forEach(({ id }) => { ret[id] = getRef(globals, id) });
-  return ret;
-};
 
 const functionCellsInOrder = (call) => {
   const {
@@ -234,38 +218,50 @@ const functionCellsInOrder = (call) => {
     topoLocationsById[id1] - topoLocationsById[id2]);
 };
 
+class RefPusher {
+  constructor() {
+    this.setStatements = [];
+    this.unsetStatements = [];
+  }
+
+  variableName() { return `v${this.unsetStatements.length}`; }
+
+  expandOverride(id) {
+    const localVariable = this.variableName();
+    this.setStatements.push(`globals["${id}"] = { value: ${localVariable}, override: true };`);
+    this.unsetStatements.push(`globals["${id}"] = ${localVariable};`);
+  }
+
+  expandSetItem(id, expr) {
+    const localVariable = this.variableName();
+    this.setStatements.push(`const ${localVariable} = globals["${id}"];`);
+    this.setStatements.push(expandSetItem(id, expr));
+    this.unsetStatements.push(`globals["${id}"] = ${localVariable};`);
+  }
+}
+
 // Actually building the code to eval and making a real function.
 const createFunction = (callTerm, refExpressions) => {
-  const functionBits = [];
-
-  // Code for adding the args to the global state
-  callTerm.args.forEach(({ ref }, i) => {
-    functionBits.push(expandSetItem(ref.ref, `v${i}`, true));
-  });
-
-  // Code for running the function
-  const functionCells = functionCellsInOrder(callTerm);
-  functionCells.forEach((id) => {
-    functionBits.push(expandSetItem(id, refExpressions[id]));
-  });
-
-  // Prepare return value
-  functionBits.push(`const ret = ${refExpressions[callTerm.call.ref]};`);
-
-  // Pop all intermediate values from global state
+  const refPusher = new RefPusher();
+  // Set overrides
   callTerm.args.forEach(({ ref }) => {
-    functionBits.push(expandPopItem(ref.ref));
-  });
-  functionCells.forEach((id) => {
-    functionBits.push(expandPopItem(id));
+    refPusher.expandOverride(ref.ref);
   });
 
-  // return.
-  functionBits.push('return ret;');
+  // Run dependent cells
+  functionCellsInOrder(callTerm).forEach((id) => {
+    refPusher.expandSetItem(id, refExpressions[id]);
+  });
 
   // Construct the function
-  const definition = functionBits.join('\n');
+  const functionDefinition = [
+    ...refPusher.setStatements,
+    `const ret = ${refExpressions[callTerm.call.ref]};`,
+    ...refPusher.unsetStatements,
+    'return ret;',
+  ].join('\n');
+
   const argNames = callTerm.args.map((arg, i) => `v${i}`);
   // eslint-disable-next-line no-new-func
-  return Function('globals', ...argNames, definition);
+  return Function('globals', ...argNames, functionDefinition);
 };
