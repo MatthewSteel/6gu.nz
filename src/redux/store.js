@@ -6,6 +6,7 @@ import {
   getFormulaGraphs,
   getRefsById,
   getSheetsByName,
+  getRefsByNameForContextId,
   rewriteRefTermToParentLookup,
   transitiveChildren,
   translateExpr,
@@ -47,6 +48,11 @@ export const setFormula = (selection, formula) => ({
 export const deleteThing = refId => ({
   type: 'DELETE_THING',
   payload: { refId },
+});
+
+export const deleteLoc = (contextId, y, x) => ({
+  type: 'DELETE_LOCATION',
+  payload: { contextId, y, x },
 });
 
 // Maybe deal with re-parenting and re-typing? "Cut-paste from table cell
@@ -206,6 +212,14 @@ const rootReducer = (state, action) => {
     const contextRef = getRefsById(store.getState())[selection.context];
     if (contextRef.type !== SHEET) delete newFormula.name;
 
+    const baseCell = selection.cellId ?
+      state.cells.find(({ id }) => id === selection.cellId) :
+      defaultCellForLocation(contextRef, selection.y, selection.x);
+
+    if (baseCell && ![CELL, ARRAY_CELL].includes(baseCell.type)) {
+      delete newFormula.formula;
+    }
+
     if (!newFormula.name && !newFormula.formula) {
       // Formula is like `name=formula`.
       // When one is blank and we have an existing cell, we use the
@@ -217,9 +231,6 @@ const rootReducer = (state, action) => {
       return state;
     }
 
-    const baseCell = selection.cellId ?
-      state.cells.find(({ id }) => id === selection.cellId) :
-      defaultCellForLocation(contextRef, selection.y, selection.x);
     const cell = {
       ...baseCell,
       ...newFormula,
@@ -247,6 +258,31 @@ const rootReducer = (state, action) => {
       ...state,
       sheets: state.sheets.filter(({ id }) => !idsToDelete.has(id)),
       cells: state.cells.filter(({ id }) => !idsToDelete.has(id)),
+      updateId: scheduleSave(),
+    };
+    return translateDeletions(stateMinusDeletions, idsToDelete);
+  }
+
+  if (action.type === 'DELETE_LOCATION') {
+    const { contextId, y } = action.payload;
+    const context = getRefsById(state)[contextId];
+    if (!context) return state;
+    if (!context.type === ARRAY) return state;
+
+    const refToDelete = getRefsByNameForContextId(state, contextId)[y];
+    const idsToDelete = refToDelete ?
+      transitiveChildren(refToDelete.id) :
+      new Set();
+
+    const stateMinusDeletions = {
+      ...state,
+      sheets: state.sheets.filter(({ id }) => !idsToDelete.has(id)),
+      cells: state.cells
+        .filter(({ id }) => !idsToDelete.has(id))
+        .map((cell) => {
+          if (cell.arrayId !== contextId || cell.index < y) return cell;
+          return { ...cell, index: cell.index - 1 };
+        }),
       updateId: scheduleSave(),
     };
     return translateDeletions(stateMinusDeletions, idsToDelete);

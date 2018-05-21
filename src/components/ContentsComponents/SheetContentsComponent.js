@@ -7,13 +7,13 @@ import EmptyCellComponent from '../CellComponent/EmptyCellComponent';
 import DragOverCellComponent from '../DragComponents/DragOverCellComponent';
 import DragOutlineComponent from '../DragComponents/DragOutlineComponent';
 import ContentsBaseComponent from './ContentsBaseComponent';
-import ArrayContentsComponent from './ArrayContentsComponent';
+import ArrayComponent from './ArrayComponent';
 
 import { getChildrenOfRef } from '../../selectors/formulas/selectors';
 import { overlaps, truncateOverlap } from '../../selectors/geom/geom';
 import getDragGeom, { getDragRefId } from '../../selectors/geom/dragGeom';
 import { getType } from '../../selectors/formulas/tables';
-import { clearDrag, startDrag, updateDrag, deleteThing, moveThing } from '../../redux/store';
+import { clearDrag, deleteLoc, startDrag, updateDrag, deleteThing, moveThing } from '../../redux/store';
 
 
 class SheetContentsComponent extends ContentsBaseComponent {
@@ -117,6 +117,7 @@ class SheetContentsComponent extends ContentsBaseComponent {
     const {
       cells,
       cellValuesById,
+      contextId,
       formulaHasFocus,
       pushViewStack,
       readOnly,
@@ -160,12 +161,14 @@ class SheetContentsComponent extends ContentsBaseComponent {
       } = truncateOverlap(y, cellHeight, scrollY, viewHeight);
 
       const cellContents = cellValuesById[id];
-      if (truncYLen > 1 && getType(cellContents.value) === 'array') {
+      const contentsType = getType(cellContents.value);
+      if (truncXLen > 1 && ['array', 'table'].includes(contentsType)) {
         return (
-          <ArrayContentsComponent
+          <ArrayComponent
             key={id}
             ref={cellSelected && this.setChildSelectionTableRef}
-            contextId={id}
+            id={id}
+            contextId={contextId}
             formulaRef={this.props.formulaRef}
             pushViewStack={pushViewStack}
             popViewStack={this.props.popViewStack}
@@ -308,6 +311,7 @@ const mapDispatchToProps = dispatch => ({
   updateDragProp: (viewId, sheetId, dragY, dragX) => (
     dispatch(updateDrag(viewId, sheetId, dragY, dragX))),
   deleteCell: cellId => dispatch(deleteThing(cellId)),
+  deleteLocation: (context, y, x) => dispatch(deleteLoc(context, y, x)),
   moveCell: (cellId, sheetId, y, x, width, height) => (
     dispatch(moveThing(cellId, sheetId, y, x, width, height))),
 });

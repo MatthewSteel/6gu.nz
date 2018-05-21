@@ -6,54 +6,46 @@ import CellValueComponent from '../CellComponent/CellValueComponent';
 import CellSelectionComponent from '../CellComponent/CellSelectionComponent';
 import EmptyCellComponent from '../CellComponent/EmptyCellComponent';
 import ContentsBaseComponent from './ContentsBaseComponent';
-import ResizeHandleComponent from '../DragComponents/ResizeHandleComponent';
 
 import { getRefsById, getChildrenOfRef } from '../../selectors/formulas/selectors';
-import { DRAG_MOVE } from '../../selectors/geom/dragGeom';
-import { deleteThing } from '../../redux/store';
+import { deleteLoc, deleteThing } from '../../redux/store';
 
 
 class ArrayContentsComponent extends ContentsBaseComponent {
-  constructor(props) {
-    super(props);
-    this.onNameDragStart = this.onNameDragStart.bind(this);
-  }
-
-  onNameDragStart(ev) {
-    ev.dataTransfer.setData('text/plain', ' ');
-    const { contextId, startDragCallback } = this.props;
-    startDragCallback(contextId, DRAG_MOVE);
-  }
-
   maybeSelectedCell() {
     const { cells } = this.props;
-    const { selY } = this.localSelection();
-    return cells.find(({ index }) => index === selY);
+    const { selY, selX } = this.localSelection();
+    const maybeCell = cells.find(({ index }) => index === selY);
+    // Eww -- see cellPosition below.
+    if (maybeCell) return { ...maybeCell, selX };
+    return maybeCell;
   }
 
   // eslint-disable-next-line class-methods-use-this
   cellPosition(cell) {
-    return { y: cell.index, x: 0, width: 1, height: 1 };
+    return { y: cell.index, x: cell.selX, width: 1, height: 1 };
   }
 
   bounds() {
-    const { cells } = this.props;
-    return { xLB: 0, yLB: 0, xUB: 1, yUB: cells.length + 1 };
+    const { readOnly, tableData } = this.props;
+    const readOnlyExtraCell = readOnly ? 0 : 1;
+    return {
+      xLB: 0,
+      yLB: 0,
+      xUB: 2,
+      yUB: tableData.arr.length + readOnlyExtraCell,
+    };
   }
 
   // eslint-disable-next-line class-methods-use-this
   localScale() {
-    return { y: 2, x: 1, yOffset: 1, xOffset: 0 };
+    return { y: 2, x: 1 };
   }
 
   render() {
     const {
-      name,
       cells,
-      contextId,
       tableData,
-      startDragCallback,
-      endDragCallback,
       pushViewStack,
       viewSelected,
       viewHeight,
@@ -61,85 +53,85 @@ class ArrayContentsComponent extends ContentsBaseComponent {
       viewOffsetX,
       viewOffsetY,
     } = this.props;
-    const { scrollY } = this.state;
-    const selection = this.selectedCellId();
+    const children = [];
+    const { selY, selX } = this.localSelection();
+    const { scrollY, scrollX } = this.state;
+    const bounds = this.bounds();
+    const numVisibleCells = viewHeight * 2;
+    for (
+      let row = scrollY;
+      row - scrollY < numVisibleCells && row < bounds.yUB;
+      ++row
+    ) {
+      const worldRow = viewOffsetY + (row - scrollY) / 2;
 
-    const numVisibleCells = viewHeight * 2 - 1;
-    const children = new Array(numVisibleCells);
-    cells.forEach((cell) => {
-      const { id, index } = cell;
-      const visibleIndex = index - scrollY;
-      if (visibleIndex < 0 || visibleIndex >= numVisibleCells) return;
-
-      const cellSelected = viewSelected && selection.cellId === id;
-      const extraClasses = [];
-      if (visibleIndex === 0 && index !== 0) {
-        extraClasses.push('FirstArrayCell');
-      }
-      if (visibleIndex === numVisibleCells - 1 && index !== cells.length - 1) {
-        extraClasses.push('LastArrayCell');
-      }
-      children[visibleIndex] = (
-        <CellSelectionComponent
-          x={viewOffsetX}
-          width={1}
-          y={viewOffsetY + 0.5 + visibleIndex / 2}
-          height={0.5}
-          selected={cellSelected}
-          key={id}
-        >
-          <CellValueComponent
-            id={id}
+      // labels
+      if (scrollX === 0) {
+        const cellSelected = viewSelected && selX === 0 && selY === row;
+        children.push((
+          <CellSelectionComponent
             x={viewOffsetX}
-            width={1}
-            y={viewOffsetY + 0.5 + visibleIndex / 2}
+            width={viewWidth}
+            y={worldRow}
             height={0.5}
-            value={tableData.arr[index]}
-            pushViewStack={pushViewStack}
-            setSelection={this.setViewSelection}
-            extraClasses={extraClasses}
-          />
-        </CellSelectionComponent>
-      );
-    });
+            selected={cellSelected}
+            key={`name-${row}`}
+          >
+            <CellNameComponent
+              x={viewOffsetX}
+              width={1}
+              y={worldRow}
+              height={0.5}
+              name={`${row}`}
+              setSelection={this.setViewSelection}
+            />
+          </CellSelectionComponent>
+        ));
+      }
 
-    const lastIndex = cells.length;
-    const visibleIndex = lastIndex - scrollY;
-    if (visibleIndex >= 0 && visibleIndex < numVisibleCells) {
-      const cellSelected = viewSelected && selection.y === lastIndex;
+      // values + blanks
+      const contentsX = 1 - scrollX;
+      if (contentsX >= viewWidth) continue;
+      const cellSelected = viewSelected && selX === 1 && selY === row;
+      const childCell = cells.find(({ index }) => index === row);
       children.push((
-        <EmptyCellComponent
-          key="blankCell"
-          x={viewOffsetX}
+        <CellSelectionComponent
+          x={viewOffsetX + contentsX}
           width={1}
-          y={viewOffsetY + 0.5 + visibleIndex / 2}
+          y={worldRow}
           height={0.5}
           selected={cellSelected}
-          setSelection={this.setViewSelection}
-        />
+          key={`cell-${row}`}
+        >
+          {(childCell) ? (
+            <CellValueComponent
+              id={childCell.id}
+              x={viewOffsetX + contentsX}
+              width={1}
+              y={worldRow}
+              height={0.5}
+              value={tableData.arr[row]}
+              pushViewStack={pushViewStack}
+              setSelection={this.setViewSelection}
+            />
+          ) : (
+            <EmptyCellComponent
+              key="empty"
+              x={viewOffsetX + contentsX}
+              width={1}
+              y={worldRow}
+              height={0.5}
+              selected={cellSelected}
+              setSelection={this.setViewSelection}
+            />
+          )}
+        </CellSelectionComponent>
       ));
     }
 
     return (
       <Fragment>
-        <CellNameComponent
-          name={name}
-          x={viewOffsetX}
-          y={viewOffsetY}
-          width={1}
-          height={0.5}
-          setSelection={this.setViewSelection}
-          onDragStart={this.onNameDragStart}
-          onDragEnd={endDragCallback}
-        />
         {children}
-        <ResizeHandleComponent
-          y={viewOffsetY + viewHeight - 1}
-          x={viewOffsetX + viewWidth - 1}
-          resizeRefId={viewSelected && contextId}
-          startDragCallback={startDragCallback}
-          endDragCallback={endDragCallback}
-        />
       </Fragment>
     );
   }
@@ -152,6 +144,7 @@ const mapStateToProps = (state, ownProps) => ({
 
 const mapDispatchToProps = dispatch => ({
   deleteCell: cellId => dispatch(deleteThing(cellId)),
+  deleteLocation: (context, y, x) => dispatch(deleteLoc(context, y, x)),
 });
 
 export default connect(

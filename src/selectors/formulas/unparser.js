@@ -46,7 +46,6 @@ const subRefsForLookupsInTerm = (term, contextId) => {
 export const stringFormula = (refId) => {
   const ref = getRefsById(store.getState())[refId];
   if (!ref) return '';
-  if (!ref.formula) throw new Error(`Tried to get string formula for bad type: ${ref.type}`);
 
   const retToJoin = [];
   if (ref.name) {
@@ -55,7 +54,7 @@ export const stringFormula = (refId) => {
   retToJoin.push('=');
   const refParent = refParentId(ref);
   const lookupTerms = translateExpr(
-    ref.formula,
+    ref.formula || [],
     getContextIdForRefId(refParent, refParent),
     subRefsForLookupsInTerm,
   );

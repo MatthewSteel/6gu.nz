@@ -39,8 +39,8 @@ export default class ContentsBaseComponent extends Component {
     const { setViewSelection, viewWidth, viewHeight } = this.props;
 
     const localScale = this.localScale();
-    const localViewHeight = viewHeight * localScale.y - localScale.yOffset;
-    const localViewWidth = viewWidth * localScale.x - localScale.xOffset;
+    const localViewHeight = viewHeight * localScale.y;
+    const localViewWidth = viewWidth * localScale.x;
     const newScrollY = clampOverlap(scrollY, localViewHeight, selY, selY + 0.5);
     const newScrollX = clampOverlap(scrollX, localViewWidth, selX, selX + 0.5);
     this.setState({ scrollY: newScrollY, scrollX: newScrollX });
@@ -59,14 +59,15 @@ export default class ContentsBaseComponent extends Component {
     // "offset from top-left elem" in elements.
     // Add an offset in case we have special header rows etc.
     const localScale = this.localScale();
-    const elemsIntoWindowY = Math.max(0, localScale.y * windowY - localScale.yOffset);
-    const elemsIntoWindowX = Math.max(0, localScale.x * windowX - localScale.xOffset);
+    const elemsIntoWindowY = Math.max(0, localScale.y * windowY);
+    const elemsIntoWindowX = Math.max(0, localScale.x * windowX);
 
     // Turn "offset from top-left elem" into "offset from very start"
     // Always truncate in case someone sends us a fractional world coord
     // we can't deal with.
     // Also, don't let it go negative -- we might click on a header :-/
     // Maybe that'll be useful later...
+    // TODO: Maybe update world coords if they're way off base?
     const { scrollY, scrollX } = this.state;
     const { yLB, yUB, xLB, xUB } = this.bounds();
     return {
@@ -90,8 +91,8 @@ export default class ContentsBaseComponent extends Component {
     // Turn "elem position from our top left" into "global coords from our
     // top left".
     const localScale = this.localScale();
-    const windowY = (elemsIntoWindowY + localScale.yOffset) / localScale.y;
-    const windowX = (elemsIntoWindowX + localScale.xOffset) / localScale.x;
+    const windowY = elemsIntoWindowY / localScale.y;
+    const windowX = elemsIntoWindowX / localScale.x;
 
     // Turn "coords from top left of window" into "coords from top left of
     // sheet. Possibly ends up fractional :-)
@@ -104,7 +105,7 @@ export default class ContentsBaseComponent extends Component {
 
   // eslint-disable-next-line class-methods-use-this
   localScale() {
-    return { y: 1, x: 1, yOffset: 0, xOffset: 0 };
+    return { y: 1, x: 1 };
   }
 
   selectedCellId() {
@@ -122,10 +123,7 @@ export default class ContentsBaseComponent extends Component {
   updateSelection() {
     const { setFormulaSelection, viewSelected } = this.props;
     if (!viewSelected) return;
-    const selectedCell = this.maybeSelectedCell();
-    // If we've selected a table or something we should let them update
-    // the formula box.
-    if (selectedCell && !selectedCell.formula) return;
+    if (this.childSelectionTableRef) return;
     setFormulaSelection(this.selectedCellId());
   }
 
@@ -147,10 +145,6 @@ export default class ContentsBaseComponent extends Component {
     const newY = clampOverlap(wantedNewY, 0.5, yLB, yUB);
     const newX = clampOverlap(wantedNewX, 0.5, xLB, xUB);
 
-    // TODO: this should probably be something like "If the selection will
-    // be the same". Then we can update the world view selection
-    // coordinates with the location of the resulting selected cell, not
-    // just where we tried to put the selection.
     if (
       rangesOverlap(newY, 0.5, selBox.y, selBox.height) &&
       rangesOverlap(newX, 0.5, selBox.x, selBox.width)
@@ -214,8 +208,12 @@ export default class ContentsBaseComponent extends Component {
       if (!readOnly) {
         // Careful: swallow the event so a parent doesn't get it.
         const selection = this.selectedCellId();
-        const { deleteCell } = this.props;
-        if (selection.cellId) deleteCell(selection.cellId);
+        const { deleteCell, deleteLocation } = this.props;
+        if (selection.cellId) {
+          deleteCell(selection.cellId);
+        } else {
+          deleteLocation(selection.context, selection.y, selection.x);
+        }
         if (realFormulaRef) realFormulaRef.resetValue();
       }
     }
