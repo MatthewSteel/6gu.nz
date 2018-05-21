@@ -274,7 +274,12 @@ const refErrorMessage = name => `(${JSON.stringify(name)} + ' does not exist.')`
 export const refError = (term) => {
   if (term.badFormula) return '"Bad formula"';
   if (term.name) return refErrorMessage(term.name);
-  if (term.lookup && term.on.ref) return refErrorMessage(term.lookup);
+  if (term.lookup && term.on.ref) {
+    // Unresolved lookups are bad on sheets and "static" objects, but fine
+    // on computed cells etc.
+    const ref = getRefsById(store.getState())[term.on.ref];
+    if (!ref.formula) return refErrorMessage(term.lookup);
+  }
   return false;
 };
 

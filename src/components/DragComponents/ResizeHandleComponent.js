@@ -23,6 +23,7 @@ class ResizeHandleComponent extends PureComponent {
       gridRow: `${2 * y + 1} / span 2`,
       position: 'relative',
       display: resizeRefId ? 'block' : 'none',
+      pointerEvents: 'none',
     };
     if (!endDragCallback) return null;
     return (

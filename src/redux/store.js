@@ -34,7 +34,16 @@ const initialState = {
     name: 's2',
     type: SHEET,
   }],
-  cells: [],
+  cells: [{
+    id: 'arr',
+    name: 'arr',
+    type: ARRAY,
+    sheetId: 'sheet0',
+    x: 1,
+    y: 1,
+    width: 2,
+    height: 2,
+  }],
   uistate: { dragState: {} },
 };
 

@@ -1,9 +1,9 @@
 import React, { Component } from 'react';
 import { connect } from 'react-redux';
+import equal from 'fast-deep-equal';
 
 import { stringFormula } from '../../selectors/formulas/unparser';
 import { deleteThing, setFormula } from '../../redux/store';
-import equal from 'fast-deep-equal';
 import './FormulaComponent.css';
 
 
