@@ -11,8 +11,11 @@ import {
 import { setIntersection, transitiveClosure } from '../algorithms/algorithms';
 import store, { ARRAY, SHEET } from '../../redux/store';
 import { getNamedMember, getNumberedMember, TableArray } from './tables';
+import builtins, { binarySymbolToName, unarySymbolToName } from './builtins';
 
 // Functions to translate into formulas into code to be evaluated
+// We don't use `translateExpr`, mostly I think (?) because we need to
+// evaluate `callSignature`. I could be wrong, though...
 
 const expandSetItem = (k, expr) =>
   `try {
@@ -49,6 +52,16 @@ const expandLookupIndex = (term) => {
   return `globals.getNumberedMember(${expandedOn}, ${expandedIndex})`;
 };
 
+const expandUnary = (term) => {
+  const func = `globals.${unarySymbolToName[term.unary]}`;
+  return `${func}(${expandExpr(term.on)})`;
+};
+
+const expandBinary = (term) => {
+  const func = `globals.${binarySymbolToName[term.binary]}`;
+  return `${func}(${expandExpr(term.left)}, ${expandExpr(term.right)})`;
+};
+
 const expandExpr = (term) => {
   if (term.lookup) return expandLookup(term);
   if (term.lookupIndex) return expandLookupIndex(term);
@@ -57,8 +70,8 @@ const expandExpr = (term) => {
   if (term.op) return term.op;
   if ('value' in term) return JSON.stringify(term.value);
   if (term.expression) return `(${expandExpr(term.expression)})`;
-  if (term.unary) return `${term.unary}${expandExpr(term.on)}`;
-  if (term.binary) return `${expandExpr(term.left)} ${term.binary} ${expandExpr(term.right)}`;
+  if (term.unary) return expandUnary(term);
+  if (term.binary) return expandBinary(term);
   throw new Error(`unknown term type ${JSON.stringify(term)}`);
 };
 
@@ -169,6 +182,7 @@ export const getCellValuesById = createSelector(
       formulaRef,
       sheetValue,
       pleaseThrow,
+      ...builtins,
     };
 
     // Initialize circular refs and things that depend on them.
