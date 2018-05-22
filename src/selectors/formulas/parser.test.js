@@ -1,5 +1,14 @@
 import { lexFormula } from './lexer';
+import { getCells, getSheets } from './selectors';
+import { getCellValuesById } from './codegen';
+import store, { setFormula } from '../../redux/store';
 import { parseFormula, parseTokens } from './parser';
+
+const getCellValue = (cellName) => {
+  const cell = getCells(store.getState())
+    .find(({ name }) => name === cellName);
+  return getCellValuesById(store.getState())[cell.id].value;
+};
 
 describe('parser', () => {
   it('parses a complicated call', () => {
@@ -104,5 +113,28 @@ describe('parser', () => {
       },
     };
     expect(parseTokens(lexFormula(formula), 0)).toEqual(expectedOutput);
+  });
+
+  it('gets operator precedence right', () => {
+    const s1 = getSheets(store.getState())[0];
+
+    // precedence
+    store.dispatch(setFormula({ context: s1.id, y: 0, x: 0 }, 'x=1+2*3'));
+    expect(getCellValue('x')).toEqual(7); // not 9
+
+    // left associativity
+    store.dispatch(setFormula({ context: s1.id, y: 1, x: 0 }, 'y=2/2*2'));
+    expect(getCellValue('y')).toEqual(2); // not 0.5
+
+    // right associativity
+    store.dispatch(setFormula({ context: s1.id, y: 1, x: 0 }, 'z=2**3**2'));
+    expect(getCellValue('z')).toEqual(512); // not 64
+
+    // recursion
+    store.dispatch(setFormula(
+      { context: s1.id, y: 1, x: 0 },
+      'w=12 ** 1 * 2*3',
+    ));
+    expect(getCellValue('w')).toEqual(72); // not 12 ^ 6.
   });
 });

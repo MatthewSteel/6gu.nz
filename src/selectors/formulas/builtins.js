@@ -6,10 +6,13 @@ const divide = (l, r) => l / r;
 const mod = (l, r) => l % r;
 const pow = (l, r) => l ** r;
 const eq = (l, r) => l === r;
+const ne = (l, r) => l !== r;
 const ge = (l, r) => l >= r;
 const gt = (l, r) => l > r;
 const le = (l, r) => l <= r;
 const lt = (l, r) => l < r;
+const lshift = (l, r) => l << r;
+const rshift = (l, r) => l >> r;
 const logicalAnd = (l, r) => l && r;
 const logicalOr = (l, r) => l || r;
 const arithmeticAnd = (l, r) => l & r;
@@ -29,10 +32,13 @@ export const binarySymbolToName = {
   '%': 'mod',
   '**': 'pow',
   '==': 'eq',
+  '!=': 'ne',
   '>=': 'ge',
   '>': 'gt',
   '<=': 'le',
   '<': 'lt',
+  '<<': 'lshift',
+  '>>': 'rshift',
   '&&': 'logicalAnd',
   '||': 'logicalOr',
   '&': 'arithmeticAnd',
@@ -47,6 +53,32 @@ export const unarySymbolToName = {
   '~': 'ucomplement',
 };
 
+// Our unary operators are all higher precedence than our binary ones,
+// so we can just use the operator symbols here.
+export const binaryPrecedences = {
+  '+': 13,
+  '-': 13,
+  '*': 14,
+  '/': 14,
+  '%': 14,
+  '**': 15,
+  '==': 10,
+  '!=': 10,
+  '>=': 11,
+  '>': 11,
+  '<=': 11,
+  '<': 11,
+  '<<': 12,
+  '>>': 12,
+  '&&': 6,
+  '||': 5,
+  '&': 9,
+  '|': 7,
+  '^': 8,
+};
+
+export const assocRight = new Set(['**']);
+
 export default {
   plus,
   minus,
@@ -55,10 +87,13 @@ export default {
   mod,
   pow,
   eq,
+  ne,
   ge,
   gt,
   le,
   lt,
+  lshift,
+  rshift,
   logicalAnd,
   logicalOr,
   arithmeticAnd,

@@ -11,6 +11,8 @@ import {
   translateExpr,
 } from './selectors';
 
+import { binaryPrecedences, assocRight } from './builtins';
+
 // A recursive-descent parser.
 
 const parseLookups = (tokens, i, lookupObj) => {
@@ -291,15 +293,29 @@ export const subNamesForRefsInTerm = (term, contextId) => {
   return term;
 };
 
-const subNamesForRefs = (nameFormula, contextId) => {
+const fixPrecedence = (term) => {
+  if (!term.binary || !term.right.binary) return term;
+  const other = term.right;
+  const ourPrecedence = binaryPrecedences[term.binary];
+  const otherPrecedence = binaryPrecedences[other.binary];
+  if (
+    ourPrecedence < otherPrecedence ||
+    (ourPrecedence === otherPrecedence && assocRight.has(term.binary))
+  ) return term;
+  return { ...other, left: fixPrecedence({ ...term, right: other.left }) };
+};
+
+const postProcessFormula = (nameFormula, contextId) => {
   if (!nameFormula) return {};
-  return { formula: translateExpr(nameFormula, contextId, subNamesForRefsInTerm) };
+  const refFormula = translateExpr(nameFormula, contextId, subNamesForRefsInTerm);
+  const precedenceFormula = translateExpr(refFormula, null, fixPrecedence);
+  return { formula: precedenceFormula };
 };
 
 const parseFormulaExpr = (tokens, formulaStart, contextId, s) => {
   try {
     return {
-      ...subNamesForRefs(parseTokens(tokens, formulaStart), contextId),
+      ...postProcessFormula(parseTokens(tokens, formulaStart), contextId),
     };
   } catch (e) {
     // Bad formula, but we might at least have a name. Stick everything

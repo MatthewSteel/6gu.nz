@@ -45,7 +45,7 @@ const chompWhitespace = (input, i) => {
 };
 
 const lexOp = (input, i) => {
-  const twoCharOps = new Set(['**', '>=', '<=', '>>', '<<', '&&', '||']);
+  const twoCharOps = new Set(['**', '>=', '<=', '>>', '<<', '&&', '||', '!=']);
   if (i + 1 !== input.length) {
     const maybeOp = input.charAt(i) + input.charAt(i + 1);
     if (twoCharOps.has(maybeOp)) {
