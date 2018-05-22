@@ -102,6 +102,27 @@ export const getSheetsByName = createSelector(
   },
 );
 
+export const sheetPlacedCellLocs = createSelector(
+  getSheets,
+  getCells,
+  (sheets, cells) => {
+    const ret = {};
+    sheets.forEach(({ id }) => { ret[id] = {}; });
+    cells.forEach(({ sheetId, id, x, y, width, height }) => {
+      if (!sheetId) return;
+
+      const sheetPlacedLocs = ret[sheetId];
+      for (let cx = x; cx < x + width; ++cx) {
+        for (let cy = y; cy < y + height; ++cy) {
+          sheetPlacedLocs[`${cy},${cx}`] = id;
+        }
+      }
+    });
+    return ret;
+  },
+);
+
+
 export const refParentId = (ref) => {
   if (ref.type === SHEET) return undefined;
   if (ref.type === ARRAY) return ref.sheetId;

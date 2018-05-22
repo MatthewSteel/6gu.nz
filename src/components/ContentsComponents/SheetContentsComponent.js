@@ -9,7 +9,7 @@ import DragOutlineComponent from '../DragComponents/DragOutlineComponent';
 import ContentsBaseComponent from './ContentsBaseComponent';
 import ArrayComponent from './ArrayComponent';
 
-import { getChildrenOfRef } from '../../selectors/formulas/selectors';
+import { getChildrenOfRef, sheetPlacedCellLocs } from '../../selectors/formulas/selectors';
 import { overlaps, truncateOverlap } from '../../selectors/geom/geom';
 import getDragGeom, { getDragRefId } from '../../selectors/geom/dragGeom';
 import { getType } from '../../selectors/formulas/tables';
@@ -42,28 +42,8 @@ class SheetContentsComponent extends ContentsBaseComponent {
     return { xLB: 0, yLB: 0, xUB: Infinity, yUB: Infinity };
   }
 
-  static getDerivedStateFromProps(nextProps) {
-    const placedCellLocs = {};
-    nextProps.cells.forEach((cell) => {
-      const {
-        id,
-        x,
-        y,
-        width: cellWidth,
-        height: cellHeight,
-      } = cell;
-      for (let cx = x; cx < x + cellWidth; ++cx) {
-        for (let cy = y; cy < y + cellHeight; ++cy) {
-          placedCellLocs[`${cy},${cx}`] = id;
-        }
-      }
-    });
-    return { placedCellLocs };
-  }
-
   canPlaceWithoutConflict() {
-    const { placedCellLocs } = this.state;
-    const { dragRefId, dragGeom } = this.props;
+    const { dragRefId, dragGeom, placedCellLocs } = this.props;
     if (!dragGeom) return false;
     const { x, y, width, height } = dragGeom;
     for (let cx = x; cx < x + width; ++cx) {
@@ -119,6 +99,7 @@ class SheetContentsComponent extends ContentsBaseComponent {
       cellValuesById,
       contextId,
       formulaHasFocus,
+      placedCellLocs,
       pushViewStack,
       readOnly,
       viewSelected,
@@ -131,7 +112,6 @@ class SheetContentsComponent extends ContentsBaseComponent {
       dragGeom,
     } = this.props;
     const {
-      placedCellLocs,
       scrollY,
       scrollX,
     } = this.state;
@@ -295,6 +275,7 @@ const mapStateToProps = (state, ownProps) => ({
   cells: getChildrenOfRef(state, ownProps.contextId),
   dragRefId: getDragRefId(state),
   dragGeom: !ownProps.readOnly && getDragGeom(ownProps.contextId),
+  placedCellLocs: sheetPlacedCellLocs(state)[ownProps.contextId],
   viewOffsetX: 0,
   viewOffsetY: 0,
 });
