@@ -84,6 +84,8 @@ class FormulaComponent extends Component {
     this.inputRef.focus(); // Make sure view is properly focussed
     this.setFormula(this.state.value);
     this.inputRef.blur();
+    // Selection often doesn't change when setting the name of an array
+    this.resetValue(selection.cellId);
   }
 
   handleOnBlur() {

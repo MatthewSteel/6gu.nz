@@ -1,4 +1,5 @@
 import { Component } from 'react';
+import { CELL } from '../../redux/store';
 import { clampValue, clampOverlap, rangesOverlap } from '../../selectors/geom/geom';
 
 // For moving the cursor out of a large cell
@@ -118,8 +119,14 @@ export default class ContentsBaseComponent extends Component {
     const { selY, selX } = this.localSelection();
     const selectedCell = this.maybeSelectedCell();
     const { contextId } = this.props;
+
+    // We might just be a cell that holds an array or something. If so,
+    // provide the cell's (sheet) context to the formula box so we can
+    // rename the cell.
+    const realContext = (selectedCell && selectedCell.type === CELL) ?
+      selectedCell.sheetId : contextId;
     return {
-      context: contextId,
+      context: realContext,
       cellId: selectedCell && selectedCell.id, // may be undefined
       y: selY,
       x: selX,

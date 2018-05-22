@@ -7,14 +7,15 @@ import CellSelectionComponent from '../CellComponent/CellSelectionComponent';
 import EmptyCellComponent from '../CellComponent/EmptyCellComponent';
 import ContentsBaseComponent from './ContentsBaseComponent';
 
-import { getChildrenOfRef } from '../../selectors/formulas/selectors';
-import { deleteLoc, deleteThing } from '../../redux/store';
+import { getRefsById, getChildrenOfRef } from '../../selectors/formulas/selectors';
+import { ARRAY, deleteLoc, deleteThing } from '../../redux/store';
 
 
 class ArrayContentsComponent extends ContentsBaseComponent {
   maybeSelectedCell() {
-    const { cells } = this.props;
+    const { cells, context } = this.props;
     const { selY, selX } = this.localSelection();
+    if (context.formula) return { ...context, selX, selY };
     const maybeCell = cells.find(({ index }) => index === selY);
     // Eww -- see cellPosition below.
     if (maybeCell) return { ...maybeCell, selX };
@@ -23,12 +24,14 @@ class ArrayContentsComponent extends ContentsBaseComponent {
 
   // eslint-disable-next-line class-methods-use-this
   cellPosition(cell) {
+    const { context } = this.props;
+    if (context.formula) return { y: cell.selY, x: cell.selX, width: 1, height: 1 };
     return { y: cell.index, x: cell.selX, width: 1, height: 1 };
   }
 
   bounds() {
-    const { readOnly, tableData } = this.props;
-    const readOnlyExtraCell = readOnly ? 0 : 1;
+    const { context, readOnly, tableData } = this.props;
+    const readOnlyExtraCell = (readOnly || context.type !== ARRAY) ? 0 : 1;
     return {
       xLB: 0,
       yLB: 0,
@@ -134,6 +137,7 @@ class ArrayContentsComponent extends ContentsBaseComponent {
 }
 
 const mapStateToProps = (state, ownProps) => ({
+  context: getRefsById(state)[ownProps.contextId],
   cells: getChildrenOfRef(state, ownProps.contextId),
 });
 
