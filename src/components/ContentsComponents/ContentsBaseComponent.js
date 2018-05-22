@@ -25,6 +25,12 @@ export default class ContentsBaseComponent extends Component {
     this.updateSelection();
   }
 
+  componentWillUnmount() {
+    // React complains about setState({ scroll }) after unmount. I don't
+    // know if this is a reasonable fix...
+    this.setSelection = () => {};
+  }
+
   setChildSelectionTableRef(ref) {
     this.childSelectionTableRef = ref;
   }
