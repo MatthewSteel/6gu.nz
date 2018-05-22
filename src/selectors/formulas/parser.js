@@ -211,24 +211,36 @@ const getNameFromTokens = (tokens) => {
 // a good ref-suggestion tab-completion engine will avoid us having to
 // rely on this so much.
 
-export const translateLookups = newRef => (existingTerm) => {
-  // D'oh, we can't run `subNamesFor...` in reducers because everything
-  // relies on selectors which are built on the global (previous) state.
-  // FIXME.
-  const parentId = refParentId(newRef);
-  if (existingTerm.on && existingTerm.on.ref !== parentId) {
+export const translateLookups = (newRefs) => {
+  const newRefsByParentId = {};
+  newRefs.forEach((newRef) => {
+    const parentId = refParentId(newRef);
+    if (!newRefsByParentId[parentId]) newRefsByParentId[parentId] = {};
+
+    const { name, id, index } = newRef;
+    if (name) newRefsByParentId[parentId][name] = id;
+    if (index !== undefined) newRefsByParentId[parentId][index] = id;
+  });
+
+  return (existingTerm) => {
+    // D'oh, we can't run `subNamesFor...` in reducers because everything
+    // relies on selectors which are built on the global (previous) state.
+    // FIXME.
+    if (!existingTerm.on || !newRefsByParentId[existingTerm.on.ref]) {
+      return existingTerm;
+    }
+    const newRefsByName = newRefsByParentId[existingTerm.on.ref];
+    if (newRefsByName[existingTerm.lookup]) {
+      return { ref: newRefsByName[existingTerm.lookup] };
+    }
+    if (
+      'lookupIndex' in existingTerm &&
+      newRefsByName[existingTerm.lookupIndex.value]
+    ) {
+      return { ref: newRefsByName[existingTerm.lookupIndex.value] };
+    }
     return existingTerm;
-  }
-  if (existingTerm.lookup && existingTerm.lookup === newRef.name) {
-    return { ref: newRef.id };
-  }
-  if (
-    'lookupIndex' in existingTerm &&
-    existingTerm.lookupIndex.value === newRef.index
-  ) {
-    return { ref: newRef.id };
-  }
-  return existingTerm;
+  };
 };
 
 const subNamesForRefsInName = (term, contextId) => {

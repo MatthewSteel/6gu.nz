@@ -179,7 +179,7 @@ const translateDeletions = (newState, deletedRefIds) => {
   };
 };
 
-const rewireFormula = (cell, updatedRef) => {
+const rewireFormula = (cell, translateFn) => {
   const { formula } = cell;
   if (!formula) return cell;
 
@@ -187,15 +187,18 @@ const rewireFormula = (cell, updatedRef) => {
   const translatedFormula = translateExpr(
     formula,
     contextId,
-    translateLookups(updatedRef),
+    translateFn,
   );
   return { ...cell, formula: translatedFormula };
 };
 
-const rewireBadRefs = (newState, updatedRef) => ({
-  ...newState,
-  cells: newState.cells.map(cell => rewireFormula(cell, updatedRef)),
-});
+const rewireBadRefs = (newState, updatedRefs) => {
+  const translateFn = translateLookups(updatedRefs);
+  return {
+    ...newState,
+    cells: newState.cells.map(cell => rewireFormula(cell, translateFn)),
+  };
+};
 
 const rootReducer = (state, action) => {
   if (action.type === 'LOAD_FILE') {
@@ -253,7 +256,7 @@ const rootReducer = (state, action) => {
       ],
       updateId: scheduleSave(),
     };
-    return rewireBadRefs(stateWithCell, cell);
+    return rewireBadRefs(stateWithCell, [cell]);
   }
 
   if (action.type === 'DELETE_THING') {
