@@ -44,9 +44,7 @@ class ArrayContentsComponent extends ContentsBaseComponent {
 
   render() {
     const {
-      cells,
       tableData,
-      pushViewStack,
       viewSelected,
       viewHeight,
       viewWidth,
@@ -93,7 +91,7 @@ class ArrayContentsComponent extends ContentsBaseComponent {
       const contentsX = 1 - scrollX;
       if (contentsX >= viewWidth) continue;
       const cellSelected = viewSelected && selX === 1 && selY === row;
-      const childCell = cells.find(({ index }) => index === row);
+      const maybeValue = tableData.arr[row];
       children.push((
         <CellSelectionComponent
           x={viewOffsetX + contentsX}
@@ -103,15 +101,13 @@ class ArrayContentsComponent extends ContentsBaseComponent {
           selected={cellSelected}
           key={`cell-${row}`}
         >
-          {(childCell) ? (
+          {(maybeValue) ? (
             <CellValueComponent
-              id={childCell.id}
               x={viewOffsetX + contentsX}
               width={1}
               y={worldRow}
               height={0.5}
-              value={tableData.arr[row]}
-              pushViewStack={pushViewStack}
+              value={maybeValue}
               setSelection={this.setViewSelection}
             />
           ) : (

@@ -18,7 +18,7 @@ const defaultFormatter = (value, pushStack) => {
   }
   if (ourType === 'object') {
     const contentsStr = `{${Object.keys(value.byName).length}}`;
-    if (value.template) {
+    if (pushStack && value.template) {
       return (
         <div style={{ position: 'relative', zIndex: 0 }}>
           {contentsStr}
@@ -38,11 +38,14 @@ class CellValueComponent extends PureComponent {
   }
 
   getCellContents() {
-    const { value } = this.props;
+    const { pushViewStack, value } = this.props;
     if (!value) return { error: 'Value missing' }; // ???
     if (value.error) return { error: value.error };
     return {
-      formattedValue: defaultFormatter(value.value, this.pushStack),
+      formattedValue: defaultFormatter(
+        value.value,
+        pushViewStack && this.pushStack,
+      ),
       override: value.override,
     };
   }
