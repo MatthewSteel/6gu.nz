@@ -7,7 +7,7 @@ import CellSelectionComponent from '../CellComponent/CellSelectionComponent';
 import EmptyCellComponent from '../CellComponent/EmptyCellComponent';
 import ContentsBaseComponent from './ContentsBaseComponent';
 
-import { getRefsById, getChildrenOfRef } from '../../selectors/formulas/selectors';
+import { getChildrenOfRef } from '../../selectors/formulas/selectors';
 import { deleteLoc, deleteThing } from '../../redux/store';
 
 
@@ -134,7 +134,6 @@ class ArrayContentsComponent extends ContentsBaseComponent {
 }
 
 const mapStateToProps = (state, ownProps) => ({
-  name: getRefsById(state)[ownProps.contextId].name,
   cells: getChildrenOfRef(state, ownProps.contextId),
 });
 

@@ -9,7 +9,7 @@ import ResizeHandleComponent from '../DragComponents/ResizeHandleComponent';
 
 import { getRefsById } from '../../selectors/formulas/selectors';
 import { DRAG_MOVE } from '../../selectors/geom/dragGeom';
-import { deleteLoc, deleteThing } from '../../redux/store';
+import { ARRAY, deleteLoc, deleteThing } from '../../redux/store';
 
 
 class ArrayComponent extends ContentsBaseComponent {
@@ -101,7 +101,7 @@ class ArrayComponent extends ContentsBaseComponent {
           formulaRef={this.props.formulaRef}
           pushViewStack={pushViewStack}
           popViewStack={this.props.popViewStack}
-          readOnly={readOnly}
+          readOnly={readOnly || array.type !== ARRAY}
           setFormulaSelection={this.props.setFormulaSelection}
           tableData={tableData}
           viewHeight={viewHeight - 0.5}
