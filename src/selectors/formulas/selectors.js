@@ -151,7 +151,7 @@ export const rewriteRefTermToParentLookup = (innermostLookup) => {
   const ref = refsById[innermostLookup.ref];
 
   if (ref.type === ARRAY_CELL) {
-    return { lookupIndex: [{ value: ref.index }], on: { ref: ref.arrayId } };
+    return { lookupIndex: { value: ref.index }, on: { ref: ref.arrayId } };
   }
   if (ref.type !== CELL && ref.type !== ARRAY) {
     throw new Error(`unknown parent type for ${ref.type}`);
@@ -220,13 +220,13 @@ export const getContextIdForRefId = (refId, defaultContextId) => {
 
 
 const translateCall = (term, contextId, f) => {
-  const call = translateTerm(term.call, contextId, f);
+  const call = translateExpr(term.call, contextId, f);
   // Sometimes we're translating names -> refs, sometimes we are
   // translating refs -> printable strings etc :-(.
   const callRef = call.ref || term.call.ref;
   const callContextId = getContextIdForRefId(callRef, contextId);
   const translatedArgs = term.args.map(({ ref, expr }) => ({
-    ref: translateTerm(ref, callContextId, f),
+    ref: translateExpr(ref, callContextId, f),
     expr: translateExpr(expr, contextId, f),
   }));
   return f(
@@ -239,18 +239,18 @@ const translateCall = (term, contextId, f) => {
 };
 
 const translateLookup = (term, contextId, f) => {
-  const on = translateTerm(term.on, contextId, f);
+  const on = translateExpr(term.on, contextId, f);
   return f({ lookup: term.lookup, on }, contextId);
 };
 
 
 const translateLookupIndex = (term, contextId, f) => {
   const lookupIndex = translateExpr(term.lookupIndex, contextId, f);
-  const on = translateTerm(term.on, contextId, f);
+  const on = translateExpr(term.on, contextId, f);
   return f({ lookupIndex, on }, contextId);
 };
 
-export const translateTerm = (term, contextId, f) => {
+export const translateExpr = (term, contextId, f) => {
   if (term.lookup) return translateLookup(term, contextId, f);
   if ('lookupIndex' in term) return translateLookupIndex(term, contextId, f);
   if (term.name || term.ref) return f(term, contextId);
@@ -258,7 +258,17 @@ export const translateTerm = (term, contextId, f) => {
   if (term.call) return translateCall(term, contextId, f);
   if (term.unary) {
     return f(
-      { unary: term.unary, on: translateTerm(term.on, contextId, f) },
+      { unary: term.unary, on: translateExpr(term.on, contextId, f) },
+      contextId,
+    );
+  }
+  if (term.binary) {
+    return f(
+      {
+        binary: term.binary,
+        left: translateExpr(term.left, contextId, f),
+        right: translateExpr(term.right, contextId, f),
+      },
       contextId,
     );
   }
@@ -271,10 +281,6 @@ export const translateTerm = (term, contextId, f) => {
   if (term.badFormula) return f(term, contextId);
   throw new Error('Unknown term type');
 };
-
-
-export const translateExpr = (expr, contextId, f) =>
-  expr.map(term => translateTerm(term, contextId, f));
 
 
 export const flattenExpr = (expr) => {

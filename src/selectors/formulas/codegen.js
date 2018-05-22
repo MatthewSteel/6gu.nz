@@ -36,26 +36,20 @@ const expandCall = (callTerm) => {
   return `globals[${JSON.stringify(signature)}](${allArgs})`;
 };
 
-const expandExpr = (expr) => {
-  const expandedTerms = expr.map(term =>
-    expandTerm(term));
-  return expandedTerms.join(' ');
-};
-
 const expandRef = term => `globals.formulaRef(globals, ${JSON.stringify(term.ref)})`;
 
 const expandLookup = (term) => {
-  const expandedOn = expandTerm(term.on);
+  const expandedOn = expandExpr(term.on);
   return `globals.getNamedMember(${expandedOn}, ${JSON.stringify(term.lookup)})`;
 };
 
 const expandLookupIndex = (term) => {
-  const expandedOn = expandTerm(term.on);
+  const expandedOn = expandExpr(term.on);
   const expandedIndex = expandExpr(term.lookupIndex);
   return `globals.getNumberedMember(${expandedOn}, ${expandedIndex})`;
 };
 
-const expandTerm = (term) => {
+const expandExpr = (term) => {
   if (term.lookup) return expandLookup(term);
   if (term.lookupIndex) return expandLookupIndex(term);
   if (term.ref) return expandRef(term);
@@ -63,7 +57,8 @@ const expandTerm = (term) => {
   if (term.op) return term.op;
   if ('value' in term) return JSON.stringify(term.value);
   if (term.expression) return `(${expandExpr(term.expression)})`;
-  if (term.unary) return `${term.unary}${expandTerm(term.on)}`;
+  if (term.unary) return `${term.unary}${expandExpr(term.on)}`;
+  if (term.binary) return `${expandExpr(term.left)} ${term.binary} ${expandExpr(term.right)}`;
   throw new Error(`unknown term type ${JSON.stringify(term)}`);
 };
 

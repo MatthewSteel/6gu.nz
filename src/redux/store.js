@@ -91,7 +91,7 @@ const defaultCellForLocation = (context, y, x) => {
       sheetId: context.id,
       id: uuidv4(),
       name: defaultCellName(y, x),
-      formula: [{ value: '' }],
+      formula: { value: '' },
       x,
       y,
       width: 1,
@@ -106,7 +106,7 @@ const defaultCellForLocation = (context, y, x) => {
     id: uuidv4(),
     arrayId: context.id,
     type: ARRAY_CELL,
-    formula: [{ value: '' }],
+    formula: { value: '' },
     index: y,
   };
 };

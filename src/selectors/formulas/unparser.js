@@ -19,22 +19,23 @@ const unparseRef = (id) => {
 export const unparseTerm = (term) => {
   if (term.lookup) return `${term.on}.${term.lookup}`;
   if (term.lookupIndex) {
-    const args = term.lookupIndex.join(' ');
+    const args = term.lookupIndex;
     return `${term.on}[${args}]`;
   }
   if (term.call) {
     const argsText = term.args
-      .map(({ ref, expr }) => `${ref}=${expr.join(' ')}`)
+      .map(({ ref, expr }) => `${ref}=${expr}`)
       .join(', ');
     return `${term.call}(${argsText})`;
   }
-  if (term.expression) return `(${term.expression.join(' ')})`;
+  if (term.expression) return `(${term.expression})`;
   if (term.badFormula) return term.badFormula;
   if (term.op) return term.op;
   if (term.ref) return unparseRef(term.ref);
   if (term.name) return term.name;
   if ('value' in term) return JSON.stringify(term.value);
   if (term.unary) return `${term.unary}${term.on}`;
+  if (term.binary) return `${term.left} ${term.binary} ${term.right}`;
   throw new Error('Unknown term type');
 };
 
@@ -43,21 +44,31 @@ const subRefsForLookupsInTerm = (term, contextId) => {
   return term;
 };
 
-export const stringFormula = (refId) => {
-  const ref = getRefsById(store.getState())[refId];
-  if (!ref) return '';
-
+const formulaElementsUpToName = (ref) => {
   const retToJoin = [];
   if (ref.name) {
     retToJoin.push(ref.name);
   }
   retToJoin.push('=');
+  return retToJoin;
+};
+
+const formulaExpressionString = (ref) => {
+  if (!ref.formula) return [];
   const refParent = refParentId(ref);
   const lookupTerms = translateExpr(
-    ref.formula || [],
+    ref.formula,
     getContextIdForRefId(refParent, refParent),
     subRefsForLookupsInTerm,
   );
-  const terms = translateExpr(lookupTerms, null, unparseTerm);
-  return [...retToJoin, ...terms].join(' ');
+  return translateExpr(lookupTerms, null, unparseTerm);
+};
+
+export const stringFormula = (refId) => {
+  const ref = getRefsById(store.getState())[refId];
+  if (!ref) return '';
+
+  const firstBits = formulaElementsUpToName(ref);
+  const expressionString = formulaExpressionString(ref);
+  return [...firstBits, expressionString].join(' ');
 };

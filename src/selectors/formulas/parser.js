@@ -155,22 +155,25 @@ const parseTerm = (tokens, i) => {
 };
 
 const parseExpression = (tokens, i) => {
-  const elements = [];
-  for (let j = i; j < tokens.length; j++) {
-    // Precondition: We should be looking at the start of a term.
-    const { term, newIndex } = parseTerm(tokens, j);
-    elements.push(term);
-    j = newIndex;
-    if (j === tokens.length || tokens[j].close || tokens[j].comma || tokens[j].closeBracket) {
-      return {
-        term: elements,
-        newIndex: j,
-      };
-    }
-    if (!tokens[j].op) {
-      throw new Error('Expected a binary operator in expression');
-    }
-    elements.push(tokens[j]);
+  const { term, newIndex } = parseTerm(tokens, i);
+  if (
+    newIndex === tokens.length ||
+    tokens[newIndex].close ||
+    tokens[newIndex].comma ||
+    tokens[newIndex].closeBracket
+  ) {
+    return { term, newIndex };
+  }
+  if (tokens[newIndex].op) {
+    const rightParse = parseExpression(tokens, newIndex + 1);
+    return {
+      term: {
+        binary: tokens[newIndex].op,
+        left: term,
+        right: rightParse.term,
+      },
+      newIndex: rightParse.newIndex,
+    };
   }
   throw new Error('Unexpected end of expression');
 };
@@ -217,7 +220,10 @@ export const translateLookups = newRef => (existingTerm) => {
   if (existingTerm.lookup && existingTerm.lookup === newRef.name) {
     return { ref: newRef.id };
   }
-  if ('lookupIndex' in existingTerm && existingTerm.lookupIndex === newRef.index) {
+  if (
+    'lookupIndex' in existingTerm &&
+    existingTerm.lookupIndex.value === newRef.index
+  ) {
     return { ref: newRef.id };
   }
   return existingTerm;
@@ -259,8 +265,8 @@ const subNamesForRefsInLookup = (term) => {
 const subNamesForRefsInLookupIndex = (term) => {
   // This turns "arrayRef[arrIndex]" into "arrayCellRef" etc.
   if (!term.on.ref) return term;
-  if (term.lookupIndex.length !== 1) return term;
-  const index = term.lookupIndex[0].value;
+  if (!('value' in term.lookupIndex)) return term;
+  const index = term.lookupIndex.value;
   if (typeof index !== 'number') return term;
 
   const { ref: refId } = term.on;
@@ -300,9 +306,7 @@ const parseFormulaExpr = (tokens, formulaStart, contextId, s) => {
     // after the `=` symbol (if one exists) into the badFormula attr.
     const formulaStr = (formulaStart === 0) ? s : s.slice(s.indexOf('=') + 1);
     return {
-      formula: [{
-        badFormula: formulaStr.trim(),
-      }],
+      formula: { badFormula: formulaStr.trim() },
     };
   }
 };
@@ -318,6 +322,6 @@ export const parseFormula = (s, contextId) => {
   } catch (e) {
     // Really bad -- can't lex or get a name... Formula is totally
     // broken.
-    return { formula: [{ badFormula: s }] };
+    return { formula: { badFormula: s } };
   }
 };

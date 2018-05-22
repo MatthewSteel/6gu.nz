@@ -24,7 +24,7 @@ describe('actions/the store', () => {
     expect({ ...cells[0], id: undefined }).toEqual({
       sheetId: sheet.id,
       name: 'x',
-      formula: [{ value: 12 }],
+      formula: { value: 12 },
       x: 0,
       y: 1,
       width: 1,

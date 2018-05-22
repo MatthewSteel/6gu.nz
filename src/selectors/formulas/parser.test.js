@@ -29,14 +29,14 @@ describe('parser', () => {
       { lookup: '.' },
       { name: 'field' },
     ];
-    const expectedOutput = [{
+    const expectedOutput = {
       lookup: 'field',
       on: {
         call: { lookup: 'b', on: { name: 'a' } },
         args: [{
           ref: { name: 'foo' },
-          expr: [{
-            lookupIndex: [{ value: 10 }],
+          expr: {
+            lookupIndex: { value: 10 },
             on: {
               lookup: 'arf',
               on: {
@@ -44,13 +44,13 @@ describe('parser', () => {
                 on: { name: 'bar' },
               },
             },
-          }],
+          },
         }, {
           ref: { name: 'quux' },
-          expr: [{ value: 1 }, { op: '+' }, { value: 'hi' }],
+          expr: { binary: '+', left: { value: 1 }, right: { value: 'hi' } },
         }],
       },
-    }];
+    };
 
     expect(lexFormula(formula)).toEqual(tokens); // Just in case...
     expect(parseTokens(tokens, 0)).toEqual(expectedOutput);
@@ -61,46 +61,48 @@ describe('parser', () => {
     expect(parseFormula('foo =')).toEqual({ name: 'foo' });
     expect(parseFormula('foo = bar')).toEqual({
       name: 'foo',
-      formula: [{ name: 'bar' }],
+      formula: { name: 'bar' },
     });
     expect(parseFormula('foo = bar +')).toEqual({
       name: 'foo',
-      formula: [{ badFormula: 'bar +' }],
+      formula: { badFormula: 'bar +' },
     });
     expect(parseFormula('foo := bar +')).toEqual({
-      formula: [{ badFormula: 'foo := bar +' }],
+      formula: { badFormula: 'foo := bar +' },
     });
   });
 
   it('parses unary operators', () => {
     const formula = '-!+~func(param=-arg)+- foo';
-    const expectedOutput = [{
-      unary: '-',
-      on: {
-        unary: '!',
+    const expectedOutput = {
+      binary: '+',
+      left: {
+        unary: '-',
         on: {
-          unary: '+',
+          unary: '!',
           on: {
-            unary: '~',
+            unary: '+',
             on: {
-              call: { name: 'func' },
-              args: [{
-                ref: { name: 'param' },
-                expr: [{
-                  unary: '-',
-                  on: { name: 'arg' },
+              unary: '~',
+              on: {
+                call: { name: 'func' },
+                args: [{
+                  ref: { name: 'param' },
+                  expr: {
+                    unary: '-',
+                    on: { name: 'arg' },
+                  },
                 }],
-              }],
+              },
             },
           },
         },
       },
-    }, {
-      op: '+',
-    }, {
-      unary: '-',
-      on: { name: 'foo' },
-    }];
+      right: {
+        unary: '-',
+        on: { name: 'foo' },
+      },
+    };
     expect(parseTokens(lexFormula(formula), 0)).toEqual(expectedOutput);
   });
 });
