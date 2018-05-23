@@ -1,102 +1,336 @@
 The long list:
- - dynamic sheet creation etc.
- - built-in functions,
- - displaying, entering complex data structures
- - "native" map/for etc,
- - better formula display/input,
- - "actions" (xhr etc),
-   - mutation story,
-   - conditional evaluation, HOF or first-class cell references,
- - js interop,
- - collaboration,
- - custom cell formatting incl charts.
-   - input modes for rich text?
- - closures and first-class functions. (Ordered args?)
- - a website, some vids.
- - putting it online
+ - MVP displaying, entering complex data structures
+ - MVP built-in functions,
+ - MVP operations on sheets -- rename, copy.
+ - V2? Microservices
+ - V2 Permanent storage, file select
+ - V2 cut, copy, paste,
+ - V2 Multi-select,
+ - V2 "native" map/for etc?
+ - V2 better formula box:
+     - terms look like cells,
+     - "click to write",
+     - tab completion
+ - V3 "actions" (xhr etc),
+     - mutation story (redux?),
+     - conditional evaluation, HOF or first-class cell references,
+ - V3 js interop, in (npm) and out (export to js)
+ - V4 collaboration,
+ - ?? custom cell formatting incl charts-in-cells (user react components).
+     - input modes for rich text?
+ - ?? closures and first-class functions.
+ - ?? laziness
+ - ?? a website, some vids.
+ - ?? putting it online
 
 
+MVP:
+ - Rename sheets,
+ - Create arrays, objects and tables,
+   - Just by entering formulas, not actual buttons I think?
+ - Rename columns in objects and tables,
+   - Use names for this, I think.
+ - array operators.
+ - "Fake refs" ("keep a map of parent -> lookup of written fake refs"),
+   - translate ref-reads, ref-writes to fake refs at codegen time?
+   - use fake refs in "sheetValue" etc.
+ - Complex writes (`sheet(arr: range(10))`)
+   - a function per written complex ref to update children and fake refs
+     ("recursive"). Also update the thing itself, I think, and any
+     externally referenced descendants. And blank out their formulas...
+ - Some built-in functions. A subset of:
+   - *args and **kwargs? "An array called `a1`"? OK for now.
+   - if, iferror, lookup (and/or table[name: "Fred"]), sum, average, stdev.
+   - String functions, sin, atan2, sqrt, abs, round(s)?, last, reverse,
+   - sort, filter, countif, group, max, length/size
+     - Maybe `sort(arrToSort, by: sortKeys)`? Nice.
+ - A website with intro video.
+ - Maybe relative references. `$row - 1`?
+ - Reasonable page layout? Animations? No!
+ - Value writes -- `cellObject(k1.k2.k3: v)`?
+   - k1 lookup order "table cols, local cell names, sheet names, cObj prop"
+   - cellArray(0: v) ? OK.
+
+Fuuck.
+
+Out of scope for MVP:
+ - Concatenating tables/arrays, zip functions,
+ - Date, time, random functions.
+ - Range selection :-(
+ - Cut copy paste :-((,
+ - Undo/redo,
+ - "microservices"?
+   - How does hosting interact with modules/npm? "Don't do it"? Sandbox?
+     - Maybe this is how we charge...
+ - Better formula input (clicking),
+ - Type tagging,
+ - Multiple files, persistent storage.
+
+Next up:
+ - Proper shadows on scrolled/scrollable children,
+ - Array creation,
+ - Browse into array values,
+   - Path at the top,
+   - Storing the path in the view somehow.
+     - Path is a lookupExpression from the selected sheet, I think.
+       Except we have to invert it, and add more crap for unreified shit.
+       Fine: `[{ name: 'fred' }, { index: 0 }]` haha
+       Can/should we get rid of byId? Meh, if it's there...
+         `{ id: 'sldkfjsjf' }` too, then.
+   - Should this be in redux? Probably...
+
+ - Objects, tables. Before or after fake refs and complex overrides?
+
+Nice to have:
+ Overridden arrays look special,
+
+Array creation: `newArr = [fred, 1, newCell[0] + newCell[1]]`
+ - Uses the "set formula" action
+ - Parser change -- comma-separated bracketed thing.
+   - Maybe "empty cells", see if it's hard.
+ - Adds the cell and the children (separately?)
+ - Only reify if this is a cell in a sheet.
+   - Still not convinced of this...
+   - We can do it for now, though. It's a dumb requirement, but easy (?) to fix.
 
 
-Short-term nice-to-have:
- - Consistent cell-sizing and overflow?
-
-Possible next projects:
- - Making new sheets,
- - Table renaming.
-
-Once these features are done I will make a video.
-
-Then tables, maybe?
-
+Long term types:
+ - null,
+ - bools,
+ - "numbers",
+ - strings,
+ - objects,
+ - arrays.
+      plus(thing1, thing2) { switch(thing1.type * n + thing2.type) { ...
+  - Groan, that'll take a while to write out...
 
 
-Complex data:
- - `...=` maybe makes a list? Or just `.=`
- - Don't care about structs maybe, because the whole sheet is a struct?
- - _Do_ care about tables, though.
- - Maybe want a "matrix" type too -- one function, two inputs, or data.
-    - "Cross"?
+When do we "reify" tables etc, shove them into the store? All literals?
+ Maaybe.
+ How deep does the recursion go? Just a couple of levels, or all the way down?
+  Is this a bad question to ask? Maybe a table is just a view thing...
 
-  Hmm, maybe continue a list with `... ? expr` or something.
-   - If there isn't enough room, make room.
-
-
-Functions: function(out, in1, in2)? Kinda magical if it's a macro...
-  - Simple, though... And we can _use_ it!
-  - Alternatives?
-    `fun(&out, &in1, &in2)`
-    `fun([out], [in1])`
-    `function = ?(in1=?, in2=?)
-      seems kinda redundant?
-
-      I like function = ?(out, in1, in2). It's short, and because `?` is
-      "special" it doesn't look like a regular function.
-
-  We can use that for conditional evaluation too --
-    if(true, ?(out, in), ?(scary))().
-    fib = if(n < 2, ?(n), ?(fib(n - 1) + fib(n - 2)))() ??? No.
-
-    What's the difference?
-      #[] just delays the expression inside. Takes no arguments.
-      ?() makes a function given references.
-
-    mapped = arr.map(before => after)
-      Can we get away with arrow functions? Are they too hard?
-      .filter(x => x < 5)...
-      Maybe with some good editor support: filter([[value] => ["keep?"]])
-
-      I suspect we actually just want `.filter(value, keep?)`
-      Cut out the complexity -- don't use a function, we can do that.
-        "Advanced users" can do that. "Real functions" can take refs?
+Work out tsort implications of `table[name: "Fred"].bar`:
+ - just `name` and `bar`? Somehow? That would be ideal.
+   Can we write `table.bar[name: "Fred"]`? Is that confusing?
+     What if each `bar` has a `name`? Seems confusing to me.
 
 
+Philosophical differences:
+  - Should tables contain formulas?
+    - No: It makes overriding awkward -- those formulas can disappear.
+    - Yes: "Augmenting" tables with "column formulas" is awkward.
+  - Maybe a table can have a "column formula" that is internal to it, and
+    when you override it you _can't_ override that formula...
+      What does that even mean...
+        I like it, though...
 
 
-Do we want a special "sheet" literal function to make structs?
-  `=row(id="asdf", name="Fred")`?
-  `=table(row(id="asdf", name="Fred"), row(id="qwer", name="Sally"))`?
+Possible projects after/during MVP work:
+ - Undo/redo,
+ - Cut, copy, paste,
+ - Clicking on cells while editing formulas.
+ - Drag select to make arrays/objects/tables? In a formula?
+   - shift/ctrl + click could also make an array, or add to one :-)
+   - Maybe "drag to select, makes an array. Hit 'tab' to turn it into an object/table". Seems reasonable?
+   - "Make it an array" in the formula, or in the sheet, though?
+ - Consistent cell-sizing and text-overflow?
+ - Row/column headers (or scroll indicators of some other kind.)
+    - Simple fake scroll bars, maybe?
+    - Just shadows?
+ - keyboard scrolling -- [shift or ctrl]+down scrolls current viewport
+ - Better sheet select, scratch-space,
+ - Rethought book layout, maybe pop-over preview.
 
 
+Array formula thoughts:
+  - Looked at "J". Verbs have "natural rank" in J, you say "apply this to scalars" and it does the right thing.
+  - Annoyingly, that scheme doesn't work with nested data types -- what rank should "flattenDeep" have? What if we often have heterogeneous depth?
+  - We can get a fair bit of mileage out of "applies to scalars" and recurse down lists (and maybe objects).
+    - Rank 0 is fine, but Rank >=1 are no good, basically.
+
+  Other ideas:
+    - Users can loop manually over things,
+    - We can provide a "broadcast array" type, for which all function calls are applied to elements.
+    - Boxing? If we have things we want to apply to lists of numbers...
+      - Not sure this works.
+    - `each`, `each1` etc macros around formula arguments.
+      - My favourite at the moment.
+
+    From looking at Q: It's not especially important that everything works "at every level" -- J's "natural depth" thing is great, but not necessary.
+    Do as well as we can for the standard library.
+      max(each(a), each(b)).
+        Maybe shortcuts for each(each(a)) etc. I do kinda like 1#2#...
+          No more J/Q for today :-)
+            each(var, key=1, depth=2)
+            So difficult though... map=each(key=1, depth=d); max(map(x))
+              Too hard -- user might use variables :-/. each1, each2...
+  max2 = zip(a, b)[a > b]. Or if(each(a) > each(b), each(a), each(b)).
+    Hmm, each(if)(a > b, a, b)... Not lazy, though...
+      None of them are lazy, _or really can be_. Fine.
 
 
-Sub-table stuff:
- - Internal scrolling?
- - Display of complex data types:
-  - Arrays,
-  - Objects,
-  - "Tables".
+OK, do we need to come up with some theory? A hierarchy of references?
+ Sheet -> cell,
+ Sheet -> table -> column -> columnEntry,
+ Sheet -> table -> row.
+ Sheet -> object -> objectEntry
+ Sheet -> array -> arrayEntry
+
+So our data types:
+ - Sheet,
+ - Table,
+ - Column,
+ - Row,
+ - Object,
+ - Array,
+ - TableEntry,
+ - ObjectEntry,
+ - ArrayEntry,
+ - Cell.
+That's a lot.
 
 
-What about interop?
- - Later. "Compat import/export" etc.
-What about closures?
- - Will require special support. Doable though.
+Different views of data. Hmm. If it's small you can "browse to it", if it's big you can see it?
+  - "Expanded view" for arrays and "template-less" objects.
+  - Just the array/object in the top-left corner, with biggish dimensions?
+    Great!
 
 
+An additional way to write lists/objects/tables:
+  a[0] = 1
+  a.b = 2
+  a.b[1] = 3
+  a[1].b = 3
 
-What's next after that? Ideas:
- - A proper formula box,
- - Thinking about laziness and/or conditional evaluation.
-    - Maybe `fib=if(n < 2, #[1], #[fib(n=n-1) + fib(n=n-2)]).value`
-    - Might be too confusing. Want to see how it plays with tsort too.
+One more: "Turn the previous cell into an array, and append to it:
+  ,= 1
+  .name = "Fred"
+
+Helpful if we can edit whole-list/obj/table formulas too, so converting an array into a table is as easy as editing the formula.
+  Hopefully we can truncate the unparsed value before it gets too long :-)
+  ("If it has `...` in it, get rid of it :-)
+    Or some "truncated" policy.
+
+
+---------------
+[obj][ a ][ b ]
+[ 0 ][val][val]
+---------------
+[ 1 ][...][...]
+[ 2 ][...][...]
+---------------
+
+
+I think we can let the user come up with primary keys. Names could be helpful, though...
+  - Maybe maps/filters etc can have names in them?
+  - References can be mapped onto the table, not global.
+  - `While` tables can just have numbers, or not be named?
+
+Also: we may want to support polymorphic arr["property"] and arr[i].
+
+Can we select cols like `friends[[age, name]]` to get partial structs (or partial transpose-structs)?
+  Maybe `friends[{age, name}]`? What is `{age, name}` though...
+    They are "children by name, in the relative namespace of `friends`".
+    That's nice.
+
+    Should we merge lookup and lookupIndex? (Well, we have to display them differently...)
+      We could call `.name` and `.index` something like `.key` instead?
+
+
+Start shitty and upgrade it - for us and the user.
+That means:
+  - Let them import CSVs and "get to work" on them. Lookups, aggregates.
+  - Let them "tidy" the data model up. Define cross-relationships for simpler formulas.
+    - No, actually, I don't like this. How do you script some GTFS processing like this? Too much manual work. We don't want to be a fancy Excel, remember? AirTable have this problem too...
+    - Maybe it's actually just a property of the table, then?
+      Or maybe the user can script a transform from CSV -> "nice" table?
+      Sure, that's doable.
+
+
+Now, things about "dragging a cell down" etc... Auto-fills and so on. Are they just "fancy value input", or do they create formulas?
+
+
+OK, I like the idea of making relational tables out of flat input.
+  Should it just be a property of the table? "Do one-many on this col?"
+  Dunno.
+  Can we punt on this? How necessary is it to get this right right now?
+
+Hmm, maybe we should have two kinds of tables -- value tables and "view" tables. Then computed columns are kinda "easy". Not too usable, though...
+
+Do we face problems with recursion? Two-way data?
+  Say we want to have a `.friends` relation.
+    `a.friends.age` gives a list of ages.
+    `a.friends.friends` is a circular reference problem, maybe?
+      Actually, probably not. We can probably `flatten(a.friends.friends)`.
+      _We_ need to come after friends, and _we_ need to come after friends?
+      Yes. We can do a transitive closure! Hooray!
+
+You can augment tables, to whatever you want with them, operate on them like values, _but_, we give good, useful ways to do "better" data transformations, and let the user build tools for their own use.
+
+That's a good mission statement -- let the user do what they want to do, but give them headroom. Don't presume that we know best. We need to not only provide the best way of doing something but the _easiest_ as well.
+
+Selection: In formulas it can make a list (of names), in the sheet it can make an object or array. Or do some formatting, or delete things.
+
+I wonder -- what do users use "paste values" for?
+
+Ugh, I suspect "data tables" will be dense with formulas, unless we can impose some structure.
+  - "Value columns and formula columns" maybe?
+  - "adjacent tables/arays of the same height scroll together"?
+
+Maybe adding and removing columns copies the table?
+
+Maybe we have "series" tables and "data" tables.
+
+Hmm, tables are used for a bunch of different purposes :-/
+
+It _would_ be nice if we could encourage users to "do reasonable things".
+It would also be nice if we could support whatever workflows they are used to.
+
+Series data often has rolling sums, time-averages etc.
+
+Maybe there's "core" data and "augmenting" data? |||==ish.
+  Niice.
+
+Maybe that can be done automatically, though.
+A table could have a "core" data-like content with surrounding computed cols/rows.
+
+A few things:
+ - We want it to work _as_ a database,
+ - We want it to work _on_ a database,
+ - We want it to work as a spreadsheet.
+
+People are going to start with the spreadsheet.
+Hmm, let's just optimise for the spreadsheet case first, yeah?
+
+A couple of ways of looking at it:
+  - AirTable is super structured. Quite restrictive. What do they get out of it?
+    - Foreign key constraints,
+    - Simple "order of execution",
+    - More scriptability because the formulas generalise.
+  - Excel is very loose. What do they get out of it?
+    - More use-cases covered,
+    - More user-exploration and rapid-prototyping possible.
+
+Things they are used for:
+ - Records,
+ - Series data with calculations,
+   - Pure series calculations after t=0,
+ - Matrices
+ - Drawing pictures :-/
+
+Time-series tends to go left-to-right? Hmm. Well, whatever, new habits.
+  - Bad attitude.
+
+We could make it easy to copy, and maybe fix up references if the users wants to "copy, transform and hide the old one"?
+  - Like a what-if...
+    `=restOfTheData(table1=table1(col1 = table1.col1 + 1))`
+
+I like the idea of taking a table and adding rows to the bottom and columns to the right. Has to be user-friendly, though.
+  Colour-coding based on insertion order? Re-ordering possible?
+  To the user it can look like "horizontal borders between rows when the formulas change." I think that's a useful heuristic.
+
+Maybe there are three kinds of rows:
+ - Add a row,
+ - Maybe add a row,
+ - Repeatedly add rows.
