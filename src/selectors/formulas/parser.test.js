@@ -137,4 +137,38 @@ describe('parser', () => {
     ));
     expect(getCellValue('w')).toEqual(72); // not 12 ^ 6.
   });
+
+  it('parses an empty array', () => {
+    const formula = '[]';
+    const expectedOutput = { array: [] };
+    expect(parseTokens(lexFormula(formula), 0)).toEqual(expectedOutput);
+  });
+
+  it('parses an array of one element', () => {
+    const formula = '["hi"]';
+    const expectedOutput = { array: [{ value: 'hi' }] };
+    expect(parseTokens(lexFormula(formula), 0)).toEqual(expectedOutput);
+  });
+
+  it('parses an array of two elements', () => {
+    const formula = '["hi", 1]';
+    const expectedOutput = { array: [{ value: 'hi' }, { value: 1 }] };
+    expect(parseTokens(lexFormula(formula), 0)).toEqual(expectedOutput);
+  });
+
+  it('parses an array of two elements with a trailing comma', () => {
+    const formula = '["hi", 1,]';
+    const expectedOutput = { array: [{ value: 'hi' }, { value: 1 }] };
+    expect(parseTokens(lexFormula(formula), 0)).toEqual(expectedOutput);
+  });
+
+  it('parses nested arrays', () => {
+    const formula = '[["hi"]]';
+    const expectedOutput = {
+      array: [{
+        array: [{ value: 'hi' }],
+      }],
+    };
+    expect(parseTokens(lexFormula(formula), 0)).toEqual(expectedOutput);
+  });
 });

@@ -62,6 +62,12 @@ const expandBinary = (term) => {
   return `${func}(${expandExpr(term.left)}, ${expandExpr(term.right)})`;
 };
 
+const expandArray = (term) => {
+  const expandedArgs = term.array.map(e => expandExpr(e));
+  const joinedArgs = expandedArgs.join(',');
+  return `globals.tableArray([${joinedArgs}])`;
+};
+
 const expandExpr = (term) => {
   if (term.lookup) return expandLookup(term);
   if (term.lookupIndex) return expandLookupIndex(term);
@@ -72,6 +78,7 @@ const expandExpr = (term) => {
   if (term.expression) return `(${expandExpr(term.expression)})`;
   if (term.unary) return expandUnary(term);
   if (term.binary) return expandBinary(term);
+  if (term.array) return expandArray(term);
   throw new Error(`unknown term type ${JSON.stringify(term)}`);
 };
 
@@ -109,6 +116,8 @@ const formulaRef = (globals, ref) => {
   if ('value' in ret) return ret.value;
   throw new Error(ret.error);
 };
+
+const tableArray = arr => new TableArray(arr);
 
 // Make a literal struct from a sheet's cells.
 const sheetValue = (sheetId, globals) => {
@@ -182,6 +191,7 @@ export const getCellValuesById = createSelector(
       formulaRef,
       sheetValue,
       pleaseThrow,
+      tableArray,
       ...builtins,
     };
 

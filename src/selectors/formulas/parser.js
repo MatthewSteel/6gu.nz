@@ -144,6 +144,7 @@ const parseTerm = (tokens, i) => {
       newIndex: newIndex + 1,
     };
   }
+  if (tokens[i].openBracket) return parseArray(tokens, i + 1);
   if ('value' in tokens[i]) {
     return {
       term: tokens[i],
@@ -180,6 +181,28 @@ const parseExpression = (tokens, i) => {
   throw new Error('Unexpected end of expression');
 };
 
+const parseArray = (tokens, i) => {
+  const array = [];
+  let j = i;
+  while (!tokens[j].closeBracket) {
+    // could detect "extra" commas here, but not sure what to do with them.
+    const { term, newIndex } = parseTerm(tokens, j);
+    array.push(term);
+    if (tokens[newIndex].comma) {
+      j = newIndex + 1;
+      continue;
+    }
+    if (!tokens[newIndex].closeBracket) {
+      throw new Error('Unexpected character in array');
+    }
+    j = newIndex;
+  }
+
+  return {
+    term: { array },
+    newIndex: j + 1,
+  };
+};
 
 export const parseTokens = (tokens, start) => {
   // There are two legal forms for formulas

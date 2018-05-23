@@ -36,6 +36,7 @@ export const unparseTerm = (term) => {
   if ('value' in term) return JSON.stringify(term.value);
   if (term.unary) return `${term.unary}${term.on}`;
   if (term.binary) return `${term.left} ${term.binary} ${term.right}`;
+  if (term.array) return `[${term.array.join(', ')}]`;
   throw new Error('Unknown term type');
 };
 

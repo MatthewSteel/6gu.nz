@@ -250,6 +250,11 @@ const translateLookupIndex = (term, contextId, f) => {
   return f({ lookupIndex, on }, contextId);
 };
 
+const translateArray = (term, contextId, f) => {
+  const array = term.array.map(t => translateExpr(t, contextId, f));
+  return f({ array }, contextId);
+};
+
 export const translateExpr = (term, contextId, f) => {
   if (term.lookup) return translateLookup(term, contextId, f);
   if ('lookupIndex' in term) return translateLookupIndex(term, contextId, f);
@@ -262,6 +267,7 @@ export const translateExpr = (term, contextId, f) => {
       contextId,
     );
   }
+  if (term.array) return translateArray(term, contextId, f);
   if (term.binary) {
     return f(
       {
