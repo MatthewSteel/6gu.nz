@@ -253,6 +253,7 @@ class SheetContentsComponent extends ContentsBaseComponent {
 
     return (
       <Fragment>
+        {super.render()}
         {emptyCells}
         {filledCells}
         {dragOverCells}

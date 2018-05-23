@@ -130,6 +130,7 @@ class ArrayContentsComponent extends ContentsBaseComponent {
 
     return (
       <Fragment>
+        {super.render()}
         {children}
       </Fragment>
     );

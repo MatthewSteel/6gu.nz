@@ -1,6 +1,7 @@
-import { Component } from 'react';
+import React, { Component } from 'react';
 import { CELL } from '../../redux/store';
-import { clampValue, clampOverlap, rangesOverlap } from '../../selectors/geom/geom';
+import { clampValue, clampOverlap, rangesOverlap, truncateOverlap } from '../../selectors/geom/geom';
+import '../CellComponent/CellComponent.css';
 
 // For moving the cursor out of a large cell
 const maybeBreakOut = (curr, move, start, length) => {
@@ -272,6 +273,73 @@ export default class ContentsBaseComponent extends Component {
   }
 
   render() {
-    return false;
+    // Render shadows around views that are truncated by surroundings
+    const { scrollY, scrollX } = this.state;
+    const { viewOffsetY, viewOffsetX, viewWidth, viewHeight } = this.props;
+    const { yLB, yUB, xLB, xUB } = this.bounds();
+    const localScale = this.localScale();
+
+    const getStyle = (ylower, ylen, xlower, xlen) => ({
+      gridColumn: (`${xlower / localScale.x + viewOffsetX + 1}
+        / span ${xlen / localScale.x}`),
+      gridRow: (`${ylower * (2 / localScale.y) + 2 * viewOffsetY + 1}
+        / span ${ylen * (2 / localScale.y)}`),
+      position: 'relative',
+    });
+
+    const ret = [];
+    const yOverlap = truncateOverlap(
+      yLB - scrollY,
+      yUB - yLB,
+      0,
+      viewHeight,
+    );
+    const xOverlap = truncateOverlap(
+      xLB - scrollX,
+      xUB - xLB,
+      0,
+      viewWidth,
+    );
+    if (scrollX > 0) {
+      const style = getStyle(yOverlap.x, yOverlap.length, 0, 1);
+      ret.push((
+        <div
+          key="LeftInternalShadow"
+          className="LeftInternalShadow"
+          style={style}
+        />
+      ));
+    }
+    if (xUB - scrollX < viewWidth * localScale.x) {
+      const style = getStyle(yOverlap.x, yOverlap.length, viewWidth * localScale.x - 1, 1);
+      ret.push((
+        <div
+          key="RightInternalShadow"
+          className="RightInternalShadow"
+          style={style}
+        />
+      ));
+    }
+    if (scrollY > 0) {
+      const style = getStyle(0, 1, xOverlap.x, xOverlap.length);
+      ret.push((
+        <div
+          key="TopInternalShadow"
+          className="TopInternalShadow"
+          style={style}
+        />
+      ));
+    }
+    if (yUB - scrollY > viewHeight * localScale.y) {
+      const style = getStyle(viewHeight * localScale.y - 1, 1, xOverlap.x, xOverlap.length);
+      ret.push((
+        <div
+          key="BottomInternalShadow"
+          className="BottomInternalShadow"
+          style={style}
+        />
+      ));
+    }
+    return ret;
   }
 }

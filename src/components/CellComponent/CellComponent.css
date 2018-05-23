@@ -11,19 +11,16 @@
   font: helvetica;
   background-color: #FAFAFA;
   border: 1px solid #EEE;
-  border-bottom: none;
-  box-shadow: 0px 2px 0px -1px #F4F4F4;
   text-overflow: ellipsis;
   z-index: 1;
   margin-right: -1px;
+  margin-bottom: -1px;
 }
 
 .CellValue {
   color: #666;
   font: helvetica;
   border: 1px solid #EEE;
-  border-top: none;
-  box-shadow: 0px -2px 0px -1px #F4F4F4;
   background-color: #FDFDFD;
   text-overflow: ellipsis;
   z-index: 1;
@@ -32,20 +29,21 @@
   position: relative;
 }
 
-.LastArrayCell::after {
-  box-shadow: inset 0px -2px 5px -3px #AAA;
+.BottomInternalShadow::after {
+  box-shadow: inset 0px -2px 5px -3px #888;
   display: block;
   position: absolute;
   top: 0px;
   right: 0px;
-  bottom: 0px;
+  bottom: -1px;
   left: 0px;
   pointer-events: none;
   content: '';
+  z-index: 4;
 }
 
-.FirstArrayCell::after {
-  box-shadow: inset 0px 2px 5px -3px #AAA;
+.TopInternalShadow::after {
+  box-shadow: inset 0px 2px 5px -3px #888;
   display: block;
   position: absolute;
   top: 0px;
@@ -54,6 +52,33 @@
   left: 0px;
   pointer-events: none;
   content: '';
+  z-index: 4;
+}
+
+.RightInternalShadow::after {
+  box-shadow: inset -2px 0px 5px -3px #888;
+  display: block;
+  position: absolute;
+  top: 0px;
+  right: 0px;
+  bottom: 0px;
+  left: 0px;
+  pointer-events: none;
+  content: '';
+  z-index: 4;
+}
+
+.LeftInternalShadow::after {
+  box-shadow: inset 2px 0px 5px -3px #888;
+  display: block;
+  position: absolute;
+  top: 0px;
+  right: 0px;
+  bottom: 0px;
+  left: 0px;
+  pointer-events: none;
+  content: '';
+  z-index: 4;
 }
 
 .CellSelected {
