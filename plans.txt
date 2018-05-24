@@ -6,6 +6,16 @@ Still to do:
  - view objects,
  - view tables.
 
+Do object entries have both keys and indices?
+Do we need to think about object order?
+  Maaybe... But maybe later? Just make it arbitrary or alphabetical for now
+
+
+
+Maybe an idea for the longer-term:
+ - byName things are maps (to preserve inserion order),
+ - object entries and table columns have indexes too (but no empty elems),
+ - drag to rearrange them?
 
 
 The long list:
@@ -40,7 +50,6 @@ MVP:
    - Just by entering formulas, not actual buttons I think?
  - Rename columns in objects and tables,
    - Use names for this, I think.
- - array operators.
  - "Fake refs" ("keep a map of parent -> lookup of written fake refs"),
    - translate ref-reads, ref-writes to fake refs at codegen time?
    - use fake refs in "sheetValue" etc.
@@ -55,7 +64,7 @@ MVP:
    - sort, filter, countif, group, max, length/size
      - Maybe `sort(arrToSort, by: sortKeys)`? Nice.
  - A website with intro video.
- - Maybe relative references. `$row - 1`?
+ - Maybe relative references (?). `$row - 1`?
  - Reasonable page layout? Animations? No!
  - Value writes -- `cellObject(k1.k2.k3: v)`?
    - k1 lookup order "table cols, local cell names, sheet names, cObj prop"
@@ -97,17 +106,6 @@ Next up:
 
 Nice to have:
  Overridden arrays look special,
-
-
-Long term types:
- - null,
- - bools,
- - "numbers",
- - strings,
- - objects,
- - arrays.
-      plus(thing1, thing2) { switch(thing1.type * n + thing2.type) { ...
-  - Groan, that'll take a while to write out...
 
 
 
