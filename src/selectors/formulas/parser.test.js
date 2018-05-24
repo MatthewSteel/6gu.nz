@@ -66,11 +66,12 @@ describe('parser', () => {
   });
 
   it('parses strings appropriately', () => {
+    const s1 = getSheets(store.getState())[0];
     expect(parseFormula('=')).toEqual({});
     expect(parseFormula('foo =')).toEqual({ name: 'foo' });
-    expect(parseFormula('foo = bar')).toEqual({
+    expect(parseFormula('foo = bar', s1.id)).toEqual({
       name: 'foo',
-      formula: { name: 'bar' },
+      formula: { lookup: 'bar', on: { ref: s1.id } },
     });
     expect(parseFormula('foo = bar +')).toEqual({
       name: 'foo',

@@ -8,6 +8,7 @@ import {
   getSheetsByName,
   getRefsByNameForContextId,
   rewriteRefTermToParentLookup,
+  sheetPlacedCellLocs,
   transitiveChildren,
   translateExpr,
 } from '../selectors/formulas/selectors';
@@ -15,7 +16,7 @@ import {
   parseFormula,
   translateLookups,
 } from '../selectors/formulas/parser';
-import { DRAG_RESIZE } from '../selectors/geom/dragGeom';
+import { canPlaceWithoutConflict, DRAG_RESIZE } from '../selectors/geom/dragGeom';
 import defaultCellName from '../selectors/formulas/defaultCellName';
 
 export const SHEET = 'sheet';
@@ -85,29 +86,72 @@ export const clearDrag = () => ({ type: 'CLEAR_DRAG' });
 
 export const loadFile = () => ({ type: 'LOAD_FILE' });
 
-const defaultCellForLocation = (context, y, x) => {
+const defaultArrayCell = (contextId, index, formula) => ({
+  id: uuidv4(),
+  arrayId: contextId,
+  type: ARRAY_CELL,
+  formula,
+  index,
+});
+
+const defaultSheetElem = (contextId, y, x) => ({
+  sheetId: contextId,
+  id: uuidv4(),
+  name: defaultCellName(y, x),
+  x,
+  y,
+});
+
+const defaultCell = (contextId, y, x) => ({
+  ...defaultSheetElem(contextId, y, x),
+  width: 1,
+  height: 1,
+  formula: { value: '' },
+  type: CELL,
+});
+
+const defaultArray = (contextId, y, x) => {
+  const base = defaultSheetElem(contextId, y, x);
+  const placedCellLocs = sheetPlacedCellLocs(store.getState());
+  const width = canPlaceWithoutConflict(
+    base.id,
+    { y, x, width: 2, height: 1 },
+    placedCellLocs,
+  ) ? 2 : 1;
+  let height = 1;
+  const MAX_WANTED_HEIGHT = 3;
+  for (;
+    height < MAX_WANTED_HEIGHT && canPlaceWithoutConflict(
+      base.id,
+      { y, x, width, height: height + 1 },
+      placedCellLocs[contextId],
+    );
+    height += 1
+  );
+  return { width, height, type: ARRAY, ...base };
+};
+
+const defaultCellForLocation = (context, y, x, isArray) => {
   if (context.type === SHEET) {
-    return {
-      sheetId: context.id,
-      id: uuidv4(),
-      name: defaultCellName(y, x),
-      formula: { value: '' },
-      x,
-      y,
-      width: 1,
-      height: 1,
-      type: CELL,
-    };
+    const baseCell = isArray ?
+      defaultArray(context.id, y, x) :
+      defaultCell(context.id, y, x);
+
+    const children = !isArray ? [] : isArray.map((
+      (formula, index) => defaultArrayCell(
+        baseCell.id,
+        index,
+        formula,
+      )
+    ));
+    return { baseCell, children };
   }
   if (context.type !== ARRAY) {
     throw new Error(`Unknown context type ${context.type}`);
   }
   return {
-    id: uuidv4(),
-    arrayId: context.id,
-    type: ARRAY_CELL,
-    formula: { value: '' },
-    index: y,
+    baseCell: defaultArrayCell(context.id, y, { value: '' }),
+    children: [],
   };
 };
 
@@ -224,15 +268,24 @@ const rootReducer = (state, action) => {
     const contextRef = getRefsById(store.getState())[selection.context];
     if (contextRef.type !== SHEET) delete newFormula.name;
 
-    const baseCell = selection.cellId ?
-      state.cells.find(({ id }) => id === selection.cellId) :
-      defaultCellForLocation(contextRef, selection.y, selection.x);
+    const formulaIsAnArray = newFormula.formula && newFormula.formula.array;
+    const { baseCell, children } = selection.cellId ?
+      {
+        baseCell: state.cells.find(({ id }) => id === selection.cellId),
+        children: [],
+      } :
+      defaultCellForLocation(
+        contextRef,
+        selection.y,
+        selection.x,
+        formulaIsAnArray,
+      );
 
-    if (baseCell && ![CELL, ARRAY_CELL].includes(baseCell.type)) {
+    if (![CELL, ARRAY_CELL].includes(baseCell.type)) {
       delete newFormula.formula;
     }
 
-    if (!newFormula.name && !newFormula.formula) {
+    if (!newFormula.name && !newFormula.formula && selection.cellId) {
       // Formula is like `name=formula`.
       // When one is blank and we have an existing cell, we use the
       // existing value.
@@ -253,10 +306,11 @@ const rootReducer = (state, action) => {
       cells: [
         ...state.cells.filter(({ id }) => id !== selection.cellId),
         cell,
+        ...children,
       ],
       updateId: scheduleSave(),
     };
-    return rewireBadRefs(stateWithCell, [cell]);
+    return rewireBadRefs(stateWithCell, [cell, ...children]);
   }
 
   if (action.type === 'DELETE_THING') {

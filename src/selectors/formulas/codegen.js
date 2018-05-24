@@ -25,6 +25,12 @@ const expandSetItem = (k, expr) =>
     globals[${JSON.stringify(k)}] = { error: e.toString() };
   }`;
 
+const tryExpandExpr = expr =>
+  `(() => {
+     try { return { value: ${expandExpr(expr)} }; }
+     catch (e) { return { error: e.toString()}; }
+   })()`;
+
 const expandCall = (callTerm) => {
   const signature = callSignature(callTerm);
   if (!callTerm.args.every(({ ref }) => ref.ref)) {
@@ -63,7 +69,7 @@ const expandBinary = (term) => {
 };
 
 const expandArray = (term) => {
-  const expandedArgs = term.array.map(e => expandExpr(e));
+  const expandedArgs = term.array.map(e => tryExpandExpr(e));
   const joinedArgs = expandedArgs.join(',');
   return `globals.tableArray([${joinedArgs}])`;
 };

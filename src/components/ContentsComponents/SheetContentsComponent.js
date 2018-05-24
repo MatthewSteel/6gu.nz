@@ -4,6 +4,7 @@ import { connect } from 'react-redux';
 import KeyboardListenerComponent from '../KeyboardListenerComponent/KeyboardListenerComponent';
 import SheetCellComponent from '../CellComponent/SheetCellComponent';
 import EmptyCellComponent from '../CellComponent/EmptyCellComponent';
+import CellSelectionComponent from '../CellComponent/CellSelectionComponent';
 import DragOverCellComponent from '../DragComponents/DragOverCellComponent';
 import DragOutlineComponent from '../DragComponents/DragOutlineComponent';
 import ContentsBaseComponent from './ContentsBaseComponent';
@@ -11,7 +12,7 @@ import ArrayComponent from './ArrayComponent';
 
 import { getChildrenOfRef, sheetPlacedCellLocs } from '../../selectors/formulas/selectors';
 import { overlaps, truncateOverlap } from '../../selectors/geom/geom';
-import getDragGeom, { getDragRefId } from '../../selectors/geom/dragGeom';
+import getDragGeom, { canPlaceWithoutConflict, getDragRefId } from '../../selectors/geom/dragGeom';
 import { getType } from '../../selectors/formulas/tables';
 import { clearDrag, deleteLoc, startDrag, updateDrag, deleteThing, moveThing } from '../../redux/store';
 
@@ -42,29 +43,25 @@ class SheetContentsComponent extends ContentsBaseComponent {
     return { xLB: 0, yLB: 0, xUB: Infinity, yUB: Infinity };
   }
 
-  canPlaceWithoutConflict() {
-    const { dragRefId, dragGeom, placedCellLocs } = this.props;
-    if (!dragGeom) return false;
-    const { x, y, width, height } = dragGeom;
-    for (let cx = x; cx < x + width; ++cx) {
-      for (let cy = y; cy < y + height; ++cy) {
-        const maybePlacedId = placedCellLocs[`${cy},${cx}`];
-        if (maybePlacedId && maybePlacedId !== dragRefId) return false;
-      }
-    }
-    return true;
-  }
-
   startDragForRef(refId, type) {
     const { startDragProp, viewId } = this.props;
     startDragProp(viewId, refId, type);
   }
 
   dragOver(ev, dragY, dragX) {
-    const { contextId, updateDragProp, viewId } = this.props;
+    const {
+      contextId,
+      dragRefId,
+      dragGeom,
+      placedCellLocs,
+      updateDragProp,
+      viewId,
+    } = this.props;
     const { scrollY, scrollX } = this.state;
     updateDragProp(viewId, contextId, dragY + scrollY, dragX + scrollX);
-    if (this.canPlaceWithoutConflict) ev.preventDefault();
+    if (canPlaceWithoutConflict(dragRefId, dragGeom, placedCellLocs)) {
+      ev.preventDefault();
+    }
   }
 
   drop() {
@@ -72,6 +69,7 @@ class SheetContentsComponent extends ContentsBaseComponent {
       contextId,
       dragRefId,
       dragGeom,
+      placedCellLocs,
       moveCell,
       clearDragProp,
     } = this.props;
@@ -80,7 +78,7 @@ class SheetContentsComponent extends ContentsBaseComponent {
       return;
     }
     const { y, x, height, width } = dragGeom;
-    if (this.canPlaceWithoutConflict()) {
+    if (canPlaceWithoutConflict(dragRefId, dragGeom, placedCellLocs)) {
       // Maybe later: Prompt for overwrite.
       moveCell(dragRefId, contextId, y, x, height, width);
       this.setSelection(y, x);
@@ -200,15 +198,23 @@ class SheetContentsComponent extends ContentsBaseComponent {
           cy + scrollY === selection.y &&
           cx + scrollX === selection.x;
         emptyCells.push((
-          <EmptyCellComponent
+          <CellSelectionComponent
             key={place}
             x={cx}
             y={cy}
             width={1}
             height={1}
             selected={cellSelected}
-            setSelection={this.setViewSelection}
-          />
+          >
+            <EmptyCellComponent
+              x={cx}
+              y={cy}
+              width={1}
+              height={1}
+              selected={cellSelected}
+              setSelection={this.setViewSelection}
+            />
+          </CellSelectionComponent>
         ));
       }
     }
@@ -233,7 +239,7 @@ class SheetContentsComponent extends ContentsBaseComponent {
         }
       }
       if (dragGeom) {
-        const dragValid = this.canPlaceWithoutConflict();
+        const dragValid = canPlaceWithoutConflict(dragInProgress, dragGeom, placedCellLocs);
         const windowY = dragGeom.y - scrollY;
         const windowX = dragGeom.x - scrollX;
         const maxHeight = viewHeight - windowY + 1;

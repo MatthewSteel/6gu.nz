@@ -17,8 +17,16 @@ class ArrayContentsComponent extends ContentsBaseComponent {
     const { selY, selX } = this.localSelection();
     if (context.formula) return { ...context, selX, selY };
     const maybeCell = cells.find(({ index }) => index === selY);
-    // Eww -- see cellPosition below.
-    if (maybeCell) return { ...maybeCell, selX };
+    // Eww -- we try to trick everyone into letting us select weird things
+    // and delete locations sometimes. See cellPosition below, and search
+    // for `deleteLocation` in the base class.
+    if (maybeCell) {
+      return {
+        ...maybeCell,
+        selX,
+        id: selX === 0 ? undefined : maybeCell.id,
+      };
+    }
     return maybeCell;
   }
 

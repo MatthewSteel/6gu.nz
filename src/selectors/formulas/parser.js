@@ -186,7 +186,7 @@ const parseArray = (tokens, i) => {
   let j = i;
   while (!tokens[j].closeBracket) {
     // could detect "extra" commas here, but not sure what to do with them.
-    const { term, newIndex } = parseTerm(tokens, j);
+    const { term, newIndex } = parseExpression(tokens, j);
     array.push(term);
     if (tokens[newIndex].comma) {
       j = newIndex + 1;
@@ -284,7 +284,8 @@ const subNamesForRefsInName = (term, contextId) => {
     return { ref: maybeSheet.id };
   }
 
-  return term; // bad ref
+  // Bad ref. Assume it's local so we can try to rewire it in the future.
+  return { lookup: term.name, on: { ref: contextId } };
 };
 
 const subNamesForRefsInLookup = (term) => {

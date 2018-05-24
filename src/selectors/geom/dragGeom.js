@@ -44,3 +44,19 @@ export default (sheetId) => {
   if (type !== DRAG_RESIZE) throw new Error(`Bad drag type: ${type}`);
   return resizeDragGeom(ref, y, x);
 };
+
+export const canPlaceWithoutConflict = (
+  dragRefId,
+  dragGeom,
+  placedCellLocs,
+) => {
+  if (!dragGeom) return false;
+  const { x, y, width, height } = dragGeom;
+  for (let cx = x; cx < x + width; ++cx) {
+    for (let cy = y; cy < y + height; ++cy) {
+      const maybePlacedId = placedCellLocs[`${cy},${cx}`];
+      if (maybePlacedId && maybePlacedId !== dragRefId) return false;
+    }
+  }
+  return true;
+};
