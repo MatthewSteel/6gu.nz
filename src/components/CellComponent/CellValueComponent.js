@@ -28,6 +28,11 @@ const defaultFormatter = (value, pushStack) => {
     }
     return contentsStr;
   }
+  if (ourType === 'table') {
+    const numCols = Object.keys(value.arr[0].value.byName).length;
+    const numRows = value.arr.length;
+    return `[{${numCols}} x ${numRows}]`;
+  }
   return JSON.stringify(value);
 };
 

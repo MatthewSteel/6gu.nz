@@ -23,6 +23,12 @@ export const SHEET = 'sheet';
 export const CELL = 'cell';
 export const ARRAY = 'array';
 export const ARRAY_CELL = 'array_cell';
+export const OBJECT = 'object';
+export const OBJECT_CELL = 'object_cell';
+export const TABLE = 'table';
+export const TABLE_ROW = 'table_row';
+export const TABLE_COLUMN = 'table_column';
+export const TABLE_CELL = 'table_cell';
 
 
 const initialState = {
@@ -36,14 +42,20 @@ const initialState = {
     type: SHEET,
   }],
   cells: [{
-    id: 'arr',
-    name: 'arr',
-    type: ARRAY,
+    id: 'obj',
+    name: 'obj',
+    type: OBJECT,
     sheetId: 'sheet0',
     x: 1,
     y: 1,
-    width: 2,
-    height: 2,
+    width: 1,
+    height: 1,
+  }, {
+    id: 'oc',
+    name: 'ocell',
+    type: OBJECT_CELL,
+    objectId: 'obj',
+    formula: { value: '' },
   }],
   uistate: { dragState: {} },
 };

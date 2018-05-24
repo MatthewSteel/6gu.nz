@@ -4,12 +4,13 @@ import {
   getFormulaGraphs,
   getTopoLocationById,
   getRefs,
+  getRefsById,
   getChildrenOfRef,
   getTopoSortedRefIds,
   refError,
 } from './selectors';
 import { setIntersection, transitiveClosure } from '../algorithms/algorithms';
-import store, { ARRAY, SHEET } from '../../redux/store';
+import store, { ARRAY, OBJECT, SHEET, TABLE, TABLE_COLUMN, TABLE_ROW } from '../../redux/store';
 import { getNamedMember, getNumberedMember, TableArray } from './tables';
 import builtins, { binarySymbolToName, unarySymbolToName } from './builtins';
 
@@ -126,13 +127,13 @@ const formulaRef = (globals, ref) => {
 const tableArray = arr => new TableArray(arr);
 
 // Make a literal struct from a sheet's cells.
-const sheetValue = (sheetId, globals) => {
+const sheetValue = (sheetId, globals, includeTemplate) => {
   const sheetCells = getChildrenOfRef(store.getState(), sheetId);
   const ret = {
     byId: {},
     byName: {},
-    template: sheetId,
   };
+  if (includeTemplate) ret.template = sheetId;
   sheetCells.forEach(({ id, name }) => {
     const cellContents = globals[id];
     ret.byId[id] = cellContents;
@@ -145,6 +146,43 @@ const arrayValue = (arrayId, globals) => {
   const arrayCells = getChildrenOfRef(store.getState(), arrayId);
   const storage = new Array(arrayCells.length);
   arrayCells.forEach(({ index, id }) => {
+    storage[index] = globals[id];
+  });
+  return new TableArray(storage);
+};
+
+const tableValue = (tableId, globals) => {
+  const tableCells = getChildrenOfRef(store.getState(), tableId)
+    .filter(({ type }) => type === TABLE_ROW);
+  const storage = new Array(tableCells.length);
+  tableCells.forEach(({ index, id }) => {
+    storage[index] = globals[id];
+  });
+  return new TableArray(storage);
+};
+
+const tableRowValue = (tableRowId, globals) => {
+  const ret = {
+    byId: {},
+    byName: {},
+  };
+  const refsById = getRefsById(store.getState());
+  const tableRowCells = getChildrenOfRef(store.getState(), tableRowId);
+  tableRowCells.forEach(({ id, arrayId }) => {
+    const cellContents = globals[id];
+    const { name } = refsById[arrayId];
+    ret.byId[id] = cellContents;
+    ret.byName[name] = cellContents;
+  });
+  return ret;
+};
+
+const tableColumnValue = (tableColumnId, globals) => {
+  const columnCells = getChildrenOfRef(store.getState(), tableColumnId);
+  const refsById = getRefsById(store.getState());
+  const storage = new Array(columnCells.length);
+  columnCells.forEach(({ id, objectId }) => {
+    const { index } = refsById[objectId];
     storage[index] = globals[id];
   });
   return new TableArray(storage);
@@ -165,11 +203,22 @@ const formulaExpression = (formula) => {
 };
 
 const refExpression = (ref) => {
-  if (ref.type === SHEET) {
-    return `globals.sheetValue(${JSON.stringify(ref.id)}, globals)`;
+  // TODO: Maybe we should store lists of children in globals so sheetValue
+  // etc don't have to read redux data.
+  if (ref.type === SHEET || ref.type === OBJECT) {
+    return `globals.sheetValue(${JSON.stringify(ref.id)}, globals, ${ref.type === SHEET})`;
   }
   if (ref.type === ARRAY) {
     return `globals.arrayValue(${JSON.stringify(ref.id)}, globals)`;
+  }
+  if (ref.type === TABLE_ROW) {
+    return `globals.tableRowValue(${JSON.stringify(ref.id)}, globals)`;
+  }
+  if (ref.type === TABLE_COLUMN) {
+    return `globals.tableColumnValue(${JSON.stringify(ref.id)}, globals)`;
+  }
+  if (ref.type === TABLE) {
+    return `globals.tableValue(${JSON.stringify(ref.id)}, globals)`;
   }
   if (!ref.formula) {
     throw new Error(`unknown object type ${ref.type}`);
@@ -198,6 +247,9 @@ export const getCellValuesById = createSelector(
       sheetValue,
       pleaseThrow,
       tableArray,
+      tableValue,
+      tableRowValue,
+      tableColumnValue,
       ...builtins,
     };
 

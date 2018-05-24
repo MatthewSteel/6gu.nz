@@ -4,7 +4,7 @@ import {
   transitiveClosure,
   nodesInLargeStronglyConnectedComponents,
 } from '../algorithms/algorithms';
-import store, { ARRAY, ARRAY_CELL, SHEET, CELL } from '../../redux/store';
+import store, { ARRAY, ARRAY_CELL, CELL, OBJECT, OBJECT_CELL, SHEET, TABLE, TABLE_CELL, TABLE_COLUMN, TABLE_ROW } from '../../redux/store';
 
 // Simple "get raw state" selectors (for the moment?)
 
@@ -34,6 +34,8 @@ export const getChildIdsByParentId = createSelector(
     refs.forEach((ref) => {
       if (ref.sheetId) ret[ref.sheetId].push(ref.id);
       if (ref.arrayId) ret[ref.arrayId].push(ref.id);
+      if (ref.tableId) ret[ref.tableId].push(ref.id);
+      if (ref.objectId) ret[ref.objectId].push(ref.id);
     });
     return ret;
   },
@@ -64,15 +66,29 @@ export const getCellsById = createSelector(
 
 const getRefsByNameForContextIdHelper = createSelector(
   getRefs,
-  (refs) => {
+  getRefsById,
+  (refs, refsById) => {
     const ret = {};
     refs.forEach((ref) => { ret[ref.id] = {}; });
     refs.forEach((ref) => {
       if (ref.sheetId) {
         ret[ref.sheetId][ref.name] = ref;
       }
-      if (ref.arrayId) {
+      if (ref.objectId && ref.name) {
+        ret[ref.objectId][ref.name] = ref;
+      }
+      if (ref.tableId) {
+        if ('index' in ref) ret[ref.tableId][ref.index] = ref;
+        if (ref.name) ret[ref.tableId][ref.name] = ref;
+      }
+      if (ref.arrayId && ref.index) {
         ret[ref.arrayId][ref.index] = ref;
+      }
+      if (ref.type === TABLE_CELL) {
+        const columnParent = refsById[ref.arrayId];
+        ret[ref.objectId][columnParent.name] = ref;
+        const rowParent = refsById[ref.objectId];
+        ret[ref.arrayId][rowParent.index] = ref;
       }
     });
     return ret;
@@ -124,11 +140,12 @@ export const sheetPlacedCellLocs = createSelector(
 
 
 export const refParentId = (ref) => {
-  if (ref.type === SHEET) return undefined;
-  if (ref.type === ARRAY) return ref.sheetId;
-  if (ref.type === ARRAY_CELL) return ref.arrayId;
-  if (ref.type !== CELL) throw new Error(`unknown ref type ${ref.type}`);
-  return ref.sheetId;
+  if (ref.sheetId) return ref.sheetId;
+  if (ref.objectId) return ref.objectId;
+  if (ref.arrayId) return ref.arrayId; // NOTE: table cells use objectId
+  if (ref.tableId) return ref.tableId;
+  if (ref.type !== SHEET) throw new Error(`unknown ref type ${ref.type}`);
+  return undefined;
 };
 
 export const refIdParentId = (refId) => {
@@ -141,6 +158,12 @@ const refHeight = (ref) => {
   if (ref.type === SHEET) return 1;
   if (ref.type === ARRAY) return 2;
   if (ref.type === ARRAY_CELL) return 3;
+  if (ref.type === OBJECT) return 2;
+  if (ref.type === OBJECT_CELL) return 3;
+  if (ref.type === TABLE) return 2;
+  if (ref.type === TABLE_ROW) return 3;
+  if (ref.type === TABLE_COLUMN) return 3;
+  if (ref.type === TABLE_CELL) return 4;
   if (ref.type !== CELL) throw new Error(`unknown ref type ${ref.type}`);
   return 2;
 };
@@ -152,6 +175,19 @@ export const rewriteRefTermToParentLookup = (innermostLookup) => {
 
   if (ref.type === ARRAY_CELL) {
     return { lookupIndex: { value: ref.index }, on: { ref: ref.arrayId } };
+  }
+  if (ref.type === OBJECT_CELL) {
+    return { lookup: ref.name, on: { ref: ref.objectId } };
+  }
+  if (ref.type === TABLE_ROW) {
+    return { lookupIndex: { value: ref.index }, on: { ref: ref.tableId } };
+  }
+  if (ref.type === TABLE_COLUMN) {
+    return { lookup: ref.name, on: { ref: ref.tableId } };
+  }
+  if (ref.type === TABLE_CELL) {
+    const arrayParent = refsById[ref.arrayId];
+    return { lookup: arrayParent.name, on: { ref: ref.objectId } };
   }
   if (ref.type !== CELL && ref.type !== ARRAY) {
     throw new Error(`unknown parent type for ${ref.type}`);
@@ -200,13 +236,12 @@ export const lookupExpression = (contextRefId, targetRefId) => {
 // Formula translation functions: Generic ways to iterate over a forumla's
 // contents, applying a function to every element from the leaves up.
 
-const isContext = (type) => {
-  if (type === CELL) return false;
-  if (type === ARRAY_CELL) return false;
-  if (type === ARRAY) return false;
-  if (type !== SHEET) throw new Error(`unknown type ${type}`);
-  return true;
-};
+// NOTE: Table rows are not contexts. We want a column name to refer to
+// the column, not an entry in this row in the column.
+// I think it might also be important that the parent of a context be a
+// context, at least with the current implementation of lookupExpression.
+const isContext = type => (
+  (type === OBJECT || type === SHEET || type === TABLE));
 
 export const getContextIdForRefId = (refId, defaultContextId) => {
   const refsById = getRefsById(store.getState());
