@@ -1,3 +1,13 @@
+Table/Object things:
+
+Still to do:
+ - parse objects,
+ - special-case objects and tables in the reducer,
+ - view objects,
+ - view tables.
+
+
+
 The long list:
  - MVP displaying, entering complex data structures
  - MVP built-in functions,
@@ -39,7 +49,7 @@ MVP:
      ("recursive"). Also update the thing itself, I think, and any
      externally referenced descendants. And blank out their formulas...
  - Some built-in functions. A subset of:
-   - *args and **kwargs? "An array called `a1`"? OK for now.
+   - *args and **kwargs. "An array called `a1`"? Uses a complex-write.
    - if, iferror, lookup (and/or table[name: "Fred"]), sum, average, stdev.
    - String functions, sin, atan2, sqrt, abs, round(s)?, last, reverse,
    - sort, filter, countif, group, max, length/size
@@ -88,13 +98,6 @@ Next up:
 Nice to have:
  Overridden arrays look special,
 
-Array creation: `newArr = [fred, 1, newCell[0] + newCell[1]]`
- - Uses the "set formula" action
- - Adds the cell and the children (separately?)
- - Only reify if this is a cell in a sheet.
-   - Still not convinced of this...
-   - We can do it for now, though. It's a dumb requirement, but easy (?) to fix.
-
 
 Long term types:
  - null,
@@ -107,10 +110,6 @@ Long term types:
   - Groan, that'll take a while to write out...
 
 
-When do we "reify" tables etc, shove them into the store? All literals?
- Maaybe.
- How deep does the recursion go? Just a couple of levels, or all the way down?
-  Is this a bad question to ask? Maybe a table is just a view thing...
 
 Work out tsort implications of `table[name: "Fred"].bar`:
  - just `name` and `bar`? Somehow? That would be ideal.
@@ -171,26 +170,6 @@ Array formula thoughts:
     Hmm, each(if)(a > b, a, b)... Not lazy, though...
       None of them are lazy, _or really can be_. Fine.
 
-
-OK, do we need to come up with some theory? A hierarchy of references?
- Sheet -> cell,
- Sheet -> table -> column -> columnEntry,
- Sheet -> table -> row.
- Sheet -> object -> objectEntry
- Sheet -> array -> arrayEntry
-
-So our data types:
- - Sheet,
- - Table,
- - Column,
- - Row,
- - Object,
- - Array,
- - TableEntry,
- - ObjectEntry,
- - ArrayEntry,
- - Cell.
-That's a lot.
 
 
 Different views of data. Hmm. If it's small you can "browse to it", if it's big you can see it?
