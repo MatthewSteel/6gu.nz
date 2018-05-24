@@ -139,10 +139,7 @@ const parseTerm = (tokens, i) => {
     if (!tokens[newIndex] || !tokens[newIndex].close) {
       throw new Error('Expected closing bracket');
     }
-    return {
-      term: { expression: term },
-      newIndex: newIndex + 1,
-    };
+    return parseLookups(tokens, newIndex + 1, { expression: term });
   }
   if (tokens[i].openBracket) return parseArray(tokens, i + 1);
   if ('value' in tokens[i]) {
@@ -198,10 +195,7 @@ const parseArray = (tokens, i) => {
     j = newIndex;
   }
 
-  return {
-    term: { array },
-    newIndex: j + 1,
-  };
+  return parseLookups(tokens, j + 1, { array });
 };
 
 export const parseTokens = (tokens, start) => {
