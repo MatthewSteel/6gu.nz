@@ -61,6 +61,7 @@ export const getType = (value) => {
 
 export const getNamedMember = (value, colName) => {
   // Either a table or a struct. Maybe we should use polymorphism?
+  // (Should this also be recursive?)
   if (value instanceof TableArray) return value.getColumn(colName);
   const { byName } = value;
   if (!byName) throw new Error('Lookup value is not an object');
@@ -73,6 +74,12 @@ export const getNamedMember = (value, colName) => {
 };
 
 export const getNumberedMember = (value, index) => {
+  if (index instanceof TableArray) {
+    return new TableArray(index.arr.map((elem) => {
+      if (elem.error) return elem;
+      return { value: getNumberedMember(value, elem.value) };
+    }));
+  }
   if (value instanceof TableArray) {
     const ret = value.arr[index];
     if (!ret) throw new Error(`No value at index ${index}`);
