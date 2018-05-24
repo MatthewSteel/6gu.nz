@@ -26,7 +26,7 @@ The long list:
 
 MVP:
  - Rename sheets,
- - Create arrays, objects and tables,
+ - Create objects and tables,
    - Just by entering formulas, not actual buttons I think?
  - Rename columns in objects and tables,
    - Use names for this, I think.
@@ -67,17 +67,21 @@ Out of scope for MVP:
  - Multiple files, persistent storage.
 
 Next up:
- - Proper shadows on scrolled/scrollable children,
- - Array creation,
  - Browse into array values,
    - Path at the top,
    - Storing the path in the view somehow.
      - Path is a lookupExpression from the selected sheet, I think.
        Except we have to invert it, and add more crap for unreified shit.
        Fine: `[{ name: 'fred' }, { index: 0 }]` haha
+         Except we have to get the array name in there too...
+           Each path element is a list?
+             [[{ id: sldkfj }], [{ id: vnkfljg }, { index: 10 }], ...]?
        Can/should we get rid of byId? Meh, if it's there...
          `{ id: 'sldkfjsjf' }` too, then.
    - Should this be in redux? Probably...
+     - It's a bit of a pain that "path validity" depends on cell values.
+     - We can make the "effective view" a selector, I guess?
+       - Righto. But later.
 
  - Objects, tables. Before or after fake refs and complex overrides?
 
@@ -86,8 +90,6 @@ Nice to have:
 
 Array creation: `newArr = [fred, 1, newCell[0] + newCell[1]]`
  - Uses the "set formula" action
- - Parser change -- comma-separated bracketed thing.
-   - Maybe "empty cells", see if it's hard.
  - Adds the cell and the children (separately?)
  - Only reify if this is a cell in a sheet.
    - Still not convinced of this...
