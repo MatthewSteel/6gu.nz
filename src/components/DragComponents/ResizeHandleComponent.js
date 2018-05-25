@@ -19,7 +19,6 @@ class ResizeHandleComponent extends PureComponent {
   }
 
   onClick(ev) {
-    console.log('clicked');
     const { onClick, resizeRefId } = this.props;
     onClick(resizeRefId);
     ev.preventDefault();
