@@ -8,7 +8,6 @@ import {
   getSheetsByName,
   getRefsByNameForContextId,
   rewriteRefTermToParentLookup,
-  sheetPlacedCellLocs,
   transitiveChildren,
   translateExpr,
 } from '../selectors/formulas/selectors';
@@ -16,7 +15,7 @@ import {
   parseFormula,
   translateLookups,
 } from '../selectors/formulas/parser';
-import { canPlaceWithoutConflict, DRAG_RESIZE } from '../selectors/geom/dragGeom';
+import { idealWidthAndHeight, DRAG_RESIZE } from '../selectors/geom/dragGeom';
 import defaultCellName from '../selectors/formulas/defaultCellName';
 
 export const SHEET = 'sheet';
@@ -77,6 +76,18 @@ export const deleteLoc = (contextId, y, x) => ({
   payload: { contextId, y, x },
 });
 
+export const toggleMaximiseSheetElem = (dispatch, refId) => {
+  const refsById = getRefsById(store.getState());
+  const ref = refsById[refId];
+  if (!ref || !ref.sheetId) return undefined;
+  const { y, x } = ref;
+  const { width, height } = (ref.width * ref.height) > 1 ?
+    { width: 1, height: 1 } :
+    idealWidthAndHeight(ref, ref.sheetId, y, x);
+
+  return dispatch(moveThing(refId, ref.sheetId, y, x, height, width));
+};
+
 // Maybe deal with re-parenting and re-typing? "Cut-paste from table cell
 // into a sheet" etc.
 export const moveThing = (refId, sheetId, y, x, height, width) => ({
@@ -124,21 +135,12 @@ const defaultCell = (contextId, y, x) => ({
 
 const defaultArray = (contextId, y, x) => {
   const base = defaultSheetElem(contextId, y, x);
-  const placedCellLocs = sheetPlacedCellLocs(store.getState());
-  const width = canPlaceWithoutConflict(
+  const { width, height } = idealWidthAndHeight(
     base.id,
-    { y, x, width: 2, height: 1 },
-    placedCellLocs,
-  ) ? 2 : 1;
-  let height = 1;
-  const MAX_WANTED_HEIGHT = 3;
-  for (;
-    height < MAX_WANTED_HEIGHT && canPlaceWithoutConflict(
-      base.id,
-      { y, x, width, height: height + 1 },
-      placedCellLocs[contextId],
-    );
-    height += 1
+    contextId,
+    y,
+    x,
+    2, // maxWidth
   );
   return { width, height, type: ARRAY, ...base };
 };

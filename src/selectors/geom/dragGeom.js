@@ -1,5 +1,5 @@
 import store from '../../redux/store';
-import { getRefsById } from '../formulas/selectors';
+import { getRefsById, sheetPlacedCellLocs } from '../formulas/selectors';
 
 export const DRAG_MOVE = 'move';
 export const DRAG_RESIZE = 'resize';
@@ -59,4 +59,31 @@ export const canPlaceWithoutConflict = (
     }
   }
   return true;
+};
+
+export const idealWidthAndHeight = (
+  refId,
+  sheetId,
+  y,
+  x,
+  maxWidth = 3,
+  maxHeight = 4,
+) => {
+  const placedCellLocs = sheetPlacedCellLocs(store.getState());
+  let best = { width: 1, height: 1 };
+  for (let height = 1; height <= maxHeight; ++height) {
+    for (let width = 1; width <= maxWidth; ++width) {
+      if (height * width <= best.height * best.width) continue;
+      if (
+        canPlaceWithoutConflict(
+          refId,
+          { y, x, width, height },
+          placedCellLocs,
+        )
+      ) {
+        best = { width, height };
+      }
+    }
+  }
+  return best;
 };

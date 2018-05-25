@@ -9,12 +9,20 @@ class ResizeHandleComponent extends PureComponent {
   constructor(props) {
     super(props);
     this.onResizeStart = this.onResizeStart.bind(this);
+    this.onClick = this.onClick.bind(this);
   }
 
   onResizeStart(ev) {
     ev.dataTransfer.setData('text/plain', '.');
     const { resizeRefId, startDragCallback } = this.props;
     startDragCallback(resizeRefId, DRAG_RESIZE);
+  }
+
+  onClick(ev) {
+    console.log('clicked');
+    const { onClick, resizeRefId } = this.props;
+    onClick(resizeRefId);
+    ev.preventDefault();
   }
 
   render() {
@@ -35,6 +43,7 @@ class ResizeHandleComponent extends PureComponent {
           <img
             className="ResizeHandle"
             src={resizeHandle}
+            onClick={this.onClick}
             onDragStart={this.onResizeStart}
             onDragEnd={endDragCallback}
             alt="Resize cell"

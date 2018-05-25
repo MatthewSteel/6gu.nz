@@ -9,7 +9,7 @@ import ResizeHandleComponent from '../DragComponents/ResizeHandleComponent';
 
 import { getRefsById } from '../../selectors/formulas/selectors';
 import { DRAG_MOVE } from '../../selectors/geom/dragGeom';
-import { deleteLoc, deleteThing } from '../../redux/store';
+import { deleteLoc, deleteThing, toggleMaximiseSheetElem } from '../../redux/store';
 
 
 class ArrayComponent extends ContentsBaseComponent {
@@ -62,6 +62,7 @@ class ArrayComponent extends ContentsBaseComponent {
       endDragCallback,
       pushViewStack,
       readOnly,
+      toggleElementSize,
       viewSelected,
       viewHeight,
       viewWidth,
@@ -84,6 +85,7 @@ class ArrayComponent extends ContentsBaseComponent {
           selected={viewSelected}
           startDragCallback={startDragCallback}
           endDragCallback={endDragCallback}
+          onClick={toggleElementSize}
         >
           <CellSelectionComponent
             selected={viewSelected && !selectedCell.childSelected}
@@ -136,6 +138,7 @@ const mapStateToProps = (state, ownProps) => ({
 const mapDispatchToProps = dispatch => ({
   deleteCell: cellId => dispatch(deleteThing(cellId)),
   deleteLocation: (context, y, x) => dispatch(deleteLoc(context, y, x)),
+  toggleElementSize: refId => toggleMaximiseSheetElem(dispatch, refId),
 });
 
 export default connect(

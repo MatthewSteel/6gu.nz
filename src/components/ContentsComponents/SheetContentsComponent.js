@@ -14,7 +14,7 @@ import { getChildrenOfRef, sheetPlacedCellLocs } from '../../selectors/formulas/
 import { overlaps, truncateOverlap } from '../../selectors/geom/geom';
 import getDragGeom, { canPlaceWithoutConflict, getDragRefId } from '../../selectors/geom/dragGeom';
 import { getType } from '../../selectors/formulas/tables';
-import { clearDrag, deleteLoc, startDrag, updateDrag, deleteThing, moveThing } from '../../redux/store';
+import { clearDrag, deleteLoc, startDrag, updateDrag, deleteThing, moveThing, toggleMaximiseSheetElem } from '../../redux/store';
 
 
 class SheetContentsComponent extends ContentsBaseComponent {
@@ -108,6 +108,7 @@ class SheetContentsComponent extends ContentsBaseComponent {
       setViewSelection,
       dragRefId: dragInProgress,
       dragGeom,
+      toggleElementSize,
     } = this.props;
     const {
       scrollY,
@@ -181,6 +182,7 @@ class SheetContentsComponent extends ContentsBaseComponent {
           setSelection={this.setViewSelection}
           startDragCallback={!readOnly ? this.startDragForRef : undefined}
           endDragCallback={!readOnly ? this.finishDrag : undefined}
+          toggleElementSize={toggleElementSize}
         />
       );
     }).filter(Boolean);
@@ -302,6 +304,7 @@ const mapDispatchToProps = dispatch => ({
   deleteLocation: (context, y, x) => dispatch(deleteLoc(context, y, x)),
   moveCell: (cellId, sheetId, y, x, width, height) => (
     dispatch(moveThing(cellId, sheetId, y, x, width, height))),
+  toggleElementSize: refId => toggleMaximiseSheetElem(dispatch, refId),
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(SheetContentsComponent);
