@@ -189,7 +189,7 @@ export const rewriteRefTermToParentLookup = (innermostLookup) => {
     const arrayParent = refsById[ref.arrayId];
     return { lookup: arrayParent.name, on: { ref: ref.objectId } };
   }
-  if (ref.type !== CELL && ref.type !== ARRAY) {
+  if (![CELL, ARRAY, OBJECT, TABLE].includes(ref.type)) {
     throw new Error(`unknown parent type for ${ref.type}`);
   }
   return { lookup: ref.name, on: { ref: ref.sheetId } };
