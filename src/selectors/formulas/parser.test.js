@@ -12,7 +12,7 @@ const getCellValue = (cellName) => {
 
 describe('parser', () => {
   it('parses a complicated call', () => {
-    const formula = 'a.b(foo:bar.baz.arf[10], quux:1+"hi").field';
+    const formula = 'a.b(foo:bar.baz.arf[10], quux:1+"hi").fi\\ eld';
     const tokens = [
       { name: 'a' },
       { lookup: '.' },
@@ -36,10 +36,10 @@ describe('parser', () => {
       { value: 'hi' },
       { close: ')' },
       { lookup: '.' },
-      { name: 'field' },
+      { name: 'fi eld' },
     ];
     const expectedOutput = {
-      lookup: 'field',
+      lookup: 'fi eld',
       on: {
         call: { lookup: 'b', on: { name: 'a' } },
         args: [{

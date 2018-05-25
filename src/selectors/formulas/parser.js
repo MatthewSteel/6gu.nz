@@ -208,10 +208,11 @@ const parseObject = (tokens, i) => {
   let j = i;
   while (!tokens[j].closeBrace) {
     let nextIndex;
-    if (tokens[j].name && tokens[j + 1].assignment) {
+    const maybeKey = tokens[j].name || tokens[j].value;
+    if (typeof maybeKey === 'string' && tokens[j + 1].assignment) {
       const { term, newIndex } = parseExpression(tokens, j + 2);
       nextIndex = newIndex;
-      object.push({ key: tokens[j].name, value: term });
+      object.push({ key: maybeKey, value: term });
     } else {
       const { term, newIndex } = parseTerm(tokens, j);
       nextIndex = newIndex;

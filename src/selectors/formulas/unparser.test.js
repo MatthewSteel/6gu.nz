@@ -8,14 +8,14 @@ describe('unparser', () => {
       on: {
         call: { name: 'called_cell' },
         args: [{
-          ref: { name: 's.c' },
+          ref: { name: 's_c' },
           expr: {
             binary: '*',
             left: {
               lookupIndex: { value: 10 },
               on: {
                 lookup: 'field',
-                on: { name: 'other_cell' },
+                on: { name: 'other cell' },
               },
             },
             right: { value: 5 },
@@ -23,6 +23,6 @@ describe('unparser', () => {
         }],
       },
     };
-    expect(translateExpr(term, null, unparseTerm)).toEqual('called_cell(s.c: other_cell.field[10] * 5).field2');
+    expect(translateExpr(term, null, unparseTerm)).toEqual('called_cell(s_c: other\\ cell.field[10] * 5).field2');
   });
 });

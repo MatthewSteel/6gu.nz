@@ -78,7 +78,7 @@ const expandArray = (term) => {
 const expandObject = (term) => {
   const translatedElems = term.object.map(({ key, value }) => {
     const expandedValue = tryExpandExpr(value);
-    return `${key}: ${expandedValue}`;
+    return `${JSON.stringify(key)}: ${expandedValue}`;
   }).join(',');
   return `{ byName: { ${translatedElems} } }`;
 };
