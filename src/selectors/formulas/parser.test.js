@@ -172,4 +172,25 @@ describe('parser', () => {
     };
     expect(parseTokens(lexFormula(formula), 0)).toEqual(expectedOutput);
   });
+
+  it('parses an empty object', () => {
+    const formula = '{}';
+    const expectedOutput = { object: [] };
+    expect(parseTokens(lexFormula(formula), 0)).toEqual(expectedOutput);
+  });
+
+  it('parses more complicated objects', () => {
+    const formula = '{foo, bar= 10, baz.quux,}';
+    const expectedOutput = { object: [{
+      key: 'foo',
+      value: { name: 'foo' },
+    }, {
+      key: 'bar',
+      value: { value: 10 },
+    }, {
+      key: 'quux',
+      value: { lookup: 'quux', on: { name: 'baz' } },
+    }] };
+    expect(parseTokens(lexFormula(formula), 0)).toEqual(expectedOutput);
+  });
 });

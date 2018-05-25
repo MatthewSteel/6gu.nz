@@ -16,6 +16,17 @@ const unparseRef = (id) => {
   return ref.name;
 };
 
+const unparseObject = (object) => {
+  if (object.length === 0) return '{}';
+  const args = object.map(({ key, value }) => {
+    if (key === value || value.slice(-key.length - 1) === `.${key}`) {
+      return value;
+    }
+    return `${key}= ${value}`;
+  });
+  return `{ ${args.join(', ')} }`;
+};
+
 export const unparseTerm = (term) => {
   if (term.lookup) return `${term.on}.${term.lookup}`;
   if (term.lookupIndex) {
@@ -37,6 +48,7 @@ export const unparseTerm = (term) => {
   if (term.unary) return `${term.unary}${term.on}`;
   if (term.binary) return `${term.left} ${term.binary} ${term.right}`;
   if (term.array) return `[${term.array.join(', ')}]`;
+  if (term.object) return unparseObject(term.object);
   throw new Error('Unknown term type');
 };
 

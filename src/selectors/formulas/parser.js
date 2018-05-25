@@ -101,7 +101,8 @@ const parseTermFromName = (tokens, i) => {
     nextToken.op ||
     nextToken.close ||
     nextToken.comma ||
-    nextToken.closeBracket
+    nextToken.closeBracket ||
+    nextToken.closeBrace
   ) {
     return {
       term,
@@ -142,6 +143,7 @@ const parseTerm = (tokens, i) => {
     return parseLookups(tokens, newIndex + 1, { expression: term });
   }
   if (tokens[i].openBracket) return parseArray(tokens, i + 1);
+  if (tokens[i].openBrace) return parseObject(tokens, i + 1);
   if ('value' in tokens[i]) {
     return {
       term: tokens[i],
@@ -160,7 +162,8 @@ const parseExpression = (tokens, i) => {
     newIndex === tokens.length ||
     tokens[newIndex].close ||
     tokens[newIndex].comma ||
-    tokens[newIndex].closeBracket
+    tokens[newIndex].closeBracket ||
+    tokens[newIndex].closeBrace
   ) {
     return { term, newIndex };
   }
@@ -196,6 +199,41 @@ const parseArray = (tokens, i) => {
   }
 
   return parseLookups(tokens, j + 1, { array });
+};
+
+const parseObject = (tokens, i) => {
+  // { name1, value(call=foo).name2 }
+  //  --> { name1: name1, name2: value(call=foo).name2 }
+  const object = [];
+  let j = i;
+  while (!tokens[j].closeBrace) {
+    let nextIndex;
+    if (tokens[j].name && tokens[j + 1].assignment) {
+      const { term, newIndex } = parseExpression(tokens, j + 2);
+      nextIndex = newIndex;
+      object.push({ key: tokens[j].name, value: term });
+    } else {
+      const { term, newIndex } = parseTerm(tokens, j);
+      nextIndex = newIndex;
+      if (term.name) {
+        object.push({ key: term.name, value: term });
+      } else if (term.lookup) {
+        object.push({ key: term.lookup, value: term });
+      } else {
+        throw new Error('Single object terms must be either names or lookups');
+      }
+    }
+    if (tokens[nextIndex].comma) {
+      j = nextIndex + 1;
+      continue;
+    }
+    if (!tokens[nextIndex].closeBrace) {
+      throw new Error('Unexpected character in object');
+    }
+    j = nextIndex;
+  }
+
+  return parseLookups(tokens, j + 1, { object });
 };
 
 export const parseTokens = (tokens, start) => {

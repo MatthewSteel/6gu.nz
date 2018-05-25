@@ -75,6 +75,14 @@ const expandArray = (term) => {
   return `globals.tableArray([${joinedArgs}])`;
 };
 
+const expandObject = (term) => {
+  const translatedElems = term.object.map(({ key, value }) => {
+    const expandedValue = tryExpandExpr(value);
+    return `${key}: ${expandedValue}`;
+  }).join(',');
+  return `{ byName: { ${translatedElems} } }`;
+};
+
 const expandExpr = (term) => {
   if (term.lookup) return expandLookup(term);
   if (term.lookupIndex) return expandLookupIndex(term);
@@ -86,6 +94,7 @@ const expandExpr = (term) => {
   if (term.unary) return expandUnary(term);
   if (term.binary) return expandBinary(term);
   if (term.array) return expandArray(term);
+  if (term.object) return expandObject(term);
   throw new Error(`unknown term type ${JSON.stringify(term)}`);
 };
 
