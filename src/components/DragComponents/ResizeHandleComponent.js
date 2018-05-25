@@ -1,4 +1,5 @@
 import React, { PureComponent } from 'react';
+import classNames from 'classnames';
 import resizeHandle from './ResizeHandle.svg';
 import './DragComponents.css';
 import { DRAG_RESIZE } from '../../selectors/geom/dragGeom';
@@ -17,26 +18,30 @@ class ResizeHandleComponent extends PureComponent {
   }
 
   render() {
-    const { x, y, resizeRefId, endDragCallback } = this.props;
+    const { children, x, y, endDragCallback, selected } = this.props;
     const style = {
       gridColumn: `${x + 1} / span 1`,
       gridRow: `${2 * y + 1} / span 2`,
       position: 'relative',
-      display: resizeRefId ? 'block' : 'none',
-      pointerEvents: 'none',
     };
     if (!endDragCallback) return null;
     return (
-      <div style={style}>
-        <img
-          className="ResizeHandle"
-          src={resizeHandle}
-          onDragStart={this.onResizeStart}
-          onDragEnd={endDragCallback}
-          alt="Resize cell"
-          width={10}
-          height={10}
-        />
+      <div className="ResizeDivHover">
+        {children}
+        <div
+          className={classNames(selected && 'ResizeThingSelected')}
+          style={style}
+        >
+          <img
+            className="ResizeHandle"
+            src={resizeHandle}
+            onDragStart={this.onResizeStart}
+            onDragEnd={endDragCallback}
+            alt="Resize cell"
+            width={10}
+            height={10}
+          />
+        </div>
       </div>
     );
   }

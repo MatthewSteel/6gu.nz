@@ -44,35 +44,37 @@ class SheetCellComponent extends PureComponent {
         height={height}
         selected={selected}
       >
-        <CellNameComponent
-          name={name}
-          x={x}
-          y={y}
-          width={width}
-          height={0.5}
-          selected={selected}
-          setSelection={setSelection}
-          onDragStart={this.onNameDragStart}
-          onDragEnd={endDragCallback}
-        />
-        <CellValueComponent
-          x={x}
-          y={y + 0.5}
-          width={width}
-          height={height - 0.5}
-          selected={selected}
-          setSelection={setSelection}
-          value={value}
-          pushViewStack={pushViewStack}
-          id={id}
-        />
         <ResizeHandleComponent
           y={y + height - 1}
           x={x + width - 1}
-          resizeRefId={selected && id}
+          resizeRefId={id}
+          selected={selected}
           startDragCallback={startDragCallback}
           endDragCallback={endDragCallback}
-        />
+        >
+          <CellNameComponent
+            name={name}
+            x={x}
+            y={y}
+            width={width}
+            height={0.5}
+            selected={selected}
+            setSelection={setSelection}
+            onDragStart={this.onNameDragStart}
+            onDragEnd={endDragCallback}
+          />
+          <CellValueComponent
+            x={x}
+            y={y + 0.5}
+            width={width}
+            height={height - 0.5}
+            selected={selected}
+            setSelection={setSelection}
+            value={value}
+            pushViewStack={pushViewStack}
+            id={id}
+          />
+        </ResizeHandleComponent>
       </CellSelectionComponent>
     );
   }

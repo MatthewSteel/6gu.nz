@@ -77,51 +77,53 @@ class ArrayComponent extends ContentsBaseComponent {
 
     return (
       <Fragment>
-        <CellSelectionComponent
-          selected={viewSelected && !selectedCell.childSelected}
-          x={viewOffsetX}
-          y={viewOffsetY}
-          width={viewWidth}
-          height={viewHeight}
-        >
-          <CellNameComponent
-            name={array.name}
-            x={viewOffsetX}
-            y={viewOffsetY}
-            width={width}
-            height={0.5}
-            setSelection={this.setViewSelection}
-            onDragStart={this.onNameDragStart}
-            onDragEnd={endDragCallback}
-          />
-        </CellSelectionComponent>
-        <ArrayContentsComponent
-          ref={contentsSelected && this.setChildSelectionTableRef}
-          contextId={id}
-          formulaRef={this.props.formulaRef}
-          pushViewStack={pushViewStack}
-          popViewStack={this.props.popViewStack}
-          readOnly={readOnly}
-          setFormulaSelection={this.props.setFormulaSelection}
-          tableData={tableData}
-          viewHeight={viewHeight - 0.5}
-          viewWidth={width}
-          viewOffsetX={viewOffsetX}
-          viewOffsetY={viewOffsetY + 0.5}
-          viewSelected={contentsSelected}
-          viewSelX={viewSelX}
-          viewSelY={viewSelY}
-          setViewSelection={setViewSelection}
-          startDragCallback={!readOnly ? this.startDragForRef : undefined}
-          endDragCallback={!readOnly ? this.finishDrag : undefined}
-        />
         <ResizeHandleComponent
           y={viewOffsetY + viewHeight - 1}
           x={viewOffsetX + viewWidth - 1}
-          resizeRefId={viewSelected && id}
+          resizeRefId={id}
+          selected={viewSelected}
           startDragCallback={startDragCallback}
           endDragCallback={endDragCallback}
-        />
+        >
+          <CellSelectionComponent
+            selected={viewSelected && !selectedCell.childSelected}
+            x={viewOffsetX}
+            y={viewOffsetY}
+            width={viewWidth}
+            height={viewHeight}
+          >
+            <CellNameComponent
+              name={array.name}
+              x={viewOffsetX}
+              y={viewOffsetY}
+              width={width}
+              height={0.5}
+              setSelection={this.setViewSelection}
+              onDragStart={this.onNameDragStart}
+              onDragEnd={endDragCallback}
+            />
+          </CellSelectionComponent>
+          <ArrayContentsComponent
+            ref={contentsSelected && this.setChildSelectionTableRef}
+            contextId={id}
+            formulaRef={this.props.formulaRef}
+            pushViewStack={pushViewStack}
+            popViewStack={this.props.popViewStack}
+            readOnly={readOnly}
+            setFormulaSelection={this.props.setFormulaSelection}
+            tableData={tableData}
+            viewHeight={viewHeight - 0.5}
+            viewWidth={width}
+            viewOffsetX={viewOffsetX}
+            viewOffsetY={viewOffsetY + 0.5}
+            viewSelected={contentsSelected}
+            viewSelX={viewSelX}
+            viewSelY={viewSelY}
+            setViewSelection={setViewSelection}
+            startDragCallback={!readOnly ? this.startDragForRef : undefined}
+            endDragCallback={!readOnly ? this.finishDrag : undefined}
+          />
+        </ResizeHandleComponent>
       </Fragment>
     );
   }
