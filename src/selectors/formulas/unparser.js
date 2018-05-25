@@ -22,7 +22,7 @@ const unparseObject = (object) => {
     if (key === value || value.slice(-key.length - 1) === `.${key}`) {
       return value;
     }
-    return `${key}= ${value}`;
+    return `${key}: ${value}`;
   });
   return `{ ${args.join(', ')} }`;
 };
@@ -35,7 +35,7 @@ export const unparseTerm = (term) => {
   }
   if (term.call) {
     const argsText = term.args
-      .map(({ ref, expr }) => `${ref}=${expr}`)
+      .map(({ ref, expr }) => `${ref}: ${expr}`)
       .join(', ');
     return `${term.call}(${argsText})`;
   }
@@ -57,15 +57,6 @@ const subRefsForLookupsInTerm = (term, contextId) => {
   return term;
 };
 
-const formulaElementsUpToName = (ref) => {
-  const retToJoin = [];
-  if (ref.name) {
-    retToJoin.push(ref.name);
-  }
-  retToJoin.push('=');
-  return retToJoin;
-};
-
 const formulaExpressionString = (ref) => {
   if (!ref.formula) return [];
   const refParent = refParentId(ref);
@@ -81,7 +72,7 @@ export const stringFormula = (refId) => {
   const ref = getRefsById(store.getState())[refId];
   if (!ref) return '';
 
-  const firstBits = formulaElementsUpToName(ref);
+  const firstBits = ref.name ? `${ref.name}:` : ':';
   const expressionString = formulaExpressionString(ref);
-  return [...firstBits, expressionString].join(' ');
+  return `${firstBits} ${expressionString}`;
 };

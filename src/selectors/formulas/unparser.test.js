@@ -23,6 +23,6 @@ describe('unparser', () => {
         }],
       },
     };
-    expect(translateExpr(term, null, unparseTerm)).toEqual('called_cell(s.c=other_cell.field[10] * 5).field2');
+    expect(translateExpr(term, null, unparseTerm)).toEqual('called_cell(s.c: other_cell.field[10] * 5).field2');
   });
 });

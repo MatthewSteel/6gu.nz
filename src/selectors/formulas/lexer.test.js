@@ -2,9 +2,9 @@ import { lexFormula } from './lexer';
 
 describe('lexFormula', () => {
   it('lexes a simple assignment', () => {
-    expect(lexFormula('foo=bar')).toEqual([
+    expect(lexFormula('foo:bar')).toEqual([
       { name: 'foo' },
-      { assignment: '=' },
+      { assignment: ':' },
       { name: 'bar' },
     ]);
   });
@@ -20,14 +20,14 @@ describe('lexFormula', () => {
   });
 
   it('gives us what we expect for lookups and calls', () => {
-    expect(lexFormula(' =func( sheet.cell=0).value')).toEqual([
-      { assignment: '=' },
+    expect(lexFormula(' :func( sheet.cell:0).value')).toEqual([
+      { assignment: ':' },
       { name: 'func' },
       { open: '(' },
       { name: 'sheet' },
       { lookup: '.' },
       { name: 'cell' },
-      { assignment: '=' },
+      { assignment: ':' },
       { value: 0 },
       { close: ')' },
       { lookup: '.' },

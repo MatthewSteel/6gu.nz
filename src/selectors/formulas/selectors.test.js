@@ -15,7 +15,7 @@ describe('formula selectors', () => {
 
   it('turns deep refs back into qualified lookups', () => {
     const [s1, s2] = getSheets(store.getState());
-    store.dispatch(setFormula({ context: s1.id, y: 0, x: 0 }, 'x=1'));
+    store.dispatch(setFormula({ context: s1.id, y: 0, x: 0 }, 'x:1'));
 
     const xId = getCell('x').id;
     expect(lookupExpression(s1.id, xId)).toEqual({ ref: xId });
@@ -29,7 +29,7 @@ describe('formula selectors', () => {
 
   it('gives good errors for bad formulas', () => {
     const s1 = getSheets(store.getState())[0];
-    store.dispatch(setFormula({ context: s1.id, y: 0, x: 0 }, 'x=('));
+    store.dispatch(setFormula({ context: s1.id, y: 0, x: 0 }, 'x:('));
 
     // FIXME: should be `x`, not `a1`.
     const cell = getCell('x');

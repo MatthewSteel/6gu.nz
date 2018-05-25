@@ -390,7 +390,7 @@ const parseFormulaExpr = (tokens, formulaStart, contextId, s) => {
   } catch (e) {
     // Bad formula, but we might at least have a name. Stick everything
     // after the `=` symbol (if one exists) into the badFormula attr.
-    const formulaStr = (formulaStart === 0) ? s : s.slice(s.indexOf('=') + 1);
+    const formulaStr = (formulaStart === 0) ? s : s.slice(s.indexOf(':') + 1);
     return {
       formula: { badFormula: formulaStr.trim() },
     };

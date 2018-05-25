@@ -12,14 +12,14 @@ const getCellValue = (cellName) => {
 
 describe('parser', () => {
   it('parses a complicated call', () => {
-    const formula = 'a.b(foo=bar.baz.arf[10], quux=1+"hi").field';
+    const formula = 'a.b(foo:bar.baz.arf[10], quux:1+"hi").field';
     const tokens = [
       { name: 'a' },
       { lookup: '.' },
       { name: 'b' },
       { open: '(' },
       { name: 'foo' },
-      { assignment: '=' },
+      { assignment: ':' },
       { name: 'bar' },
       { lookup: '.' },
       { name: 'baz' },
@@ -30,7 +30,7 @@ describe('parser', () => {
       { closeBracket: ']' },
       { comma: ',' },
       { name: 'quux' },
-      { assignment: '=' },
+      { assignment: ':' },
       { value: 1 },
       { op: '+' },
       { value: 'hi' },
@@ -67,23 +67,23 @@ describe('parser', () => {
 
   it('parses strings appropriately', () => {
     const s1 = getSheets(store.getState())[0];
-    expect(parseFormula('=')).toEqual({});
-    expect(parseFormula('foo =')).toEqual({ name: 'foo' });
-    expect(parseFormula('foo = bar', s1.id)).toEqual({
+    expect(parseFormula(':')).toEqual({});
+    expect(parseFormula('foo :')).toEqual({ name: 'foo' });
+    expect(parseFormula('foo : bar', s1.id)).toEqual({
       name: 'foo',
       formula: { lookup: 'bar', on: { ref: s1.id } },
     });
-    expect(parseFormula('foo = bar +')).toEqual({
+    expect(parseFormula('foo : bar +')).toEqual({
       name: 'foo',
       formula: { badFormula: 'bar +' },
     });
-    expect(parseFormula('foo := bar +')).toEqual({
-      formula: { badFormula: 'foo := bar +' },
+    expect(parseFormula('foo =: bar +')).toEqual({
+      formula: { badFormula: 'foo =: bar +' },
     });
   });
 
   it('parses unary operators', () => {
-    const formula = '-!+~func(param=-arg)+- foo';
+    const formula = '-!+~func(param:-arg)+- foo';
     const expectedOutput = {
       binary: '+',
       left: {
@@ -120,21 +120,21 @@ describe('parser', () => {
     const s1 = getSheets(store.getState())[0];
 
     // precedence
-    store.dispatch(setFormula({ context: s1.id, y: 0, x: 0 }, 'x=1+2*3'));
+    store.dispatch(setFormula({ context: s1.id, y: 0, x: 0 }, 'x:1+2*3'));
     expect(getCellValue('x')).toEqual(7); // not 9
 
     // left associativity
-    store.dispatch(setFormula({ context: s1.id, y: 1, x: 0 }, 'y=2/2*2'));
+    store.dispatch(setFormula({ context: s1.id, y: 1, x: 0 }, 'y:2/2*2'));
     expect(getCellValue('y')).toEqual(2); // not 0.5
 
     // right associativity
-    store.dispatch(setFormula({ context: s1.id, y: 1, x: 0 }, 'z=2**3**2'));
+    store.dispatch(setFormula({ context: s1.id, y: 1, x: 0 }, 'z:2**3**2'));
     expect(getCellValue('z')).toEqual(512); // not 64
 
     // recursion
     store.dispatch(setFormula(
       { context: s1.id, y: 1, x: 0 },
-      'w=12 ** 1 * 2*3',
+      'w:12 ** 1 * 2*3',
     ));
     expect(getCellValue('w')).toEqual(72); // not 12 ^ 6.
   });
@@ -180,7 +180,7 @@ describe('parser', () => {
   });
 
   it('parses more complicated objects', () => {
-    const formula = '{foo, bar= 10, baz.quux,}';
+    const formula = '{foo, bar: 10, baz.quux,}';
     const expectedOutput = { object: [{
       key: 'foo',
       value: { name: 'foo' },

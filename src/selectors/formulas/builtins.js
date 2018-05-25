@@ -13,7 +13,6 @@ const classify = (o) => {
     if (o.byName) return OBJECT;
     if (o.arr) return ARRAY;
     if (!o) return NULL;
-    console.log(o);
     throw new Error('bad type');
   }
   return {
@@ -119,7 +118,7 @@ export const binarySymbolToName = {
   '/': 'divide',
   '%': 'mod',
   '**': 'pow',
-  '==': 'eq',
+  '=': 'eq',
   '!=': 'ne',
   '>=': 'ge',
   '>': 'gt',

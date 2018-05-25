@@ -57,7 +57,7 @@ const lexOp = (input, i) => {
 
 const lexOne = (input, i) => {
   const next = input.charAt(i);
-  if (next.match(/^[<>+\-*/%&|^!~]$/)) return lexOp(input, i);
+  if (next.match(/^[=<>+\-*/%&|^!~]$/)) return lexOp(input, i);
   if (next === '(') return { matchEnd: i + 1, token: { open: '(' } };
   if (next === ')') return { matchEnd: i + 1, token: { close: ')' } };
   if (next === '[') return { matchEnd: i + 1, token: { openBracket: '[' } };
@@ -68,11 +68,7 @@ const lexOne = (input, i) => {
   if (next.match(/^[0-9]$/)) return lexNumber(input, i);
   if (next === '"') return lexString(input, i);
   if (next.match(/^\s$/)) return chompWhitespace(input, i);
-  if (next + input.charAt(i + 1) === '==') {
-    // TODO: Precendence parsing and a deep-equality check.
-    return { matchEnd: i + 2, token: { op: '==' } };
-  }
-  if (next === '=') return { matchEnd: i + 1, token: { assignment: next } };
+  if (next === ':') return { matchEnd: i + 1, token: { assignment: next } };
   if (next === '.') return { matchEnd: i + 1, token: { lookup: next } };
   if (next === ',') return { matchEnd: i + 1, token: { comma: next } };
   throw new Error(`don't know what to do with '${next}'`);
