@@ -349,23 +349,31 @@ export const flattenExpr = (expr) => {
 const refErrorMessage = name => `(${JSON.stringify(name)} + ' does not exist.')`;
 
 export const refError = (term) => {
-  if (term.badFormula) return '"Bad formula"';
-  if (term.name) return refErrorMessage(term.name);
+  if (term.badFormula) return { str: '"Bad formula"' };
+  if (term.name) return { str: refErrorMessage(term.name) };
   if (term.lookup && term.on.ref) {
     // Unresolved lookups are bad on sheets and "static" objects, but fine
     // on computed cells etc.
     const ref = getRefsById(store.getState())[term.on.ref];
-    if (!ref.formula) return refErrorMessage(term.lookup);
+    if (!ref.formula) {
+      return { str: refErrorMessage(term.lookup), ref: term.on.ref };
+    }
   }
   return false;
 };
 
 const refEdges = (ref) => {
   if (ref.formula) {
-    const refErrors = flattenExpr(ref.formula).filter(refError);
-    if (refErrors.length) return [];
+    const errorRefs = new Set((
+      flattenExpr(ref.formula)
+        .map((term) => {
+          const err = refError(term);
+          return err && err.ref;
+        })
+        .filter(Boolean)
+    ));
     return flattenExpr(ref.formula)
-      .filter(term => term.ref)
+      .filter(term => term.ref && !errorRefs.has(term.ref))
       .map(term => term.ref);
   }
   return getChildIdsByParentId(store.getState())[ref.id];

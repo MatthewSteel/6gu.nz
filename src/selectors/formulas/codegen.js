@@ -206,7 +206,7 @@ const formulaExpression = (formula) => {
     .map(term => refError(term))
     .filter(Boolean);
   if (termErrors.length > 0) {
-    return `pleaseThrow(${termErrors[0]})`;
+    return `pleaseThrow(${termErrors[0].str})`;
   }
   return expandExpr(formula);
 };
