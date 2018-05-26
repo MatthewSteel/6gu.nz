@@ -102,32 +102,28 @@ class ArrayContentsComponent extends ContentsBaseComponent {
       if (contentsX >= viewWidth) continue;
       const cellSelected = viewSelected && selX === 1 && selY === row;
       const maybeValue = tableData.arr[row];
+      const geomProps = {
+        x: viewOffsetX + contentsX,
+        width: 1,
+        y: worldRow,
+        height: 0.5,
+      };
+
       children.push((
         <CellSelectionComponent
-          x={viewOffsetX + contentsX}
-          width={1}
-          y={worldRow}
-          height={0.5}
+          {...geomProps}
           selected={cellSelected}
           key={`cell-${row}`}
         >
           {(maybeValue) ? (
             <CellValueComponent
-              x={viewOffsetX + contentsX}
-              width={1}
-              y={worldRow}
-              height={0.5}
+              {...geomProps}
               value={maybeValue}
               setSelection={this.setViewSelection}
             />
           ) : (
             <EmptyCellComponent
-              key="empty"
-              x={viewOffsetX + contentsX}
-              width={1}
-              y={worldRow}
-              height={0.5}
-              selected={cellSelected}
+              {...geomProps}
               setSelection={this.setViewSelection}
             />
           )}

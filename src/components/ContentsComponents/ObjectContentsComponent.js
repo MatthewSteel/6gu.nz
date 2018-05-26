@@ -42,7 +42,7 @@ class ObjectContentsComponent extends ContentsBaseComponent {
   }
 
   // eslint-disable-next-line class-methods-use-this
-  locationSelected(cell) {
+  locationSelected() {
     const { selY } = this.localSelection();
     return selY === 0;
   }
@@ -109,32 +109,28 @@ class ObjectContentsComponent extends ContentsBaseComponent {
       // values + blanks
       const cellSelected = viewSelected && selY === 1 && selX === col;
       const maybeValue = tableData.byName[colsByIndex[col]];
+      const geomProps = {
+        x: worldCol,
+        y: viewOffsetY + 0.5,
+        width: 1,
+        height: 0.5,
+      };
+
       children.push((
         <CellSelectionComponent
-          x={worldCol}
-          width={1}
-          y={viewOffsetY + 0.5}
-          height={0.5}
+          {...geomProps}
           selected={cellSelected}
           key={`cell-${col}`}
         >
           {(maybeValue) ? (
             <CellValueComponent
-              x={worldCol}
-              width={1}
-              y={viewOffsetY + 0.5}
-              height={0.5}
+              {...geomProps}
               value={maybeValue}
               setSelection={this.setViewSelection}
             />
           ) : (
             <EmptyCellComponent
-              key="empty"
-              x={worldCol}
-              width={1}
-              y={viewOffsetY + 0.5}
-              height={0.5}
-              selected={cellSelected}
+              {...geomProps}
               setSelection={this.setViewSelection}
             />
           )}
