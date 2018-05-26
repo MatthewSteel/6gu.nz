@@ -167,7 +167,13 @@ const tableValue = (tableId, globals) => {
   tableCells.forEach(({ index, id }) => {
     storage[index] = globals[id];
   });
-  return new TableArray(storage);
+  const ret = new TableArray(storage);
+
+  const tableCols = getChildrenOfRef(store.getState(), tableId)
+    .filter(({ type }) => type === TABLE_COLUMN);
+  ret.keys = [];
+  tableCols.forEach(({ index, name }) => { ret.keys[index] = name; });
+  return ret;
 };
 
 const tableRowValue = (tableRowId, globals) => {
