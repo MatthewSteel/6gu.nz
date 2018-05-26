@@ -31,25 +31,26 @@ class ResizeHandleComponent extends PureComponent {
       gridRow: `${2 * y + 1} / span 2`,
       position: 'relative',
     };
-    if (!endDragCallback) return null;
     return (
       <div className="ResizeDivHover">
         {children}
-        <div
-          className={classNames(selected && 'ResizeThingSelected')}
-          style={style}
-        >
-          <img
-            className="ResizeHandle"
-            src={resizeHandle}
-            onClick={this.onClick}
-            onDragStart={this.onResizeStart}
-            onDragEnd={endDragCallback}
-            alt="Resize cell"
-            width={10}
-            height={10}
-          />
-        </div>
+        {endDragCallback &&
+          <div
+            className={classNames(selected && 'ResizeThingSelected')}
+            style={style}
+          >
+            <img
+              className="ResizeHandle"
+              src={resizeHandle}
+              onClick={this.onClick}
+              onDragStart={this.onResizeStart}
+              onDragEnd={endDragCallback}
+              alt="Resize cell"
+              width={10}
+              height={10}
+            />
+          </div>
+        }
       </div>
     );
   }
