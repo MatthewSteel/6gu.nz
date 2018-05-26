@@ -119,8 +119,6 @@ class ObjectComponent extends ContentsBaseComponent {
             viewSelX={viewSelX}
             viewSelY={viewSelY}
             setViewSelection={setViewSelection}
-            startDragCallback={!readOnly ? this.startDragForRef : undefined}
-            endDragCallback={!readOnly ? this.finishDrag : undefined}
           />
         </ResizeHandleComponent>
       </Fragment>
