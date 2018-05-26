@@ -126,12 +126,25 @@ const defaultSheetElem = (contextId, y, x) => ({
   y,
 });
 
-const defaultObjectCell = (contextId, index, formula) => ({
+const defaultObject = (contextId, y, x) => {
+  const base = defaultSheetElem(contextId, y, x);
+  const { width, height } = idealWidthAndHeight(
+    base.id,
+    contextId,
+    y,
+    x,
+    undefined, // maxWidth
+    2, // maxHeight
+  );
+  return { width, height, type: OBJECT, ...base };
+};
+
+const defaultObjectCell = (contextId, index, formula, name = `f${index + 1}`) => ({
   id: uuidv4(),
   objectId: contextId,
   formula,
   index,
-  name: `f${index + 1}`,
+  name,
   type: OBJECT_CELL,
 });
 
@@ -155,19 +168,31 @@ const defaultArray = (contextId, y, x) => {
   return { width, height, type: ARRAY, ...base };
 };
 
-const defaultCellForLocation = (context, y, x, isArray) => {
+const defaultCellForLocation = (context, y, x, formula) => {
   if (context.type === SHEET) {
-    const baseCell = isArray ?
-      defaultArray(context.id, y, x) :
-      defaultCell(context.id, y, x);
+    let baseCell = defaultCell(context.id, y, x);
+    let children = [];
+    if (formula && formula.array) {
+      baseCell = defaultArray(context.id, y, x);
+      children = formula.array.map((
+        (childFormula, index) => defaultArrayCell(
+          baseCell.id,
+          index,
+          childFormula,
+        )
+      ));
+    } else if (formula && formula.object) {
+      baseCell = defaultObject(context.id, y, x);
+      children = formula.object.map((
+        (childFormula, index) => defaultObjectCell(
+          baseCell.id,
+          index,
+          childFormula.value,
+          childFormula.key,
+        )
+      ));
+    }
 
-    const children = !isArray ? [] : isArray.map((
-      (formula, index) => defaultArrayCell(
-        baseCell.id,
-        index,
-        formula,
-      )
-    ));
     return { baseCell, children };
   }
   if (context.type === OBJECT) {
@@ -298,7 +323,6 @@ const rootReducer = (state, action) => {
     const contextRef = getRefsById(store.getState())[selection.context];
     if (![SHEET, OBJECT].includes(contextRef.type)) delete newFormula.name;
 
-    const formulaIsAnArray = newFormula.formula && newFormula.formula.array;
     const { baseCell, children } = selection.cellId ?
       {
         baseCell: state.cells.find(({ id }) => id === selection.cellId),
@@ -308,7 +332,7 @@ const rootReducer = (state, action) => {
         contextRef,
         selection.y,
         selection.x,
-        formulaIsAnArray,
+        newFormula.formula,
       );
 
     if (![CELL, ARRAY_CELL, OBJECT_CELL].includes(baseCell.type)) {
