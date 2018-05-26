@@ -1,11 +1,11 @@
 import React, { Fragment } from 'react';
 import { connect } from 'react-redux';
 
+import ContentsBaseComponent from './ContentsBaseComponent';
 import CellNameComponent from '../CellComponent/CellNameComponent';
 import CellValueComponent from '../CellComponent/CellValueComponent';
 import CellSelectionComponent from '../CellComponent/CellSelectionComponent';
 import EmptyCellComponent from '../CellComponent/EmptyCellComponent';
-import ContentsBaseComponent from './ContentsBaseComponent';
 
 import { getRefsById, getChildrenOfRef } from '../../selectors/formulas/selectors';
 import { ARRAY, deleteLoc, deleteThing } from '../../redux/store';
@@ -17,17 +17,10 @@ class ArrayContentsComponent extends ContentsBaseComponent {
     const { selY, selX } = this.localSelection();
     if (context.formula) return { ...context, selX, selY };
     const maybeCell = cells.find(({ index }) => index === selY);
-    // Eww -- we try to trick everyone into letting us select weird things
-    // and delete locations sometimes. See cellPosition below, and search
-    // for `deleteLocation` in the base class.
-    if (maybeCell) {
-      return {
-        ...maybeCell,
-        selX,
-        id: selX === 0 ? undefined : maybeCell.id,
-      };
-    }
-    return maybeCell;
+    // Eww -- we lie so we can write the cell but select it in two ways.
+    // See cellPosition below.
+    if (maybeCell) return { ...maybeCell, selX };
+    return undefined;
   }
 
   // eslint-disable-next-line class-methods-use-this
@@ -35,6 +28,12 @@ class ArrayContentsComponent extends ContentsBaseComponent {
     const { context } = this.props;
     if (context.formula) return { y: cell.selY, x: cell.selX, width: 1, height: 1 };
     return { y: cell.index, x: cell.selX, width: 1, height: 1 };
+  }
+
+  // eslint-disable-next-line class-methods-use-this
+  locationSelected() {
+    const { selX } = this.localSelection();
+    return selX === 0;
   }
 
   bounds() {

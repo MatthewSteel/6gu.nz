@@ -28,17 +28,10 @@ class ObjectContentsComponent extends ContentsBaseComponent {
     const { selY, selX } = this.localSelection();
     if (context.formula) return { ...context, selX, selY };
     const maybeCell = cells.find(({ index }) => index === selX);
-    // Eww -- we try to trick everyone into letting us select weird things
-    // and delete locations sometimes. See cellPosition below, and search
-    // for `deleteLocation` in the base class.
-    if (maybeCell) {
-      return {
-        ...maybeCell,
-        selY,
-        id: selY === 0 ? undefined : maybeCell.id,
-      };
-    }
-    return maybeCell;
+    // Eww -- we lie so we can write the cell but select it in two ways.
+    // See cellPosition below.
+    if (maybeCell) return { ...maybeCell, selY };
+    return undefined;
   }
 
   // eslint-disable-next-line class-methods-use-this
@@ -46,6 +39,12 @@ class ObjectContentsComponent extends ContentsBaseComponent {
     const { context } = this.props;
     if (context.formula) return { y: cell.selY, x: cell.selX, width: 1, height: 1 };
     return { y: cell.selY, x: cell.index, width: 1, height: 1 };
+  }
+
+  // eslint-disable-next-line class-methods-use-this
+  locationSelected(cell) {
+    const { selY } = this.localSelection();
+    return selY === 0;
   }
 
   bounds() {

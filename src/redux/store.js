@@ -365,6 +365,7 @@ const rootReducer = (state, action) => {
     if (!context) return state;
     if (![ARRAY, OBJECT].includes(context.type)) return state;
     const delObjIndex = (context.type === ARRAY) ? y : x;
+    const parentIdName = (context.type === ARRAY) ? 'arrayId' : 'objectId';
 
     const refToDelete = getChildrenOfRef(state, contextId)
       .find(({ index }) => index === delObjIndex);
@@ -378,7 +379,7 @@ const rootReducer = (state, action) => {
       cells: state.cells
         .filter(({ id }) => !idsToDelete.has(id))
         .map((cell) => {
-          if (cell.arrayId !== contextId || cell.index < delObjIndex) {
+          if (cell[parentIdName] !== contextId || cell.index < delObjIndex) {
             return cell;
           }
           return { ...cell, index: cell.index - 1 };

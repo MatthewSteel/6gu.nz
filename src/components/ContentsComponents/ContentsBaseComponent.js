@@ -116,6 +116,12 @@ export default class ContentsBaseComponent extends Component {
     return { y: 1, x: 1 };
   }
 
+  // eslint-disable-next-line class-methods-use-this
+  locationSelected() {
+    // So we know what to delete -- an table element or the whole row etc.
+    return false;
+  }
+
   selectedCellId() {
     const { selY, selX } = this.localSelection();
     const selectedCell = this.maybeSelectedCell();
@@ -131,6 +137,7 @@ export default class ContentsBaseComponent extends Component {
       cellId: selectedCell && selectedCell.id, // may be undefined
       y: selY,
       x: selX,
+      locationSelected: this.locationSelected(),
     };
   }
 
@@ -223,10 +230,10 @@ export default class ContentsBaseComponent extends Component {
         // Careful: swallow the event so a parent doesn't get it.
         const selection = this.selectedCellId();
         const { deleteCell, deleteLocation } = this.props;
-        if (selection.cellId) {
-          deleteCell(selection.cellId);
-        } else {
+        if (selection.locationSelected) {
           deleteLocation(selection.context, selection.y, selection.x);
+        } else {
+          deleteCell(selection.cellId);
         }
         if (realFormulaRef) realFormulaRef.resetValue();
       }
