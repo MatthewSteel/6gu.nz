@@ -142,73 +142,62 @@ class SheetContentsComponent extends ContentsBaseComponent {
 
       const cellContents = cellValuesById[id];
       const contentsType = getType(cellContents.value);
+
+      const commonChildProps = {
+        key: id,
+        id,
+        pushViewStack,
+        startDragCallback: !readOnly ? this.startDragForRef : undefined,
+        endDragCallback: !readOnly ? this.finishDrag : undefined,
+      };
+
+      const commonComplexChildProps = {
+        ref: cellSelected && this.setChildSelectionTableRef,
+        contextId,
+        formulaRef: this.props.formulaRef,
+        popViewStack: this.props.popViewStack,
+        readOnly,
+        setFormulaSelection: this.props.setFormulaSelection,
+        tableData: cellContents.value,
+        // TODO: should share names with SheetCell so we can specify them
+        // once. Most (all?) of the rest are shared...
+        viewHeight: truncYLen,
+        viewWidth: truncXLen,
+        viewOffsetX: truncX - scrollX,
+        viewOffsetY: truncY - scrollY,
+        viewSelected: cellSelected,
+        viewSelX,
+        viewSelY,
+        setViewSelection,
+      };
+
       if (truncXLen > 1 && ['array', 'table'].includes(contentsType)) {
         return (
           <ArrayComponent
-            key={id}
-            ref={cellSelected && this.setChildSelectionTableRef}
-            id={id}
-            contextId={contextId}
-            formulaRef={this.props.formulaRef}
-            pushViewStack={pushViewStack}
-            popViewStack={this.props.popViewStack}
-            readOnly={readOnly}
-            setFormulaSelection={this.props.setFormulaSelection}
-            tableData={cellContents.value}
-            viewHeight={truncYLen}
-            viewWidth={truncXLen}
-            viewOffsetX={truncX - scrollX}
-            viewOffsetY={truncY - scrollY}
-            viewSelected={cellSelected}
-            viewSelX={viewSelX}
-            viewSelY={viewSelY}
-            setViewSelection={setViewSelection}
-            startDragCallback={!readOnly ? this.startDragForRef : undefined}
-            endDragCallback={!readOnly ? this.finishDrag : undefined}
+            {...commonChildProps}
+            {...commonComplexChildProps}
           />
         );
       }
       if (truncXLen > 1 && contentsType === 'object') {
         return (
           <ObjectComponent
-            key={id}
-            ref={cellSelected && this.setChildSelectionTableRef}
-            id={id}
-            contextId={contextId}
-            formulaRef={this.props.formulaRef}
-            pushViewStack={pushViewStack}
-            popViewStack={this.props.popViewStack}
-            readOnly={readOnly}
-            setFormulaSelection={this.props.setFormulaSelection}
-            tableData={cellContents.value}
-            viewHeight={truncYLen}
-            viewWidth={truncXLen}
-            viewOffsetX={truncX - scrollX}
-            viewOffsetY={truncY - scrollY}
-            viewSelected={cellSelected}
-            viewSelX={viewSelX}
-            viewSelY={viewSelY}
-            setViewSelection={setViewSelection}
-            startDragCallback={!readOnly ? this.startDragForRef : undefined}
-            endDragCallback={!readOnly ? this.finishDrag : undefined}
+            {...commonChildProps}
+            {...commonComplexChildProps}
           />
         );
       }
       return (
         <SheetCellComponent
-          key={id}
-          id={id}
+          {...commonChildProps}
           x={truncX - scrollX}
           width={truncXLen}
           y={truncY - scrollY}
           height={truncYLen}
           name={name}
           value={cellContents}
-          pushViewStack={pushViewStack}
           selected={cellSelected}
           setSelection={this.setViewSelection}
-          startDragCallback={!readOnly ? this.startDragForRef : undefined}
-          endDragCallback={!readOnly ? this.finishDrag : undefined}
           toggleElementSize={toggleElementSize}
         />
       );
