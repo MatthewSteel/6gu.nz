@@ -9,6 +9,7 @@ import DragOverCellComponent from '../DragComponents/DragOverCellComponent';
 import DragOutlineComponent from '../DragComponents/DragOutlineComponent';
 import ContentsBaseComponent from './ContentsBaseComponent';
 import ArrayComponent from './ArrayComponent';
+import ObjectComponent from './ObjectComponent';
 
 import { getChildrenOfRef, sheetPlacedCellLocs } from '../../selectors/formulas/selectors';
 import { overlaps, truncateOverlap } from '../../selectors/geom/geom';
@@ -144,6 +145,32 @@ class SheetContentsComponent extends ContentsBaseComponent {
       if (truncXLen > 1 && ['array', 'table'].includes(contentsType)) {
         return (
           <ArrayComponent
+            key={id}
+            ref={cellSelected && this.setChildSelectionTableRef}
+            id={id}
+            contextId={contextId}
+            formulaRef={this.props.formulaRef}
+            pushViewStack={pushViewStack}
+            popViewStack={this.props.popViewStack}
+            readOnly={readOnly}
+            setFormulaSelection={this.props.setFormulaSelection}
+            tableData={cellContents.value}
+            viewHeight={truncYLen}
+            viewWidth={truncXLen}
+            viewOffsetX={truncX - scrollX}
+            viewOffsetY={truncY - scrollY}
+            viewSelected={cellSelected}
+            viewSelX={viewSelX}
+            viewSelY={viewSelY}
+            setViewSelection={setViewSelection}
+            startDragCallback={!readOnly ? this.startDragForRef : undefined}
+            endDragCallback={!readOnly ? this.finishDrag : undefined}
+          />
+        );
+      }
+      if (truncXLen > 1 && contentsType === 'object') {
+        return (
+          <ObjectComponent
             key={id}
             ref={cellSelected && this.setChildSelectionTableRef}
             id={id}

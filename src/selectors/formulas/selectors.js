@@ -78,10 +78,10 @@ const getRefsByNameForContextIdHelper = createSelector(
         ret[ref.objectId][ref.name] = ref;
       }
       if (ref.tableId) {
-        if ('index' in ref) ret[ref.tableId][ref.index] = ref;
-        if (ref.name) ret[ref.tableId][ref.name] = ref;
+        if (ref.type === TABLE_ROW) ret[ref.tableId][ref.index] = ref;
+        if (ref.type === TABLE_COLUMN) ret[ref.tableId][ref.name] = ref;
       }
-      if (ref.arrayId && ref.index) {
+      if (ref.arrayId && 'index' in ref) { // table cells have no index
         ret[ref.arrayId][ref.index] = ref;
       }
       if (ref.type === TABLE_CELL) {

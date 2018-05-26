@@ -2,11 +2,11 @@ import { createStore } from 'redux';
 import uuidv4 from 'uuid-v4';
 import equal from 'fast-deep-equal';
 import {
+  getChildrenOfRef,
   getContextIdForRefId,
   getFormulaGraphs,
   getRefsById,
   getSheetsByName,
-  getRefsByNameForContextId,
   rewriteRefTermToParentLookup,
   transitiveChildren,
   translateExpr,
@@ -52,6 +52,7 @@ const initialState = {
   }, {
     id: 'oc',
     name: 'ocell',
+    index: 0,
     type: OBJECT_CELL,
     objectId: 'obj',
     formula: { value: '' },
@@ -125,6 +126,15 @@ const defaultSheetElem = (contextId, y, x) => ({
   y,
 });
 
+const defaultObjectCell = (contextId, index, formula) => ({
+  id: uuidv4(),
+  objectId: contextId,
+  formula,
+  index,
+  name: `f${index + 1}`,
+  type: OBJECT_CELL,
+});
+
 const defaultCell = (contextId, y, x) => ({
   ...defaultSheetElem(contextId, y, x),
   width: 1,
@@ -159,6 +169,12 @@ const defaultCellForLocation = (context, y, x, isArray) => {
       )
     ));
     return { baseCell, children };
+  }
+  if (context.type === OBJECT) {
+    return {
+      baseCell: defaultObjectCell(context.id, x, { value: '' }),
+      children: [],
+    };
   }
   if (context.type !== ARRAY) {
     throw new Error(`Unknown context type ${context.type}`);
@@ -280,7 +296,7 @@ const rootReducer = (state, action) => {
     const newFormula = parseFormula(formulaStr, selection.context);
 
     const contextRef = getRefsById(store.getState())[selection.context];
-    if (contextRef.type !== SHEET) delete newFormula.name;
+    if (![SHEET, OBJECT].includes(contextRef.type)) delete newFormula.name;
 
     const formulaIsAnArray = newFormula.formula && newFormula.formula.array;
     const { baseCell, children } = selection.cellId ?
@@ -295,7 +311,7 @@ const rootReducer = (state, action) => {
         formulaIsAnArray,
       );
 
-    if (![CELL, ARRAY_CELL].includes(baseCell.type)) {
+    if (![CELL, ARRAY_CELL, OBJECT_CELL].includes(baseCell.type)) {
       delete newFormula.formula;
     }
 
@@ -344,12 +360,14 @@ const rootReducer = (state, action) => {
   }
 
   if (action.type === 'DELETE_LOCATION') {
-    const { contextId, y } = action.payload;
+    const { contextId, y, x } = action.payload;
     const context = getRefsById(state)[contextId];
     if (!context) return state;
-    if (!context.type === ARRAY) return state;
+    if (![ARRAY, OBJECT].includes(context.type)) return state;
+    const delObjIndex = (context.type === ARRAY) ? y : x;
 
-    const refToDelete = getRefsByNameForContextId(state, contextId)[y];
+    const refToDelete = getChildrenOfRef(state, contextId)
+      .find(({ index }) => index === delObjIndex);
     const idsToDelete = refToDelete ?
       transitiveChildren(refToDelete.id) :
       new Set();
@@ -360,7 +378,9 @@ const rootReducer = (state, action) => {
       cells: state.cells
         .filter(({ id }) => !idsToDelete.has(id))
         .map((cell) => {
-          if (cell.arrayId !== contextId || cell.index < y) return cell;
+          if (cell.arrayId !== contextId || cell.index < delObjIndex) {
+            return cell;
+          }
           return { ...cell, index: cell.index - 1 };
         }),
       updateId: scheduleSave(),
