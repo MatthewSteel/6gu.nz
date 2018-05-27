@@ -31,6 +31,8 @@ class ArrayContentsComponent extends ContentsBaseComponent {
 
   // eslint-disable-next-line class-methods-use-this
   locationSelected() {
+    const { context } = this.props;
+    if (context.formula) return undefined;
     const { selY, selX } = this.localSelection();
     if (selX !== 0) return undefined;
     return { typeToDelete: ARRAY_CELL, indexToDelete: selY };

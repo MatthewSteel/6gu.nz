@@ -36,6 +36,8 @@ class TableIndicesComponent extends ContentsBaseComponent {
 
   // eslint-disable-next-line class-methods-use-this
   locationSelected() {
+    const { context } = this.props;
+    if (context.formula) return undefined;
     const { selY } = this.localSelection();
     return { typeToDelete: TABLE_ROW, indexToDelete: selY };
   }

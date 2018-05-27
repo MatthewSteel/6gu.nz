@@ -37,6 +37,8 @@ class ObjectContentsComponent extends ContentsBaseComponent {
 
   // eslint-disable-next-line class-methods-use-this
   locationSelected() {
+    const { context } = this.props;
+    if (context.formula) return undefined;
     const { selY, selX } = this.localSelection();
     if (selY !== 0) return undefined;
     return { typeToDelete: OBJECT_CELL, indexToDelete: selX };
