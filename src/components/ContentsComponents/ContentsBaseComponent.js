@@ -51,10 +51,14 @@ export default class ContentsBaseComponent extends Component {
     const localViewWidth = viewWidth * localScale.x;
     const newScrollY = clampOverlap(scrollY, localViewHeight, selY, selY + 0.5);
     const newScrollX = clampOverlap(scrollX, localViewWidth, selX, selX + 0.5);
-    this.setState({ scrollY: newScrollY, scrollX: newScrollX });
+    this.scroll({ scrollY: newScrollY, scrollX: newScrollX });
     const worldCoords = this.localToWorld({ y: selY, x: selX });
     setViewSelection(worldCoords.y, worldCoords.x);
     this.updateSelection();
+  }
+
+  scroll(coords) {
+    this.setState(coords);
   }
 
   worldToLocal(world) {
@@ -118,8 +122,8 @@ export default class ContentsBaseComponent extends Component {
 
   // eslint-disable-next-line class-methods-use-this
   locationSelected() {
-    // So we know what to delete -- an table element or the whole row etc.
-    return false;
+    // { typeToDelete, indexToDelete } or undefined.
+    return undefined;
   }
 
   selectedCellId() {
@@ -231,7 +235,8 @@ export default class ContentsBaseComponent extends Component {
         const selection = this.selectedCellId();
         const { deleteCell, deleteLocation } = this.props;
         if (selection.locationSelected) {
-          deleteLocation(selection.context, selection.y, selection.x);
+          const { typeToDelete, indexToDelete } = selection.locationSelected;
+          deleteLocation(selection.context, typeToDelete, indexToDelete);
         } else {
           deleteCell(selection.cellId);
         }

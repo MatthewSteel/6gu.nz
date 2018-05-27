@@ -8,7 +8,7 @@ import CellSelectionComponent from '../CellComponent/CellSelectionComponent';
 import EmptyCellComponent from '../CellComponent/EmptyCellComponent';
 
 import { getRefsById, refsAtPosition } from '../../selectors/formulas/selectors';
-import { deleteLoc, deleteThing } from '../../redux/store';
+import { ARRAY_CELL, deleteLoc, deleteThing } from '../../redux/store';
 
 
 class ArrayContentsComponent extends ContentsBaseComponent {
@@ -31,8 +31,9 @@ class ArrayContentsComponent extends ContentsBaseComponent {
 
   // eslint-disable-next-line class-methods-use-this
   locationSelected() {
-    const { selX } = this.localSelection();
-    return selX === 0;
+    const { selY, selX } = this.localSelection();
+    if (selX !== 0) return undefined;
+    return { typeToDelete: ARRAY_CELL, indexToDelete: selY };
   }
 
   bounds() {

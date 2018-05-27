@@ -10,6 +10,7 @@ import DragOutlineComponent from '../DragComponents/DragOutlineComponent';
 import ContentsBaseComponent from './ContentsBaseComponent';
 import ArrayComponent from './ArrayComponent';
 import ObjectComponent from './ObjectComponent';
+import TableComponent from './TableComponent';
 
 import { getChildrenOfRef, sheetPlacedCellLocs } from '../../selectors/formulas/selectors';
 import { overlaps, truncateOverlap } from '../../selectors/geom/geom';
@@ -171,9 +172,17 @@ class SheetContentsComponent extends ContentsBaseComponent {
         setViewSelection,
       };
 
-      if (truncXLen > 1 && ['array', 'table'].includes(contentsType)) {
+      if (truncXLen > 1 && contentsType === 'array') {
         return (
           <ArrayComponent
+            {...commonChildProps}
+            {...commonComplexChildProps}
+          />
+        );
+      }
+      if (truncXLen > 1 && contentsType === 'table') {
+        return (
+          <TableComponent
             {...commonChildProps}
             {...commonComplexChildProps}
           />

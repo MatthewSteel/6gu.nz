@@ -7,6 +7,8 @@ import {
   getFormulaGraphs,
   getRefsById,
   getSheetsByName,
+  refsAtPosition,
+  refParentId,
   rewriteRefTermToParentLookup,
   transitiveChildren,
   translateExpr,
@@ -29,6 +31,7 @@ export const TABLE_ROW = 'table_row';
 export const TABLE_COLUMN = 'table_column';
 export const TABLE_CELL = 'table_cell';
 
+const DEFAULT_FORMULA = { value: '' };
 
 const initialState = {
   sheets: [{
@@ -72,9 +75,9 @@ export const deleteThing = refId => ({
   payload: { refId },
 });
 
-export const deleteLoc = (contextId, y, x) => ({
+export const deleteLoc = (contextId, typeToDelete, indexToDelete) => ({
   type: 'DELETE_LOCATION',
-  payload: { contextId, y, x },
+  payload: { contextId, typeToDelete, indexToDelete },
 });
 
 export const toggleMaximiseSheetElem = (dispatch, refId) => {
@@ -110,11 +113,11 @@ export const clearDrag = () => ({ type: 'CLEAR_DRAG' });
 
 export const loadFile = () => ({ type: 'LOAD_FILE' });
 
-const defaultArrayCell = (contextId, index, formula) => ({
+const defaultArrayCell = (contextId, index) => ({
   id: uuidv4(),
   arrayId: contextId,
   type: ARRAY_CELL,
-  formula,
+  formula: DEFAULT_FORMULA,
   index,
 });
 
@@ -139,10 +142,31 @@ const defaultObject = (contextId, y, x) => {
   return { width, height, type: OBJECT, ...base };
 };
 
-const defaultObjectCell = (contextId, index, formula, name = `f${index + 1}`) => ({
+const defaultTableCell = () => ({
+  id: uuidv4(),
+  formula: DEFAULT_FORMULA,
+  type: TABLE_CELL,
+});
+
+const defaultTableColumn = (contextId, index, name = `c${index + 1}`) => ({
+  id: uuidv4(),
+  tableId: contextId,
+  name,
+  index,
+  type: TABLE_COLUMN,
+});
+
+const defaultTableRow = (contextId, index) => ({
+  id: uuidv4(),
+  tableId: contextId,
+  index,
+  type: TABLE_ROW,
+});
+
+const defaultObjectCell = (contextId, index, name = `f${index + 1}`) => ({
   id: uuidv4(),
   objectId: contextId,
-  formula,
+  formula: DEFAULT_FORMULA,
   index,
   name,
   type: OBJECT_CELL,
@@ -152,7 +176,7 @@ const defaultCell = (contextId, y, x) => ({
   ...defaultSheetElem(contextId, y, x),
   width: 1,
   height: 1,
-  formula: { value: '' },
+  formula: DEFAULT_FORMULA,
   type: CELL,
 });
 
@@ -195,9 +219,29 @@ const defaultCellForLocation = (context, y, x, formula) => {
 
     return { baseCell, children };
   }
+  if (context.type === TABLE) {
+    const tableRefsAtPosition = refsAtPosition(store.getState())[context.id];
+    const baseCell = defaultTableCell();
+    const children = [];
+    if (tableRefsAtPosition.columns[x]) {
+      baseCell.arrayId = tableRefsAtPosition.columns[x].id;
+    } else {
+      const col = defaultTableColumn(context.id, x);
+      children.push(col);
+      baseCell.arrayId = col.id;
+    }
+    if (tableRefsAtPosition.rows[y]) {
+      baseCell.objectId = tableRefsAtPosition.rows[y].id;
+    } else {
+      const row = defaultTableRow(context.id, y);
+      children.push(row);
+      baseCell.objectId = row.id;
+    }
+    return { baseCell, children };
+  }
   if (context.type === OBJECT) {
     return {
-      baseCell: defaultObjectCell(context.id, x, { value: '' }),
+      baseCell: defaultObjectCell(context.id, x),
       children: [],
     };
   }
@@ -205,7 +249,7 @@ const defaultCellForLocation = (context, y, x, formula) => {
     throw new Error(`Unknown context type ${context.type}`);
   }
   return {
-    baseCell: defaultArrayCell(context.id, y, { value: '' }),
+    baseCell: defaultArrayCell(context.id, y),
     children: [],
   };
 };
@@ -321,7 +365,6 @@ const rootReducer = (state, action) => {
     const newFormula = parseFormula(formulaStr, selection.context);
 
     const contextRef = getRefsById(store.getState())[selection.context];
-    if (![SHEET, OBJECT].includes(contextRef.type)) delete newFormula.name;
 
     const { baseCell, children } = selection.cellId ?
       {
@@ -335,18 +378,21 @@ const rootReducer = (state, action) => {
         newFormula.formula,
       );
 
-    if (![CELL, ARRAY_CELL, OBJECT_CELL].includes(baseCell.type)) {
+    if (!baseCell.name) {
+      delete newFormula.name;
+    }
+    if (!baseCell.formula) {
       delete newFormula.formula;
     }
 
     if (!newFormula.name && !newFormula.formula && selection.cellId) {
-      // Formula is like `name=formula`.
-      // When one is blank and we have an existing cell, we use the
-      // existing value.
-      // When both are blank (i.e., the formula is `=`) we should leave
+      // Formula is like `name: formula`.
+      // When name or formula is blank and we have an existing cell, we use
+      // the existing value.
+      // When both are blank (i.e., the formula is `:`) we should leave
       // the cell alone.
       // When one is blank but there's no cell there, we can use a default
-      // value. Don't put a default cell for the `=` formula though.
+      // value. Don't put a default cell for the `:` formula though.
       return state;
     }
 
@@ -384,15 +430,13 @@ const rootReducer = (state, action) => {
   }
 
   if (action.type === 'DELETE_LOCATION') {
-    const { contextId, y, x } = action.payload;
+    const { contextId, typeToDelete, indexToDelete } = action.payload;
     const context = getRefsById(state)[contextId];
     if (!context) return state;
-    if (![ARRAY, OBJECT].includes(context.type)) return state;
-    const delObjIndex = (context.type === ARRAY) ? y : x;
-    const parentIdName = (context.type === ARRAY) ? 'arrayId' : 'objectId';
+    if (![ARRAY, OBJECT, TABLE].includes(context.type)) return state;
 
     const refToDelete = getChildrenOfRef(state, contextId)
-      .find(({ index }) => index === delObjIndex);
+      .find(({ type, index }) => index === indexToDelete && type === typeToDelete);
     const idsToDelete = refToDelete ?
       transitiveChildren(refToDelete.id) :
       new Set();
@@ -403,9 +447,9 @@ const rootReducer = (state, action) => {
       cells: state.cells
         .filter(({ id }) => !idsToDelete.has(id))
         .map((cell) => {
-          if (cell[parentIdName] !== contextId || cell.index < delObjIndex) {
-            return cell;
-          }
+          if (typeToDelete !== cell.type) return cell;
+          if (refParentId(cell) !== contextId) return cell;
+          if (cell.index < indexToDelete) return cell;
           return { ...cell, index: cell.index - 1 };
         }),
       updateId: scheduleSave(),

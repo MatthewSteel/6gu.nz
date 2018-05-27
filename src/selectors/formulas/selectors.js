@@ -266,12 +266,14 @@ export const lookupExpression = (contextRefId, targetRefId) => {
 // Formula translation functions: Generic ways to iterate over a forumla's
 // contents, applying a function to every element from the leaves up.
 
-// NOTE: Table rows are not contexts. We want a column name to refer to
-// the column, not an entry in this row in the column.
-// I think it might also be important that the parent of a context be a
-// context, at least with the current implementation of lookupExpression.
-const isContext = type => (
-  (type === OBJECT || type === SHEET || type === TABLE));
+// NOTE: We might want to let people refer to table columns by name (and
+// without reference to the sheet) from within the table, and similarly
+// object fields from within objects, but nto sure how to at the moment.
+// The problems are around what to do with unmatched names  when we finish
+// literal expansion.
+// Also: `col[0]` from within a table breaks our preferred pattern of
+// `table[0].col`. Not sure what to do about that, tbh.
+const isContext = type => type === SHEET;
 
 export const getContextIdForRefId = (refId, defaultContextId) => {
   const refsById = getRefsById(store.getState());
