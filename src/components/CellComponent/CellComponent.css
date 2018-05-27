@@ -82,6 +82,7 @@
 }
 
 .CellSelected {
+  pointer-events: none;
   position: relative;
 }
 
@@ -94,7 +95,6 @@
   bottom: 0px;
   left: 1px;
   box-shadow: 0px 0px 3px 0px #0000FF;
-  pointer-events: none;
   content: '';
 }
 
