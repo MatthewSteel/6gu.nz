@@ -7,19 +7,16 @@ import CellSelectionComponent from '../CellComponent/CellSelectionComponent';
 import EmptyCellComponent from '../CellComponent/EmptyCellComponent';
 import ContentsBaseComponent from './ContentsBaseComponent';
 
-import { getRefsById, getChildrenOfRef } from '../../selectors/formulas/selectors';
-import { OBJECT, deleteLoc, deleteThing } from '../../redux/store';
+import { getRefsById, refsAtPosition } from '../../selectors/formulas/selectors';
+import { deleteLoc, deleteThing } from '../../redux/store';
 
 
 class ObjectContentsComponent extends ContentsBaseComponent {
   static getDerivedStateFromProps(nextProps) {
-    const { cells, context, tableData } = nextProps;
+    const { cells, tableData } = nextProps;
+    if (cells) return { colsByIndex: cells.map(({ name }) => name) };
     const colsByIndex = [];
-    if (context.formula) {
-      Object.keys(tableData.byName).forEach((key) => { colsByIndex.push(key); });
-      return { colsByIndex };
-    }
-    cells.forEach(({ index, name }) => { colsByIndex[index] = name; });
+    Object.keys(tableData.byName).forEach((key) => { colsByIndex.push(key); });
     return { colsByIndex };
   }
 
@@ -27,11 +24,8 @@ class ObjectContentsComponent extends ContentsBaseComponent {
     const { cells, context } = this.props;
     const { selY, selX } = this.localSelection();
     if (context.formula) return { ...context, selX, selY };
-    const maybeCell = cells.find(({ index }) => index === selX);
-    // Eww -- we lie so we can write the cell but select it in two ways.
-    // See cellPosition below.
-    if (maybeCell) return { ...maybeCell, selY };
-    return undefined;
+    const maybeCell = cells[selX];
+    return maybeCell && { ...maybeCell, selY };
   }
 
   // eslint-disable-next-line class-methods-use-this
@@ -50,7 +44,7 @@ class ObjectContentsComponent extends ContentsBaseComponent {
   bounds() {
     const { context, readOnly } = this.props;
     const { colsByIndex } = this.state;
-    const appendExtraCell = (readOnly || context.type !== OBJECT) ? 0 : 1;
+    const appendExtraCell = (readOnly || context.formula) ? 0 : 1;
     return {
       xLB: 0,
       yLB: 0,
@@ -147,10 +141,11 @@ class ObjectContentsComponent extends ContentsBaseComponent {
   }
 }
 
-const mapStateToProps = (state, ownProps) => ({
-  context: getRefsById(state)[ownProps.contextId],
-  cells: getChildrenOfRef(state, ownProps.contextId),
-});
+const mapStateToProps = (state, ownProps) => {
+  const context = getRefsById(state)[ownProps.contextId];
+  const cells = !context.formula && refsAtPosition(state)[ownProps.contextId];
+  return { context, cells };
+};
 
 const mapDispatchToProps = dispatch => ({
   deleteCell: cellId => dispatch(deleteThing(cellId)),

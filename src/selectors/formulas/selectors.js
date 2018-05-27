@@ -138,6 +138,36 @@ export const sheetPlacedCellLocs = createSelector(
   },
 );
 
+export const refsAtPosition = createSelector(
+  getCells,
+  getRefsById,
+  (cells, refsById) => {
+    const ret = {};
+    cells.forEach((cell) => {
+      if ([OBJECT, ARRAY, TABLE_ROW].includes(cell.type)) {
+        ret[cell.id] = [];
+      } else if (cell.type === TABLE) {
+        ret[cell.id] = { rows: [], columns: [], cells: {} };
+      }
+    });
+    cells.forEach((cell) => {
+      if (cell.type === OBJECT_CELL) {
+        ret[cell.objectId][cell.index] = cell;
+      } else if (cell.type === ARRAY_CELL) {
+        ret[cell.arrayId][cell.index] = cell;
+      } else if (cell.type === TABLE_ROW) {
+        ret[cell.tableId].rows[cell.index] = cell;
+      } else if (cell.type === TABLE_COLUMN) {
+        ret[cell.tableId].columns[cell.index] = cell;
+      } else if (cell.type === TABLE_CELL) {
+        const col = refsById[cell.arrayId];
+        const rowIndex = refsById[cell.objectId].index;
+        ret[col.tableId].cells[`${rowIndex},${col.index}`] = cell;
+      }
+    });
+    return ret;
+  },
+);
 
 export const refParentId = (ref) => {
   if (ref.sheetId) return ref.sheetId;

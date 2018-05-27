@@ -7,8 +7,8 @@ import CellValueComponent from '../CellComponent/CellValueComponent';
 import CellSelectionComponent from '../CellComponent/CellSelectionComponent';
 import EmptyCellComponent from '../CellComponent/EmptyCellComponent';
 
-import { getRefsById, getChildrenOfRef } from '../../selectors/formulas/selectors';
-import { ARRAY, deleteLoc, deleteThing } from '../../redux/store';
+import { getRefsById, refsAtPosition } from '../../selectors/formulas/selectors';
+import { deleteLoc, deleteThing } from '../../redux/store';
 
 
 class ArrayContentsComponent extends ContentsBaseComponent {
@@ -16,11 +16,10 @@ class ArrayContentsComponent extends ContentsBaseComponent {
     const { cells, context } = this.props;
     const { selY, selX } = this.localSelection();
     if (context.formula) return { ...context, selX, selY };
-    const maybeCell = cells.find(({ index }) => index === selY);
+    const maybeCell = cells[selY];
     // Eww -- we lie so we can write the cell but select it in two ways.
     // See cellPosition below.
-    if (maybeCell) return { ...maybeCell, selX };
-    return undefined;
+    return maybeCell && { ...maybeCell, selX };
   }
 
   // eslint-disable-next-line class-methods-use-this
@@ -38,7 +37,7 @@ class ArrayContentsComponent extends ContentsBaseComponent {
 
   bounds() {
     const { context, readOnly, tableData } = this.props;
-    const readOnlyExtraCell = (readOnly || context.type !== ARRAY) ? 0 : 1;
+    const readOnlyExtraCell = (readOnly || context.formula) ? 0 : 1;
     return {
       xLB: 0,
       yLB: 0,
@@ -115,7 +114,7 @@ class ArrayContentsComponent extends ContentsBaseComponent {
           selected={cellSelected}
           key={`cell-${row}`}
         >
-          {(maybeValue) ? (
+          {maybeValue ? (
             <CellValueComponent
               {...geomProps}
               value={maybeValue}
@@ -140,10 +139,11 @@ class ArrayContentsComponent extends ContentsBaseComponent {
   }
 }
 
-const mapStateToProps = (state, ownProps) => ({
-  context: getRefsById(state)[ownProps.contextId],
-  cells: getChildrenOfRef(state, ownProps.contextId),
-});
+const mapStateToProps = (state, ownProps) => {
+  const context = getRefsById(state)[ownProps.contextId];
+  const cells = !context.formula && refsAtPosition(state)[ownProps.contextId];
+  return { context, cells };
+};
 
 const mapDispatchToProps = dispatch => ({
   deleteCell: cellId => dispatch(deleteThing(cellId)),
