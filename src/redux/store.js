@@ -113,11 +113,11 @@ export const clearDrag = () => ({ type: 'CLEAR_DRAG' });
 
 export const loadFile = () => ({ type: 'LOAD_FILE' });
 
-const defaultArrayCell = (contextId, index) => ({
+const defaultArrayCell = (contextId, index, formula = DEFAULT_FORMULA) => ({
   id: uuidv4(),
   arrayId: contextId,
   type: ARRAY_CELL,
-  formula: DEFAULT_FORMULA,
+  formula,
   index,
 });
 
@@ -142,9 +142,17 @@ const defaultObject = (contextId, y, x) => {
   return { width, height, type: OBJECT, ...base };
 };
 
-const defaultTableCell = () => ({
+const defaultTable = (contextId, y, x) => {
+  const base = defaultSheetElem(contextId, y, x);
+  const { width, height } = idealWidthAndHeight(base.id, contextId, y, x);
+  return { width, height, type: TABLE, ...base };
+};
+
+const defaultTableCell = (arrayId, objectId, formula = DEFAULT_FORMULA) => ({
   id: uuidv4(),
-  formula: DEFAULT_FORMULA,
+  arrayId,
+  objectId,
+  formula,
   type: TABLE_CELL,
 });
 
@@ -163,10 +171,10 @@ const defaultTableRow = (contextId, index) => ({
   type: TABLE_ROW,
 });
 
-const defaultObjectCell = (contextId, index, name = `f${index + 1}`) => ({
+const defaultObjectCell = (contextId, index, formula = DEFAULT_FORMULA, name = `f${index + 1}`) => ({
   id: uuidv4(),
   objectId: contextId,
-  formula: DEFAULT_FORMULA,
+  formula,
   index,
   name,
   type: OBJECT_CELL,
@@ -197,14 +205,31 @@ const defaultCellForLocation = (context, y, x, formula) => {
     let baseCell = defaultCell(context.id, y, x);
     let children = [];
     if (formula && formula.array) {
-      baseCell = defaultArray(context.id, y, x);
-      children = formula.array.map((
-        (childFormula, index) => defaultArrayCell(
-          baseCell.id,
-          index,
-          childFormula,
-        )
-      ));
+      if (formula.array.length > 0 && formula.array.every(t => t.object)) {
+        baseCell = defaultTable(context.id, y, x);
+        const keys = {}; // name -> new child
+        formula.array.forEach(({ object }, rowIndex) => {
+          const row = defaultTableRow(baseCell.id, rowIndex);
+          children.push(row);
+          object.forEach(({ key, value }) => {
+            if (!keys[key]) {
+              const numKeys = Object.keys(keys).length;
+              keys[key] = defaultTableColumn(baseCell.id, numKeys, key);
+              children.push(keys[key]);
+            }
+            children.push(defaultTableCell(keys[key].id, row.id, value));
+          });
+        });
+      } else {
+        baseCell = defaultArray(context.id, y, x);
+        children = formula.array.map((
+          (childFormula, index) => defaultArrayCell(
+            baseCell.id,
+            index,
+            childFormula,
+          )
+        ));
+      }
     } else if (formula && formula.object) {
       baseCell = defaultObject(context.id, y, x);
       children = formula.object.map((
@@ -221,22 +246,20 @@ const defaultCellForLocation = (context, y, x, formula) => {
   }
   if (context.type === TABLE) {
     const tableRefsAtPosition = refsAtPosition(store.getState())[context.id];
-    const baseCell = defaultTableCell();
     const children = [];
-    if (tableRefsAtPosition.columns[x]) {
-      baseCell.arrayId = tableRefsAtPosition.columns[x].id;
-    } else {
+    let array = tableRefsAtPosition.columns[x];
+    if (!array) {
       const col = defaultTableColumn(context.id, x);
       children.push(col);
-      baseCell.arrayId = col.id;
+      array = col;
     }
-    if (tableRefsAtPosition.rows[y]) {
-      baseCell.objectId = tableRefsAtPosition.rows[y].id;
-    } else {
+    let object = tableRefsAtPosition.rows[y];
+    if (!object) {
       const row = defaultTableRow(context.id, y);
       children.push(row);
-      baseCell.objectId = row.id;
+      object = row;
     }
+    const baseCell = defaultTableCell(array.id, object.id);
     return { baseCell, children };
   }
   if (context.type === OBJECT) {
