@@ -94,7 +94,7 @@ export const stringFormula = (refId) => {
   const ref = getRefsById(store.getState())[refId];
   if (!ref) return '';
 
-  const firstBits = ref.name ? `${unparseName(ref.name)}:` : ':';
   const expressionString = formulaExpressionString(ref);
-  return `${firstBits} ${expressionString}`;
+  if (!ref.name) return expressionString;
+  return `${unparseName(ref.name)}: ${expressionString}`;
 };
