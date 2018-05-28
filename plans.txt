@@ -25,9 +25,6 @@ The long list:
 
 MVP:
  - Rename sheets,
- - "Fake refs" ("keep a map of parent -> lookup of written fake refs"),
-   - translate ref-reads, ref-writes to fake refs at codegen time?
-   - use fake refs in "sheetValue" etc.
  - Complex writes (`sheet(arr: range(10))`)
    - a function per written complex ref to update children and fake refs
      ("recursive"). Also update the thing itself, I think, and any
@@ -49,28 +46,12 @@ MVP:
 Fuuck.
 
 
-So, after all that:
- - Find external-facing children and override them.
-Which means,
- - Identifying external-facing children,
- - Knowing how to calculate them from their parents.
-    - Find all complex overrides,
-    - For each complex override,
-      - Set the thing itself,
-      - For each descendant from most complex to least, emit a "set by lookup on set object" instruction,
-        `expandExpr(lookupExpression(setThing, ref))` I think.
-        Do it for fakerefs too :-/
 
-  Aand fakerefs :-/.
-    Make a function to detect a bad lookup (ref.name) and give it a unique id,
-    Rewrite the fake refs themselves to point to those things,
-    Put them into `globals`,
-    Make a selector for fakeRefs.
-      fakeRefs[realRefId] = [{
-        refExpression: { lookup: name, on: { ref: realRef.id } },
-        fakeRefId: 'asdklfsdlkfj',
-      }]
-    and then do the magic? Still need to translate the ref inside tho. :-(
+ - Select external-facing descendants of complex data types,
+ - Write external-facing descendants when we write complex data types,
+      `expandExpr(lookupExpression(setThing, ref))` I think.
+ - Fix up functionCellsInOrder to include external-facing descendants.
+
 
 
 Out of scope for MVP:
