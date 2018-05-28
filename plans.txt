@@ -1,25 +1,4 @@
-Table/Object things:
-
-Still to do:
- - parse objects,
- - special-case objects and tables in the reducer,
- - view objects,
- - view tables.
-
-Do object entries have both keys and indices?
-Do we need to think about object order?
-  Maaybe... But maybe later? Just make it arbitrary or alphabetical for now
-
-
-
-Maybe an idea for the longer-term:
- - byName things are maps (to preserve inserion order),
- - object entries and table columns have indexes too (but no empty elems),
- - drag to rearrange them?
-
-
 The long list:
- - MVP displaying, entering complex data structures
  - MVP built-in functions,
  - MVP operations on sheets -- rename, copy.
  - V2? Microservices
@@ -46,10 +25,6 @@ The long list:
 
 MVP:
  - Rename sheets,
- - Create objects and tables,
-   - Just by entering formulas, not actual buttons I think?
- - Rename columns in objects and tables,
-   - Use names for this, I think.
  - "Fake refs" ("keep a map of parent -> lookup of written fake refs"),
    - translate ref-reads, ref-writes to fake refs at codegen time?
    - use fake refs in "sheetValue" etc.
@@ -57,6 +32,7 @@ MVP:
    - a function per written complex ref to update children and fake refs
      ("recursive"). Also update the thing itself, I think, and any
      externally referenced descendants. And blank out their formulas...
+   - Overridden deep values look special? Hrm... "parent overridden" prop?
  - Some built-in functions. A subset of:
    - *args and **kwargs. "An array called `a1`"? Uses a complex-write.
    - if, iferror, lookup (and/or table[name: "Fred"]), sum, average, stdev.
@@ -72,6 +48,31 @@ MVP:
 
 Fuuck.
 
+
+So, after all that:
+ - Find external-facing children and override them.
+Which means,
+ - Identifying external-facing children,
+ - Knowing how to calculate them from their parents.
+    - Find all complex overrides,
+    - For each complex override,
+      - Set the thing itself,
+      - For each descendant from most complex to least, emit a "set by lookup on set object" instruction,
+        `expandExpr(lookupExpression(setThing, ref))` I think.
+        Do it for fakerefs too :-/
+
+  Aand fakerefs :-/.
+    Make a function to detect a bad lookup (ref.name) and give it a unique id,
+    Rewrite the fake refs themselves to point to those things,
+    Put them into `globals`,
+    Make a selector for fakeRefs.
+      fakeRefs[realRefId] = [{
+        refExpression: { lookup: name, on: { ref: realRef.id } },
+        fakeRefId: 'asdklfsdlkfj',
+      }]
+    and then do the magic? Still need to translate the ref inside tho. :-(
+
+
 Out of scope for MVP:
  - Concatenating tables/arrays, zip functions,
  - Date, time, random functions.
@@ -84,6 +85,7 @@ Out of scope for MVP:
  - Better formula input (clicking),
  - Type tagging,
  - Multiple files, persistent storage.
+
 
 Next up:
  - Browse into array values,
@@ -102,17 +104,23 @@ Next up:
      - We can make the "effective view" a selector, I guess?
        - Righto. But later.
 
- - Objects, tables. Before or after fake refs and complex overrides?
+ - Create table columns with no cells,
+ - Rename table columns by renaming cells,
 
-Nice to have:
- Overridden arrays look special,
+ - Make sure to fill arrays with nulls?
+ - Just get nulls when looking up things that don't exist?
+
+ - Arr "looks like a table" if _every_ element is an obj or error?
+   - work out `keys` at display time still.
+
+ - Does an "array input" always look like an array? Hrm :-/
+   - Maybe if the base is table-like we can edit rows or something?
 
 
 
 Work out tsort implications of `table[name: "Fred"].bar`:
  - just `name` and `bar`? Somehow? That would be ideal.
-   Can we write `table.bar[name: "Fred"]`? Is that confusing?
-     What if each `bar` has a `name`? Seems confusing to me.
+
 
 
 Philosophical differences:
