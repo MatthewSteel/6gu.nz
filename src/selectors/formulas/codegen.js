@@ -18,13 +18,30 @@ import builtins, { binarySymbolToName, unarySymbolToName } from './builtins';
 // We don't use `translateExpr`, mostly I think (?) because we need to
 // evaluate `callSignature`. I could be wrong, though...
 
-const expandSetItem = (k, expr) =>
-  `try {
-    globals[${JSON.stringify(k)}] = {
+const expandSetItem = (k, expr) => {
+  const kstr = JSON.stringify(k);
+  // I'm not 100% sure it's a good idea to "fix" overridden values.
+  // A logic in which it makes sense is "The 'what-if' function replaces
+  // the cell whole-sale, including any formulas inside."
+  // Two upsides:
+  //  - When the compute dag goes (a -> b -> c), if you call `c(a:, b:)`
+  //    you will see both `a` and `b` overridden (not just `a` overridden
+  //    and `b` computed from `a`. (Though that may not make sense...)
+  //  - It makes "complex writes" conceptually simpler. When you replace an
+  //    array or a table, what happens to the things inside? What happens
+  //    if one of them changes?
+  // Most of all, though, you probably just see less "weird stuff"
+  // happening. Things just "freeze up", they don't get inconsistent.
+  // By and large, though, advice to users should be:
+  //  - Don't replace things with formulas in them,
+  //  - Don't refer to individual table cells/rows from outside the table.
+  return `try {
+    if(!globals[${kstr}].override) globals[${kstr}] = {
       value: ${expr}, override: false };
   } catch (e) {
-    globals[${JSON.stringify(k)}] = { error: e.toString() };
+    globals[${kstr}] = { error: e.toString() };
   }`;
+};
 
 const tryExpandExpr = expr =>
   `(() => {
@@ -345,11 +362,13 @@ const createFunction = (callTerm, refExpressions) => {
     refPusher.expandSetItem(id, refExpressions[id]);
   });
 
+  const retRefExpr = `globals[${JSON.stringify(callTerm.call.ref)}]`;
   // Construct the function
   const functionDefinition = [
     ...refPusher.setStatements,
     `const ret = ${refExpressions[callTerm.call.ref]};`,
     ...refPusher.unsetStatements,
+    `if (${retRefExpr}.override) return ${expandRef(callTerm.call)}`,
     'return ret;',
   ].join('\n');
 
