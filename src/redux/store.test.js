@@ -96,9 +96,11 @@ describe('actions/the store', () => {
 
     expect(getCellValue(y1)).toEqual({
       error: 'Error: x does not exist.',
+      override: false,
     });
     expect(getCellValue(x2)).toEqual({
       error: 'Error: x does not exist.',
+      override: false,
     });
 
     store.dispatch(setFormula({ context: sheet1.id, y: 5, x: 5 }, 'x:"hello"'));
@@ -139,7 +141,7 @@ describe('actions/the store', () => {
     ));
     const x = find(() => true);
     store.dispatch(deleteThing(sheet1.id));
-    expect(getCellValue(x)).toEqual({ error: `Error: ${s1Name} does not exist.` });
+    expect(getCellValue(x)).toEqual({ error: `Error: ${s1Name} does not exist.`, override: false });
   });
 
   it('does simple equality checks', () => {

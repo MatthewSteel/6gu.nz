@@ -1,5 +1,6 @@
 import { createSelector } from 'reselect';
 import {
+  externalFacingDescendants,
   flattenExpr,
   getFormulaGraphs,
   getTopoLocationById,
@@ -7,6 +8,7 @@ import {
   getRefsById,
   getChildrenOfRef,
   getTopoSortedRefIds,
+  rewriteRefTermToParentLookup,
   refError,
 } from './selectors';
 import { setIntersection, transitiveClosure } from '../algorithms/algorithms';
@@ -18,7 +20,7 @@ import builtins, { binarySymbolToName, unarySymbolToName } from './builtins';
 // We don't use `translateExpr`, mostly I think (?) because we need to
 // evaluate `callSignature`. I could be wrong, though...
 
-const expandSetItem = (k, expr) => {
+const expandSetItem = (k, expr, override = false) => {
   const kstr = JSON.stringify(k);
   // I'm not 100% sure it's a good idea to "fix" overridden values.
   // A logic in which it makes sense is "The 'what-if' function replaces
@@ -37,9 +39,9 @@ const expandSetItem = (k, expr) => {
   //  - Don't refer to individual table cells/rows from outside the table.
   return `try {
     if(!globals[${kstr}].override) globals[${kstr}] = {
-      value: ${expr}, override: false };
+      value: ${expr}, override: ${override} };
   } catch (e) {
-    globals[${kstr}] = { error: e.toString() };
+    globals[${kstr}] = { error: e.toString(), override: ${override} };
   }`;
 };
 
@@ -318,34 +320,66 @@ const functionCellsInOrder = (call) => {
     backwardsGraph,
   } = getFormulaGraphs(store.getState());
   const argRefs = call.args.map(({ ref }) => ref.ref);
-  const dependOnArgs = transitiveClosure(argRefs, backwardsGraph);
+  const allWrittenRefs = [].concat(...argRefs.map(externalFacingDescendants));
+  const dependOnArgs = transitiveClosure(allWrittenRefs, backwardsGraph);
   const leadsToValue = transitiveClosure([call.call.ref], forwardsGraph);
   const cellsToEvaluate = setIntersection(dependOnArgs, leadsToValue);
 
   const topoLocationsById = getTopoLocationById(store.getState());
-  return [...cellsToEvaluate].sort((id1, id2) =>
+  return [...cellsToEvaluate, call.call.ref].sort((id1, id2) =>
     topoLocationsById[id1] - topoLocationsById[id2]);
 };
 
 class RefPusher {
   constructor() {
+    this.variableCounts = {};
     this.setStatements = [];
     this.unsetStatements = [];
+    this.overriddenVariables = new Set();
   }
 
-  variableName() { return `v${this.unsetStatements.length}`; }
+  variableName(prefix = 'l') {
+    if (!this.variableCounts[prefix]) this.variableCounts[prefix] = 0;
+    const ret = `${prefix}${this.variableCounts[prefix]}`;
+    this.variableCounts[prefix] = this.variableCounts[prefix] + 1;
+    return ret;
+  }
 
   expandOverride(id) {
-    const localVariable = this.variableName();
-    this.setStatements.push(`globals["${id}"] = { value: ${localVariable}, override: true };`);
-    this.unsetStatements.push(`globals["${id}"] = ${localVariable};`);
+    this.overriddenVariables.add(id);
+    const paramVar = this.variableName('v');
+    const localVar = this.variableName();
+    this.setStatements.push(`const ${localVar} = globals["${id}"];`);
+    this.setStatements.push(`globals["${id}"] = { value: ${paramVar}, override: true };`);
+    externalFacingDescendants(id).forEach((descendantId) => {
+      if (id === descendantId) return;
+      this.expandOverrideDeepElement(descendantId, id);
+    });
+    this.unsetStatements.push(`globals["${id}"] = ${localVar};`);
   }
 
   expandSetItem(id, expr) {
+    if (this.overriddenVariables.has(id)) return;
     const localVariable = this.variableName();
     this.setStatements.push(`const ${localVariable} = globals["${id}"];`);
     this.setStatements.push(expandSetItem(id, expr));
     this.unsetStatements.push(`globals["${id}"] = ${localVariable};`);
+  }
+
+  expandOverrideDeepElement(id, contextId) {
+    if (this.overriddenVariables.has(id)) return;
+    this.overriddenVariables.add(id);
+    const localVar = this.variableName();
+    this.setStatements.push(`const ${localVar} = globals["${id}"];`);
+    const outermostLookup = { on: { ref: id } };
+    let innermostLookup = outermostLookup;
+    while (innermostLookup.on.ref !== contextId) {
+      innermostLookup.on = rewriteRefTermToParentLookup(innermostLookup.on);
+      innermostLookup = innermostLookup.on;
+    }
+    const expr = expandExpr(outermostLookup.on);
+    this.setStatements.push(expandSetItem(id, expr, true));
+    this.unsetStatements.push(`globals["${id}"] = ${localVar};`);
   }
 }
 
@@ -366,10 +400,10 @@ const createFunction = (callTerm, refExpressions) => {
   // Construct the function
   const functionDefinition = [
     ...refPusher.setStatements,
-    `const ret = ${refExpressions[callTerm.call.ref]};`,
+    `const ret = ${retRefExpr};`,
     ...refPusher.unsetStatements,
-    `if (${retRefExpr}.override) return ${expandRef(callTerm.call)}`,
-    'return ret;',
+    'if ("value" in ret) return ret.value;',
+    'throw new Error(ret.error);',
   ].join('\n');
 
   const argNames = callTerm.args.map((arg, i) => `v${i}`);

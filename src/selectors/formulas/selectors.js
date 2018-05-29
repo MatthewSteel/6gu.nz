@@ -55,6 +55,19 @@ export const transitiveChildren = (refId) => {
   return descendants;
 };
 
+export const externalFacingDescendants = (refId) => {
+  if (refId === undefined) return []; // Ugh, bad "call" arguments...
+  const descendants = transitiveChildren(refId);
+  const { backwardsGraph } = getFormulaGraphs(store.getState());
+  const ret = new Set([refId]);
+  descendants.forEach((descendantId) => {
+    backwardsGraph[descendantId].forEach((referrerId) => {
+      if (!descendants.has(referrerId)) ret.add(descendantId);
+    });
+  });
+  return [...ret];
+};
+
 export const getCellsById = createSelector(
   getCells,
   (cells) => {
