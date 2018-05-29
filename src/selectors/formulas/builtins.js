@@ -166,6 +166,17 @@ export const binaryPrecedences = {
 
 export const assocRight = new Set(['**']);
 
+// TODO: make it map to functions
+export const globalFunctions = {
+  sum: 'sum',
+  sin: 'sin',
+};
+
+export const globalFunctionArgs = {
+  sum: new Set(),
+  sin: new Set(['degrees', 'radians']),
+};
+
 export default {
   plus,
   minus,

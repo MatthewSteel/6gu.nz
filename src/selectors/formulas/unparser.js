@@ -51,14 +51,12 @@ const unparseObject = (object) => {
 
 export const unparseTerm = (term) => {
   if (term.lookup) return `${term.on}.${unparseName(term.lookup)}`;
-  if (term.lookupIndex) {
-    const args = term.lookupIndex;
-    return `${term.on}[${args}]`;
-  }
+  if (term.lookupIndex) return `${term.on}[${term.lookupIndex}]`;
   if (term.call) {
-    const argsText = term.args
-      .map(({ ref, expr }) => `${ref}: ${expr}`)
-      .join(', ');
+    const argsText = [
+      ...term.args,
+      ...term.kwargs.map(({ ref, expr }) => `${ref}: ${expr}`),
+    ].join(', ');
     return `${term.call}(${argsText})`;
   }
   if (term.expression) return `(${term.expression})`;

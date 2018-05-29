@@ -160,5 +160,37 @@ describe('actions/the store', () => {
     expect(getCellValue(xCell).value).toBe(false);
     expect(getCellValue(yCell).value).toBe(true);
   });
+
+  it('parses global function calls reasonably', () => {
+    const [sheet] = getSheets(store.getState());
+    store.dispatch(setFormula(
+      { context: sheet.id, y: 1, x: 0 },
+      'x: sin(degrees: 90)',
+    ));
+    store.dispatch(setFormula(
+      { context: sheet.id, y: 2, x: 0 },
+      'y: sin("arg", x: 10)',
+    ));
+    store.dispatch(setFormula(
+      { context: sheet.id, y: 2, x: 0 },
+      'z: notAFunction(degrees: 0)',
+    ));
+
+    const x = find(({ name }) => name === 'x');
+    expect(x.formula).toEqual({
+      call: { name: 'sin' },
+      args: [],
+      // args: [{ value: 'arg' }],
+      kwargs: [{ ref: { name: 'degrees' }, expr: { value: 90 } }],
+    });
+    const y = find(({ name }) => name === 'y');
+    expect(y.formula).toEqual({
+      call: { name: 'sin' },
+      args: [{ value: 'arg' }],
+      kwargs: [{ ref: { ref: x.id }, expr: { value: 10 } }],
+    });
+    const z = find(({ name }) => name === 'z');
+    expect(z.formula).toEqual({ badFormula: 'notAFunction(degrees: 0)' });
+  });
 });
 

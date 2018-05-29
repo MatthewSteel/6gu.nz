@@ -45,18 +45,22 @@ const expandSetItem = (k, expr, override = false) => {
   }`;
 };
 
-const tryExpandExpr = expr =>
-  `(() => {
-     try { return { value: ${expandExpr(expr)} }; }
-     catch (e) { return { error: e.toString()}; }
-   })()`;
+const tryExpandExpr = (expr) => {
+  if (expr.value) return `{ value: ${expandExpr(expr)} }`;
+  return (
+    `(() => {
+       try { return { value: ${expandExpr(expr)} }; }
+       catch (e) { return { error: e.toString()}; }
+     })()`
+  );
+};
 
 const expandCall = (callTerm) => {
   const signature = callSignature(callTerm);
-  if (!callTerm.args.every(({ ref }) => ref.ref)) {
+  if (!callTerm.kwargs.every(({ ref }) => ref.ref)) {
     return 'pleaseThrow("Call arguments must be plain references")';
   }
-  const customArgs = callTerm.args.map(({ expr }) =>
+  const customArgs = callTerm.kwargs.map(({ expr }) =>
     expandExpr(expr));
   const allArgs = [
     'globals',
@@ -124,7 +128,7 @@ const callSignature = (callTerm) => {
   if (!callTerm.call.ref) {
     throw new Error('Can only call refs');
   }
-  const argRefs = callTerm.args.map(({ ref }) => ref.ref);
+  const argRefs = callTerm.kwargs.map(({ ref }) => ref.ref);
   const joinedRefs = argRefs.join(',');
   return `${callTerm.call.ref}(${joinedRefs})`;
 };
@@ -319,7 +323,7 @@ const functionCellsInOrder = (call) => {
     forwardsGraph,
     backwardsGraph,
   } = getFormulaGraphs(store.getState());
-  const argRefs = call.args.map(({ ref }) => ref.ref);
+  const argRefs = call.kwargs.map(({ ref }) => ref.ref);
   const allWrittenRefs = [].concat(...argRefs.map(externalFacingDescendants));
   const dependOnArgs = transitiveClosure(allWrittenRefs, backwardsGraph);
   const leadsToValue = transitiveClosure([call.call.ref], forwardsGraph);
@@ -387,7 +391,7 @@ class RefPusher {
 const createFunction = (callTerm, refExpressions) => {
   const refPusher = new RefPusher();
   // Set overrides
-  callTerm.args.forEach(({ ref }) => {
+  callTerm.kwargs.forEach(({ ref }) => {
     refPusher.expandOverride(ref.ref);
   });
 
@@ -406,7 +410,7 @@ const createFunction = (callTerm, refExpressions) => {
     'throw new Error(ret.error);',
   ].join('\n');
 
-  const argNames = callTerm.args.map((arg, i) => `v${i}`);
+  const argNames = callTerm.kwargs.map((arg, i) => `v${i}`);
   // eslint-disable-next-line no-new-func
   return Function('globals', ...argNames, functionDefinition);
 };

@@ -7,7 +7,8 @@ describe('unparser', () => {
       lookup: 'field2',
       on: {
         call: { name: 'called_cell' },
-        args: [{
+        args: [],
+        kwargs: [{
           ref: { name: 's_c' },
           expr: {
             binary: '*',

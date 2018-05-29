@@ -42,7 +42,8 @@ describe('parser', () => {
       lookup: 'fi eld',
       on: {
         call: { lookup: 'b', on: { name: 'a' } },
-        args: [{
+        args: [],
+        kwargs: [{
           ref: { name: 'foo' },
           expr: {
             lookupIndex: { value: 10 },
@@ -96,7 +97,8 @@ describe('parser', () => {
               unary: '~',
               on: {
                 call: { name: 'func' },
-                args: [{
+                args: [],
+                kwargs: [{
                   ref: { name: 'param' },
                   expr: {
                     unary: '-',

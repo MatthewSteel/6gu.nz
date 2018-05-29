@@ -4,6 +4,7 @@ import {
   transitiveClosure,
   nodesInLargeStronglyConnectedComponents,
 } from '../algorithms/algorithms';
+import { globalFunctions, globalFunctionArgs } from './builtins';
 import store, { ARRAY, ARRAY_CELL, CELL, OBJECT, OBJECT_CELL, SHEET, TABLE, TABLE_CELL, TABLE_COLUMN, TABLE_ROW } from '../../redux/store';
 
 // Simple "get raw state" selectors (for the moment?)
@@ -299,23 +300,42 @@ export const getContextIdForRefId = (refId, defaultContextId) => {
 };
 
 
+const isGlobalCall = (preTranslate, postTranslate) => {
+  if (postTranslate.name) {
+    const maybeName = postTranslate.name;
+    return (maybeName in globalFunctions) && maybeName;
+  }
+  const maybeName = preTranslate.name;
+  return (maybeName in globalFunctions) && maybeName;
+};
+
+const callRef = (preTranslate, postTranslate) => {
+  // Sometimes we're translating names -> refs, sometimes we are
+  // translating refs -> printable strings etc. One of them should have a
+  // reference...
+  if (postTranslate.ref) return postTranslate.ref;
+  return preTranslate.ref;
+};
+
+
 const translateCall = (term, contextId, f) => {
   const call = translateExpr(term.call, contextId, f);
-  // Sometimes we're translating names -> refs, sometimes we are
-  // translating refs -> printable strings etc :-(.
-  const callRef = call.ref || term.call.ref;
-  const callContextId = getContextIdForRefId(callRef, contextId);
-  const translatedArgs = term.args.map(({ ref, expr }) => ({
-    ref: translateExpr(ref, callContextId, f),
-    expr: translateExpr(expr, contextId, f),
-  }));
-  return f(
-    {
-      call,
-      args: translatedArgs,
-    },
-    contextId,
-  );
+  const globalCall = isGlobalCall(term.call, call);
+  const callContextId = globalCall ?
+    contextId :
+    getContextIdForRefId(callRef(term.call, call), contextId);
+  const args = term.args.map(expr => (
+    translateExpr(expr, contextId, f)));
+  const kwargs = term.kwargs.map(({ ref, expr }) => {
+    if (globalCall && globalFunctionArgs[globalCall].has(ref.name)) {
+      return { ref, expr: translateExpr(expr, contextId, f) };
+    }
+    return {
+      ref: translateExpr(ref, callContextId, f),
+      expr: translateExpr(expr, contextId, f),
+    };
+  });
+  return f({ call, args, kwargs }, contextId);
 };
 
 const translateLookup = (term, contextId, f) => {

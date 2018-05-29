@@ -11,7 +11,7 @@ import {
   translateExpr,
 } from './selectors';
 
-import { binaryPrecedences, assocRight } from './builtins';
+import { binaryPrecedences, assocRight, globalFunctions } from './builtins';
 
 // A recursive-descent parser.
 
@@ -44,6 +44,33 @@ const parseLookups = (tokens, i, lookupObj) => {
 };
 
 
+const parseKwarg = (tokens, i) => {
+  if (!tokens[i].name) {
+    throw new Error('Expected name at start of argument');
+  }
+  const {
+    term: lookups,
+    newIndex: eqIndex,
+  } = parseLookups(tokens, i + 1, tokens[i]);
+  if (!tokens[eqIndex].assignment) {
+    throw new Error('Expected assignment in argument');
+  }
+  const {
+    term: expression,
+    newIndex: exprIndex,
+  } = parseExpression(tokens, eqIndex + 1);
+  const ret = {
+    term: { ref: lookups, expr: expression },
+    newIndex: exprIndex,
+  };
+
+  if (!tokens[exprIndex].close && !tokens[exprIndex].comma) {
+    throw new Error('Expected ")" or "," after keyword arg.');
+  }
+  return ret;
+};
+
+
 const parseArgsList = (tokens, i) => {
   if (tokens[i].close) {
     return {
@@ -51,43 +78,31 @@ const parseArgsList = (tokens, i) => {
       newIndex: i + 1,
     };
   }
-  const argsList = [];
+  const args = [];
+  const kwargs = [];
+  let parsedKwarg = false;
   for (let j = i; j < tokens.length; ++j) {
-    if (!tokens[j].name) {
-      throw new Error('Expected name at start of argument');
+    // TODO
+    try {
+      const { term, newIndex } = parseKwarg(tokens, j);
+      parsedKwarg = true;
+      kwargs.push(term);
+      j = newIndex;
+    } catch (e) {
+      if (parsedKwarg) throw e;
+      const { term, newIndex } = parseExpression(tokens, j);
+      args.push(term);
+      j = newIndex;
     }
-    const {
-      term: lookups,
-      newIndex: eqIndex,
-    } = parseLookups(tokens, j + 1, tokens[j]);
-    if (eqIndex === tokens.length || !tokens[eqIndex].assignment) {
-      throw new Error('Expected assignment in argument');
-    }
-    if (eqIndex + 1 === tokens.length) {
-      throw new Error('Expected expression after equals in argument');
-    }
-    const {
-      term: expression,
-      newIndex: expressionIndex,
-    } = parseExpression(tokens, eqIndex + 1);
-    argsList.push({
-      ref: lookups,
-      expr: expression,
-    });
-    if (expressionIndex === tokens.length) {
-      throw new Error('Expected more after experssion in args list');
-    }
-
-    if (tokens[expressionIndex].close) {
+    if (tokens[j].close) {
       return {
-        term: argsList,
-        newIndex: expressionIndex + 1,
+        term: { args, kwargs },
+        newIndex: j + 1,
       };
     }
-    if (!tokens[expressionIndex].comma) {
+    if (!tokens[j].comma) {
       throw new Error('Expected comma or bracket in args list');
     }
-    j = expressionIndex;
   }
   throw new Error('Expected more in args list');
 };
@@ -116,7 +131,7 @@ const parseTermFromName = (tokens, i) => {
     const argsData = parseArgsList(tokens, newIndex + 1);
     const callTerm = {
       call: term,
-      args: argsData.term,
+      ...argsData.term,
     };
     const finalExpr = parseLookups(tokens, argsData.newIndex, callTerm);
     return {
@@ -317,6 +332,8 @@ const subNamesForRefsInName = (term, contextId) => {
     return { ref: maybeSheet.id };
   }
 
+  if (term.name in globalFunctions) return term;
+
   // Bad ref. Assume it's local so we can try to rewire it in the future.
   return { lookup: term.name, on: { ref: contextId } };
 };
@@ -356,7 +373,7 @@ export const subNamesForRefsInTerm = (term, contextId) => {
   if (term.lookup) return subNamesForRefsInLookup(term);
   if (term.lookupIndex) return subNamesForRefsInLookupIndex(term);
   if (term.call) {
-    const argRefs = term.args.map(({ ref }) => ref);
+    const argRefs = term.kwargs.map(({ ref }) => ref);
     if ([term.call, ...argRefs].some(({ lookup }) => lookup)) {
       throw new Error('Got a field ref when we just want a cell ref.');
     }
