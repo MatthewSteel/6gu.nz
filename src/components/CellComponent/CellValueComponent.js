@@ -6,7 +6,14 @@ import './CellComponent.css';
 
 const defaultFormatter = (value, pushStack) => {
   if (typeof value === 'string') return value;
-  if (typeof value === 'number') return value.toString();
+  if (typeof value === 'number') {
+    const str = value.toString();
+    const afterDecimal = str.split('.')[1];
+    if (afterDecimal && afterDecimal.length > 6) {
+      return value.toFixed(6);
+    }
+    return str;
+  }
   if (typeof value === 'boolean') {
     return (
       <input type="checkbox" checked={value} disabled />
