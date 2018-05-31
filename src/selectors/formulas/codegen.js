@@ -14,7 +14,7 @@ import {
 import { setIntersection, transitiveClosure } from '../algorithms/algorithms';
 import store, { ARRAY, OBJECT, SHEET, TABLE, TABLE_COLUMN, TABLE_ROW } from '../../redux/store';
 import { getNamedMember, getNumberedMember, TableArray } from './tables';
-import builtins, { binarySymbolToName, unarySymbolToName } from './builtins';
+import builtins, { globalFunctions, globalFunctionArgs, binarySymbolToName, unarySymbolToName } from './builtins';
 
 // Functions to translate into formulas into code to be evaluated
 // We don't use `translateExpr`, mostly I think (?) because we need to
@@ -55,7 +55,7 @@ const tryExpandExpr = (expr) => {
   );
 };
 
-const expandCall = (callTerm) => {
+const expandUserCall = (callTerm) => {
   const signature = callSignature(callTerm);
   if (!callTerm.kwargs.every(({ ref }) => ref.ref)) {
     return 'pleaseThrow("Call arguments must be plain references")';
@@ -67,6 +67,31 @@ const expandCall = (callTerm) => {
     ...customArgs,
   ].join(', ');
   return `globals[${JSON.stringify(signature)}](${allArgs})`;
+};
+
+const expandBuiltinCall = (callTerm) => {
+  const fnName = callTerm.call.name;
+  for (const kwarg of callTerm.kwargs) {
+    if (!kwarg.ref.name) {
+      return `pleaseThrow("Call to ${fnName} has a bad keyword argument")`;
+    }
+    if (!(globalFunctionArgs[fnName].has(kwarg.ref.name))) {
+      return `pleaseThrow("${fnName} has no argument ${kwarg.ref.name}")`;
+    }
+  }
+  const argExprs = callTerm.args.map(expandExpr);
+  const args = `[${argExprs.join(',')}]`;
+  const kwargPairs = callTerm.kwargs.map(({ ref, expr }) => (
+    `${ref.name}: ${expandExpr(expr)}`));
+  const kwargs = `{${kwargPairs.join(',')}}`;
+
+  return `globals.${fnName}(${args}, ${kwargs})`;
+};
+
+const expandCall = (callTerm) => {
+  if (callTerm.call.ref) return expandUserCall(callTerm);
+  if (callTerm.call.name in globalFunctions) return expandBuiltinCall(callTerm);
+  return 'pleaseThrow("Bad function call")';
 };
 
 const expandRef = term => `globals.formulaRef(globals, ${JSON.stringify(term.ref)})`;
@@ -289,6 +314,7 @@ export const getCellValuesById = createSelector(
       tableRowValue,
       tableColumnValue,
       ...builtins,
+      ...globalFunctions,
     };
 
     // Initialize circular refs and things that depend on them.
@@ -302,7 +328,7 @@ export const getCellValuesById = createSelector(
     // Write all functions
     const allFormulas = refs.map(({ formula }) => formula).filter(Boolean);
     const allTerms = [].concat(...allFormulas.map(flattenExpr));
-    const allCalls = allTerms.filter(({ call }) => !!call);
+    const allCalls = allTerms.filter(({ call }) => call && !(call.name in globalFunctions));
     allCalls.forEach((callTerm) => {
       const signature = callSignature(callTerm);
       if (globals[signature]) return;

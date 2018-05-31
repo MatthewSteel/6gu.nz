@@ -74,7 +74,7 @@ const parseKwarg = (tokens, i) => {
 const parseArgsList = (tokens, i) => {
   if (tokens[i].close) {
     return {
-      term: [],
+      term: { args: [], kwargs: [] },
       newIndex: i + 1,
     };
   }

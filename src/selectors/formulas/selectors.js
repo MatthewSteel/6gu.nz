@@ -415,7 +415,9 @@ const refErrorMessage = name => `(${JSON.stringify(name)} + ' does not exist.')`
 
 export const refError = (term) => {
   if (term.badFormula) return { str: '"Bad formula"' };
-  if (term.name) return { str: refErrorMessage(term.name) };
+  if (term.name && !(term.name in globalFunctions)) {
+    return { str: refErrorMessage(term.name) };
+  }
   if (term.lookup && term.on.ref) {
     // Unresolved lookups are bad on sheets and "static" objects, but fine
     // on computed cells etc.

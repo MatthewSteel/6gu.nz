@@ -43,23 +43,7 @@ const initialState = {
     name: 's2',
     type: SHEET,
   }],
-  cells: [{
-    id: 'obj',
-    name: 'obj',
-    type: OBJECT,
-    sheetId: 'sheet0',
-    x: 1,
-    y: 1,
-    width: 1,
-    height: 1,
-  }, {
-    id: 'oc',
-    name: 'ocell',
-    index: 0,
-    type: OBJECT_CELL,
-    objectId: 'obj',
-    formula: { value: '' },
-  }],
+  cells: [],
   uistate: { dragState: {} },
 };
 
