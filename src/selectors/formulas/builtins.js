@@ -187,6 +187,28 @@ const trig = (fn, name) => (args, kwargs) => {
   throw new Error(`Unexpected argument to ${name}: ${Object.keys(kwargs)[0]}`);
 };
 
+const log = (args, kwargs) => {
+  let base = Math.E;
+  const deepLog = deepOp1(Math.log);
+  for (const [key, value] of Object.entries(kwargs)) {
+    if (key !== 'base') {
+      throw new Error('log only takes "base" as a keyword argument');
+    }
+    base = value;
+  }
+  if (args.length === 0) return -Infinity;
+  if (args.length === 1) {
+    if (base === Math.E) return deepLog(args[0]);
+    return divide(deepLog(args[0]), deepLog(base));
+  }
+  return new TableArray(args.map((elem) => {
+    if (base === Math.E) return { value: deepLog(elem) };
+    return {
+      value: divide(deepLog(elem), deepLog(base)),
+    };
+  }));
+};
+
 const unaryFn = (fn, name) => (args, kwargs) => {
   if (Object.keys(kwargs).length > 0) {
     throw new Error(`${name} does not take keyword parameters.`);
@@ -346,6 +368,7 @@ const sin = trig(Math.sin, 'sin');
 const cos = trig(Math.cos, 'sin');
 const tan = trig(Math.tan, 'sin');
 const pi = () => Math.PI;
+const e = () => Math.E;
 const sqrt = unaryFn(deepOp1(Math.sqrt), 'sqrt');
 const abs = unaryFn(deepOp1(Math.abs), 'abs');
 const round = unaryFn(deepOp1(Math.round), 'round');
@@ -374,6 +397,8 @@ export const globalFunctions = {
   asin,
   acos,
   pi,
+  e,
+  log,
   sqrt,
   abs,
   round,
@@ -401,6 +426,7 @@ export const globalFunctionArgs = {
   size: new Set(),
   length: new Set(),
   range: new Set(),
+  log: new Set(['base']),
 };
 
 export default {
