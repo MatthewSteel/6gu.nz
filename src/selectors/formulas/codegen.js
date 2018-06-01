@@ -10,6 +10,7 @@ import {
   getTopoSortedRefIds,
   rewriteRefTermToParentLookup,
   refError,
+  translateExpr,
 } from './selectors';
 import { setIntersection, transitiveClosure } from '../algorithms/algorithms';
 import store, { ARRAY, OBJECT, SHEET, TABLE, TABLE_COLUMN, TABLE_ROW } from '../../redux/store';
@@ -152,6 +153,7 @@ const expandExpr = (term) => {
   if (term.binary) return expandBinary(term);
   if (term.array) return expandArray(term);
   if (term.object) return expandObject(term);
+  if (term.name) return `pleaseThrow(${JSON.stringify(term.name)} + " does not exist")`;
   throw new Error(`unknown term type ${JSON.stringify(term)}`);
 };
 
@@ -268,10 +270,12 @@ const tableColumnValue = (tableColumnId, globals) => {
 const pleaseThrow = (s) => { throw new Error(s); };
 
 const formulaExpression = (formula) => {
-  const allTerms = flattenExpr(formula);
-  const termErrors = allTerms
-    .map(term => refError(term))
-    .filter(Boolean);
+  const termErrors = [];
+  translateExpr(formula, null, (term, contextId) => {
+    const err = refError(term, contextId);
+    if (err) termErrors.push(err);
+    return term;
+  });
   if (termErrors.length > 0) {
     return `pleaseThrow(${termErrors[0].str})`;
   }

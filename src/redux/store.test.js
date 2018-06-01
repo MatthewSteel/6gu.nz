@@ -169,7 +169,7 @@ describe('actions/the store', () => {
     ));
     store.dispatch(setFormula(
       { context: sheet.id, y: 2, x: 0 },
-      'y: sin("arg", x: 10)',
+      'y: sin("arg")',
     ));
     store.dispatch(setFormula(
       { context: sheet.id, y: 2, x: 0 },
@@ -187,10 +187,21 @@ describe('actions/the store', () => {
     expect(y.formula).toEqual({
       call: { name: 'sin' },
       args: [{ value: 'arg' }],
-      kwargs: [{ ref: { ref: x.id }, expr: { value: 10 } }],
+      kwargs: [],
     });
     const z = find(({ name }) => name === 'z');
     expect(z.formula).toEqual({ badFormula: 'notAFunction(degrees: 0)' });
+
+    store.dispatch(setFormula(
+      { context: sheet.id, y: 1, x: 0 },
+      'w: sin',
+    ));
+    const w = find(({ name }) => name === 'w');
+    expect(w.formula).toEqual({ name: 'sin' });
+    expect(getCellValue(w)).toEqual({
+      error: 'Error: sin does not exist',
+      override: false,
+    });
   });
 });
 

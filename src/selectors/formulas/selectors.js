@@ -184,6 +184,7 @@ export const refsAtPosition = createSelector(
 );
 
 export const refParentId = (ref) => {
+  if (ref === undefined) return undefined;
   if (ref.sheetId) return ref.sheetId;
   if (ref.objectId) return ref.objectId;
   if (ref.arrayId) return ref.arrayId; // NOTE: table cells use objectId
@@ -321,15 +322,10 @@ const callRef = (preTranslate, postTranslate) => {
 const translateCall = (term, contextId, f) => {
   const call = translateExpr(term.call, contextId, f);
   const globalCall = isGlobalCall(term.call, call);
-  const callContextId = globalCall ?
-    contextId :
-    getContextIdForRefId(callRef(term.call, call), contextId);
+  const callContextId = globalCall || getContextIdForRefId(callRef(term.call, call), contextId);
   const args = term.args.map(expr => (
     translateExpr(expr, contextId, f)));
   const kwargs = term.kwargs.map(({ ref, expr }) => {
-    if (globalCall && globalFunctionArgs[globalCall].has(ref.name)) {
-      return { ref, expr: translateExpr(expr, contextId, f) };
-    }
     return {
       ref: translateExpr(ref, callContextId, f),
       expr: translateExpr(expr, contextId, f),
@@ -426,9 +422,13 @@ export const flattenExpr = (expr) => {
 
 const refErrorMessage = name => `(${JSON.stringify(name)} + ' does not exist.')`;
 
-export const refError = (term) => {
+export const refError = (term, contextId) => {
   if (term.badFormula) return { str: '"Bad formula"' };
-  if (term.name && !(term.name in globalFunctions)) {
+  if (term.name) {
+    if (term.name in globalFunctions) return false;
+    if (contextId in globalFunctions && globalFunctionArgs[contextId].has(term.name)) {
+      return false;
+    }
     return { str: refErrorMessage(term.name) };
   }
   if (term.lookup && term.on.ref) {
@@ -442,16 +442,15 @@ export const refError = (term) => {
   return false;
 };
 
+
 const refEdges = (ref) => {
   if (ref.formula) {
-    const errorRefs = new Set((
-      flattenExpr(ref.formula)
-        .map((term) => {
-          const err = refError(term);
-          return err && err.ref;
-        })
-        .filter(Boolean)
-    ));
+    const errorRefs = new Set();
+    translateExpr(ref.formula, null, (term, contextId) => {
+      const err = refError(term, contextId);
+      if (err && err.ref) errorRefs.add(err.ref);
+      return term;
+    });
     return flattenExpr(ref.formula)
       .filter(term => term.ref && !errorRefs.has(term.ref))
       .map(term => term.ref);

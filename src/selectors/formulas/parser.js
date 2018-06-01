@@ -11,7 +11,7 @@ import {
   runTranslations,
 } from './selectors';
 
-import { binaryPrecedences, assocRight, globalFunctions } from './builtins';
+import { binaryPrecedences, assocRight, globalFunctions, globalFunctionArgs } from './builtins';
 
 // A recursive-descent parser.
 
@@ -346,6 +346,9 @@ const subNamesForRefsInName = (term, contextId) => {
   }
 
   if (term.name in globalFunctions) return term;
+  if (contextId in globalFunctions && globalFunctionArgs[contextId].has(term.name)) {
+    return term;
+  }
 
   // Bad ref. Assume it's local so we can try to rewire it in the future.
   return { lookup: term.name, on: { ref: contextId } };

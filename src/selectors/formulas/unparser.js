@@ -49,12 +49,6 @@ const unparseObject = (object) => {
   return `{ ${args.join(', ')} }`;
 };
 
-const parseKwarg = (kwarg) => {
-  const { ref, expr } = kwarg;
-  if (ref.name) return { ref: unparseName(ref.name), expr };
-  return { ref, expr };
-};
-
 export const unparseTerm = (term) => {
   if (term.lookup) return `${term.on}.${unparseName(term.lookup)}`;
   if (term.lookupIndex) return `${term.on}[${term.lookupIndex}]`;
@@ -64,9 +58,7 @@ export const unparseTerm = (term) => {
   if (term.call) {
     const argsText = [
       ...term.args,
-      ...term.kwargs
-        .map(parseKwarg)
-        .map(({ ref, expr }) => `${ref}: ${expr}`),
+      ...term.kwargs.map(({ ref, expr }) => `${ref}: ${expr}`),
     ].join(', ');
     return `${term.call}(${argsText})`;
   }
