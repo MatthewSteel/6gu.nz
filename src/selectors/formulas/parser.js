@@ -8,7 +8,7 @@ import {
   getSheetsByName,
   refIdParentId,
   refParentId,
-  translateExpr,
+  runTranslations,
 } from './selectors';
 
 import { binaryPrecedences, assocRight, globalFunctions } from './builtins';
@@ -26,18 +26,31 @@ const parseLookups = (tokens, i, lookupObj) => {
       return parseLookups(tokens, i + 2, termSoFar);
     }
     if (nextToken.openBracket) {
-      const {
-        term: expression,
-        newIndex: expressionIndex,
-      } = parseExpression(tokens, i + 1);
-      if (
-        !tokens[expressionIndex] ||
-        !tokens[expressionIndex].closeBracket
-      ) {
+      let termSoFar;
+      let nextIndex;
+      if (tokens[i + 2] && tokens[i + 1].name && tokens[i + 2].assignment) {
+        const {
+          term: expression,
+          newIndex: expressionIndex,
+        } = parseExpression(tokens, i + 3);
+        termSoFar = {
+          indexLookup: expression,
+          keyCol: { lookup: tokens[i + 1].name, on: lookupObj },
+          on: lookupObj,
+        };
+        nextIndex = expressionIndex + 1;
+      } else {
+        const {
+          term: expression,
+          newIndex: expressionIndex,
+        } = parseExpression(tokens, i + 1);
+        termSoFar = { lookupIndex: expression, on: lookupObj };
+        nextIndex = expressionIndex + 1;
+      }
+      if (!tokens[nextIndex - 1].closeBracket) {
         throw new Error('Missing close bracket after index expression');
       }
-      const termSoFar = { lookupIndex: expression, on: lookupObj };
-      return parseLookups(tokens, expressionIndex + 1, termSoFar);
+      return parseLookups(tokens, nextIndex, termSoFar);
     }
   }
   return { term: lookupObj, newIndex: i };
@@ -393,11 +406,40 @@ const fixPrecedence = (term) => {
   return { ...other, left: fixPrecedence({ ...term, right: other.left }) };
 };
 
+const translateIndexLookups = (term) => {
+  // User types in `table[name: "Fred"].age` and it comes out of the
+  // parser like
+  //
+  //   lookup: "age"
+  //   on: {
+  //     indexLookup: { value: "Fred" },
+  //     on: { ref: table.id },
+  //     keyCol: { lookup: "name", on: { ref: table.id } },
+  //   }
+  //
+  // This function translates that to
+  //
+  //   indexLookup: { value: "Fred" },
+  //   on: { lookup: "age", on: { ref: table.id } },
+  //   keyCol: { lookup: "name", on: { ref: table.id } },
+  //
+  // In a later step we (hopefully) resolve the lookups into direct refs.
+  // (We also do an inverse step in the unparser)
+  if (term.lookup && term.on.indexLookup) {
+    return { ...term.on, on: { ...term, on: term.on.on } };
+  }
+  return term;
+};
+
 const postProcessFormula = (nameFormula, contextId) => {
   if (!nameFormula) return {};
-  const refFormula = translateExpr(nameFormula, contextId, subNamesForRefsInTerm);
-  const precedenceFormula = translateExpr(refFormula, null, fixPrecedence);
-  return { formula: precedenceFormula };
+  return {
+    formula: runTranslations(
+      nameFormula,
+      contextId,
+      [translateIndexLookups, subNamesForRefsInTerm, fixPrecedence],
+    ),
+  };
 };
 
 const parseFormulaExpr = (tokens, formulaStart, contextId, s) => {

@@ -53,8 +53,18 @@ describe('TableArray', () => {
     expect(table.isTable()).toBe(true);
     const table2 = new TableArray([]);
     expect(table2.isTable()).toBe(false);
-    const table3 = new TableArray([1, 2, 3]);
+    const table3 = new TableArray([
+      { value: 1 },
+      { value: 2 },
+      { value: 3 },
+    ]);
     expect(table3.isTable()).toBe(false);
+
+    expect(table3.indexLookup(new TableArray([
+      { value: 2 }, { value: 2 }, { value: 1 }, { value: 4 },
+    ]))).toEqual(new TableArray([
+      { value: 1 }, { value: 1 }, { value: 0 }, { value: null },
+    ]));
   });
 });
 

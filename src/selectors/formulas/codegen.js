@@ -13,7 +13,7 @@ import {
 } from './selectors';
 import { setIntersection, transitiveClosure } from '../algorithms/algorithms';
 import store, { ARRAY, OBJECT, SHEET, TABLE, TABLE_COLUMN, TABLE_ROW } from '../../redux/store';
-import { getNamedMember, getNumberedMember, TableArray } from './tables';
+import { getNamedMember, getNumberedMember, getIndexLookup, TableArray } from './tables';
 import builtins, { globalFunctions, globalFunctionArgs, binarySymbolToName, unarySymbolToName } from './builtins';
 
 // Functions to translate into formulas into code to be evaluated
@@ -107,6 +107,14 @@ const expandLookupIndex = (term) => {
   return `globals.getNumberedMember(${expandedOn}, ${expandedIndex})`;
 };
 
+const expandIndexLookup = (term) => {
+  const indexLookup = expandExpr(term.indexLookup);
+  const on = expandExpr(term.on);
+  const keyCol = expandExpr(term.keyCol);
+  const lookupExpr = `globals.getIndexLookup(${keyCol}, ${indexLookup})`;
+  return `globals.getNumberedMember(${on}, ${lookupExpr})`;
+};
+
 const expandUnary = (term) => {
   const func = `globals.${unarySymbolToName[term.unary]}`;
   return `${func}(${expandExpr(term.on)})`;
@@ -134,6 +142,7 @@ const expandObject = (term) => {
 const expandExpr = (term) => {
   if (term.lookup) return expandLookup(term);
   if (term.lookupIndex) return expandLookupIndex(term);
+  if (term.indexLookup) return expandIndexLookup(term);
   if (term.ref) return expandRef(term);
   if (term.call) return expandCall(term);
   if (term.op) return term.op;
@@ -220,7 +229,11 @@ const tableValue = (tableId, globals) => {
   const tableCols = getChildrenOfRef(store.getState(), tableId)
     .filter(({ type }) => type === TABLE_COLUMN);
   ret.keys = [];
-  tableCols.forEach(({ index, name }) => { ret.keys[index] = name; });
+  ret.memoizedCols = {};
+  tableCols.forEach(({ name, index, id }) => {
+    ret.keys[index] = name;
+    ret.memoizedCols[name] = globals[id];
+  });
   return ret;
 };
 
@@ -304,6 +317,7 @@ export const getCellValuesById = createSelector(
   (refs, sortedRefIds) => {
     const globals = {
       arrayValue,
+      getIndexLookup,
       getNamedMember,
       getNumberedMember,
       formulaRef,

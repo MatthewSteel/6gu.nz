@@ -6,7 +6,7 @@ import {
   lookupExpression,
   getContextIdForRefId,
   refParentId,
-  translateExpr,
+  runTranslations,
 } from './selectors';
 
 // Turning a stored raw formula back into a string.
@@ -58,6 +58,9 @@ const parseKwarg = (kwarg) => {
 export const unparseTerm = (term) => {
   if (term.lookup) return `${term.on}.${unparseName(term.lookup)}`;
   if (term.lookupIndex) return `${term.on}[${term.lookupIndex}]`;
+  if (term.indexLookup) {
+    return `${term.on}[${term.keyCol}: ${term.indexLookup}]`;
+  }
   if (term.call) {
     const argsText = [
       ...term.args,
@@ -85,15 +88,47 @@ const subRefsForLookupsInTerm = (term, contextId) => {
   return term;
 };
 
+const translateIndexLookupKeyCol = term => (
+  // Turns
+  //   indexLookup: { value: "Fred" },
+  //   on: { lookup: "age", on: { ref: table.id } },
+  //   keyCol: { lookup: "name", on: { ref: table.id } },
+  // into
+  //   indexLookup: { value: "Fred" },
+  //   on: { lookup: "age", on: { ref: table.id } },
+  //   keyCol: { name: "name" },
+  { ...term, keyCol: { name: term.keyCol.lookup } });
+
+const undoTranslateIndexLookups = (term) => {
+  // Turns
+  //   indexLookup: { value: "Fred" },
+  //   keyCol: { lookup: "name", on: { ref: table.id } },
+  //   on: { lookup: "age", on: { ref: table.id } },
+  // into
+  //   lookup: "age",
+  //   on: {
+  //     indexLookup: { value: "Fred" },
+  //     keyCol: { lookup: "name", on: { ref: table.id } },
+  //     on: { ref: table.id },
+  //   },
+  if (term.indexLookup && term.on.lookup) {
+    return {
+      lookup: term.on.lookup,
+      on: translateIndexLookupKeyCol({ ...term, on: term.on.on }),
+    };
+  }
+  if (term.indexLookup) return translateIndexLookupKeyCol(term);
+  return term;
+};
+
 const formulaExpressionString = (ref) => {
   if (!ref.formula) return [];
   const refParent = refParentId(ref);
-  const lookupTerms = translateExpr(
+  return runTranslations(
     ref.formula,
     getContextIdForRefId(refParent, refParent),
-    subRefsForLookupsInTerm,
+    [subRefsForLookupsInTerm, undoTranslateIndexLookups, unparseTerm],
   );
-  return translateExpr(lookupTerms, null, unparseTerm);
 };
 
 export const stringFormula = (refId) => {

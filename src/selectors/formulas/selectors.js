@@ -363,9 +363,17 @@ const translateObject = (term, contextId, f) => {
   return f({ object }, contextId);
 };
 
+const translateIndexLookup = (term, contextId, f) => {
+  const indexLookup = translateExpr(term.indexLookup, contextId, f);
+  const on = translateExpr(term.on, contextId, f);
+  const keyCol = translateExpr(term.keyCol, contextId, f);
+  return f({ indexLookup, on, keyCol }, contextId, f);
+};
+
 export const translateExpr = (term, contextId, f) => {
   if (term.lookup) return translateLookup(term, contextId, f);
   if ('lookupIndex' in term) return translateLookupIndex(term, contextId, f);
+  if (term.indexLookup) return translateIndexLookup(term, contextId, f);
   if (term.name || term.ref) return f(term, contextId);
   if ('value' in term || term.op) return f(term, contextId);
   if (term.call) return translateCall(term, contextId, f);
@@ -397,6 +405,11 @@ export const translateExpr = (term, contextId, f) => {
   throw new Error('Unknown term type');
 };
 
+export const runTranslations = (input, contextId, fs) => {
+  let term = input;
+  fs.forEach((f) => { term = translateExpr(term, contextId, f); });
+  return term;
+};
 
 export const flattenExpr = (expr) => {
   // Get every element inside the formula (not just leaves)
