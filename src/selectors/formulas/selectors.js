@@ -5,7 +5,7 @@ import {
   nodesInLargeStronglyConnectedComponents,
 } from '../algorithms/algorithms';
 import { globalFunctions, globalFunctionArgs } from './builtins';
-import store, { ARRAY, ARRAY_CELL, CELL, OBJECT, OBJECT_CELL, SHEET, TABLE, TABLE_CELL, TABLE_COLUMN, TABLE_ROW } from '../../redux/store';
+import store, { ARRAY, ARRAY_CELL, CELL, OBJECT, OBJECT_CELL, SHEET, TABLE, TABLE_CELL, COMPUTED_TABLE_COLUMN, TABLE_COLUMN, TABLE_ROW } from '../../redux/store';
 
 // Simple "get raw state" selectors (for the moment?)
 
@@ -93,7 +93,9 @@ const getRefsByNameForContextIdHelper = createSelector(
       }
       if (ref.tableId) {
         if (ref.type === TABLE_ROW) ret[ref.tableId][ref.index] = ref;
-        if (ref.type === TABLE_COLUMN) ret[ref.tableId][ref.name] = ref;
+        if (ref.type === TABLE_COLUMN || ref.type === COMPUTED_TABLE_COLUMN) {
+          ret[ref.tableId][ref.name] = ref;
+        }
       }
       if (ref.arrayId && 'index' in ref) { // table cells have no index
         ret[ref.arrayId][ref.index] = ref;
@@ -171,7 +173,7 @@ export const refsAtPosition = createSelector(
         ret[cell.arrayId][cell.index] = cell;
       } else if (cell.type === TABLE_ROW) {
         ret[cell.tableId].rows[cell.index] = cell;
-      } else if (cell.type === TABLE_COLUMN) {
+      } else if (cell.type === TABLE_COLUMN || cell.type === COMPUTED_TABLE_COLUMN) {
         ret[cell.tableId].columns[cell.index] = cell;
       } else if (cell.type === TABLE_CELL) {
         const col = refsById[cell.arrayId];
@@ -227,7 +229,7 @@ export const rewriteRefTermToParentLookup = (innermostLookup) => {
   if (ref.type === TABLE_ROW) {
     return { lookupIndex: { value: ref.index }, on: { ref: ref.tableId } };
   }
-  if (ref.type === TABLE_COLUMN) {
+  if (ref.type === TABLE_COLUMN || ref.type === COMPUTED_TABLE_COLUMN) {
     return { lookup: ref.name, on: { ref: ref.tableId } };
   }
   if (ref.type === TABLE_CELL) {
@@ -325,12 +327,10 @@ const translateCall = (term, contextId, f) => {
   const callContextId = globalCall || getContextIdForRefId(callRef(term.call, call), contextId);
   const args = term.args.map(expr => (
     translateExpr(expr, contextId, f)));
-  const kwargs = term.kwargs.map(({ ref, expr }) => {
-    return {
-      ref: translateExpr(ref, callContextId, f),
-      expr: translateExpr(expr, contextId, f),
-    };
-  });
+  const kwargs = term.kwargs.map(({ ref, expr }) => ({
+    ref: translateExpr(ref, callContextId, f),
+    expr: translateExpr(expr, contextId, f),
+  }));
   return f({ call, args, kwargs }, contextId);
 };
 
@@ -442,6 +442,19 @@ export const refError = (term, contextId) => {
   return false;
 };
 
+export const computedColumnsByTableId = createSelector(
+  getRefs,
+  (refs) => {
+    const ret = {};
+    refs.forEach((ref) => { ret[ref.id] = []; });
+    refs.forEach((ref) => {
+      if (ref.type === COMPUTED_TABLE_COLUMN) {
+        ret[ref.tableId].push(ref);
+      }
+    });
+    return ret;
+  },
+);
 
 const refEdges = (ref) => {
   if (ref.formula) {
@@ -455,7 +468,14 @@ const refEdges = (ref) => {
       .filter(term => term.ref && !errorRefs.has(term.ref))
       .map(term => term.ref);
   }
-  return getChildIdsByParentId(store.getState())[ref.id];
+  const children = getChildIdsByParentId(store.getState())[ref.id];
+  if (ref.type !== TABLE_ROW) return children;
+
+  // Each table row in a table depends on the computed columns in the table
+  // being computed (so we can steal elements from them)
+  const allComputedCols = computedColumnsByTableId(store.getState());
+  const computedColumnIds = allComputedCols[ref.tableId].map(({ id }) => id);
+  return [...children, ...computedColumnIds];
 };
 
 // Predecessor/successor relations in the formula/computation graph.

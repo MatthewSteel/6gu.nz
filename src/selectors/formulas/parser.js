@@ -1,4 +1,4 @@
-import store, { ARRAY, OBJECT, SHEET, TABLE, TABLE_COLUMN, TABLE_ROW } from '../../redux/store';
+import store, { ARRAY, OBJECT, SHEET, TABLE, COMPUTED_TABLE_COLUMN, TABLE_COLUMN, TABLE_ROW } from '../../redux/store';
 import { lexFormula } from './lexer';
 
 import {
@@ -377,7 +377,7 @@ const subNamesForRefsInLookupIndex = (term) => {
   const { ref: refId } = term.on;
   const ref = getRefsById(store.getState())[refId];
 
-  if (ref.type === ARRAY || ref.type === TABLE || ref.type === TABLE_COLUMN) {
+  if ([ARRAY, TABLE, TABLE_COLUMN, COMPUTED_TABLE_COLUMN].includes(ref.type)) {
     const maybeCell = getRefsByNameForContextId(store.getState(), refId)[index];
     if (maybeCell) return { ref: maybeCell.id };
   }

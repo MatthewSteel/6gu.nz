@@ -7,7 +7,7 @@ import CellSelectionComponent from '../CellComponent/CellSelectionComponent';
 import ContentsBaseComponent from './ContentsBaseComponent';
 
 import { getRefsById, refsAtPosition } from '../../selectors/formulas/selectors';
-import { deleteLoc, deleteThing } from '../../redux/store';
+import { COMPUTED_TABLE_COLUMN, deleteLoc, deleteThing } from '../../redux/store';
 
 
 class TableContentsComponent extends ContentsBaseComponent {
@@ -25,10 +25,14 @@ class TableContentsComponent extends ContentsBaseComponent {
   }
 
   maybeSelectedCell() {
-    const { cells, context } = this.props;
+    const { cells, columns, context } = this.props;
     const { selY, selX } = this.localSelection();
     if (!cells) return { ...context, selY, selX };
 
+    const maybeCol = columns[selX];
+    if (maybeCol && maybeCol.type === COMPUTED_TABLE_COLUMN) {
+      return { ...maybeCol, selX, selY };
+    }
     const cell = cells[`${selY},${selX}`];
     return cell && { ...cell, selY, selX };
   }
@@ -36,6 +40,16 @@ class TableContentsComponent extends ContentsBaseComponent {
   // eslint-disable-next-line class-methods-use-this
   cellPosition(cell) {
     return { y: cell.selY, x: cell.selX, width: 1, height: 1 };
+  }
+
+  locationSelected() {
+    const { columns } = this.props;
+    const { selX } = this.localSelection();
+    const maybeCol = columns[selX];
+    if (maybeCol && maybeCol.type === COMPUTED_TABLE_COLUMN) {
+      return { type: COMPUTED_TABLE_COLUMN, index: selX };
+    }
+    return undefined;
   }
 
   bounds() {
@@ -134,8 +148,8 @@ class TableContentsComponent extends ContentsBaseComponent {
 
 const mapStateToProps = (state, ownProps) => {
   const context = getRefsById(state)[ownProps.contextId];
-  const { cells } = !context.formula && refsAtPosition(state)[ownProps.contextId];
-  return { context, cells };
+  const { cells, columns } = !context.formula && refsAtPosition(state)[ownProps.contextId];
+  return { context, cells, columns };
 };
 
 const mapDispatchToProps = dispatch => ({

@@ -1,24 +1,24 @@
 import { TableArray } from './tables';
 // Built-in functions and operators
-const NUMBER = 0;
-const STRING = 1;
-const BOOL = 2;
-const NULL = 3;
-const ARRAY = 4;
-const OBJECT = 5;
+const NUMBER_T = 0;
+const STRING_T = 1;
+const BOOL_T = 2;
+const NULL_T = 3;
+export const ARRAY_T = 4;
+const OBJECT_T = 5;
 
-const classify = (o) => {
+export const classify = (o) => {
   const t = typeof o;
   if (t === 'object') {
-    if (o.byName) return OBJECT;
-    if (o.arr) return ARRAY;
-    if (!o) return NULL;
+    if (o.byName) return OBJECT_T;
+    if (o.arr) return ARRAY_T;
+    if (!o) return NULL_T;
     throw new Error('bad type');
   }
   return {
-    boolean: BOOL,
-    number: NUMBER,
-    string: STRING,
+    boolean: BOOL_T,
+    number: NUMBER_T,
+    string: STRING_T,
   }[t];
 };
 
@@ -34,7 +34,7 @@ export const deepOp2 = (op) => {
     const type2 = classify(right);
     // TODO: Some switch on a bitmask, I think.
     // Also: Consider getting rid of errors...
-    if (type1 === ARRAY && type2 === ARRAY) {
+    if (type1 === ARRAY_T && type2 === ARRAY_T) {
       if (left.arr.length !== right.arr.length) {
         if (left.arr.length === 1) {
           const leftElem = left.arr[0];
@@ -53,15 +53,15 @@ export const deepOp2 = (op) => {
         return tryF(leftElem, rightElem);
       }));
     }
-    if (type1 === ARRAY) {
+    if (type1 === ARRAY_T) {
       return new TableArray(left.arr.map((
         leftElem => tryF(leftElem, { value: right }))));
     }
-    if (type2 === ARRAY) {
+    if (type2 === ARRAY_T) {
       return new TableArray(right.arr.map((
         rightElem => tryF({ value: left }, rightElem))));
     }
-    if (type1 === OBJECT || type2 === OBJECT) {
+    if (type1 === OBJECT_T || type2 === OBJECT_T) {
       throw new Error('Binary op not supported for objects');
     }
     return op(left, right);
@@ -72,10 +72,10 @@ export const deepOp2 = (op) => {
 export const deepOp1 = (op) => {
   const f = (right) => {
     const type1 = classify(right);
-    if (type1 === OBJECT) {
+    if (type1 === OBJECT_T) {
       throw new Error('Unary op not supported for objects');
     }
-    if (type1 === ARRAY) {
+    if (type1 === ARRAY_T) {
       return new TableArray(right.arr.map((elem) => {
         if (elem.error) return elem;
         return { value: f(elem.value) };
@@ -237,9 +237,9 @@ const range1 = (thing) => {
 const size1 = (thing) => {
   const type = classify(thing);
   switch (type) {
-    case ARRAY: return thing.arr.length;
-    case OBJECT: return Object.keys(thing.byName).length;
-    case STRING: return thing.length;
+    case ARRAY_T: return thing.arr.length;
+    case OBJECT_T: return Object.keys(thing.byName).length;
+    case STRING_T: return thing.length;
     default: throw new Error('Has no length.');
   }
 };
@@ -299,12 +299,12 @@ const sortFn = (arr, by) => {
 const sum1 = (thing) => {
   const type = classify(thing);
   switch (type) {
-    case NUMBER: return thing;
-    case BOOL: return thing;
-    case NULL: return 0;
-    case STRING: throw new Error('Sum not supported for strings');
-    case OBJECT: throw new Error('Sum not supported for objects yet');
-    case ARRAY: return thing.arr.reduce(
+    case NUMBER_T: return thing;
+    case BOOL_T: return thing;
+    case NULL_T: return 0;
+    case STRING_T: throw new Error('Sum not supported for strings');
+    case OBJECT_T: throw new Error('Sum not supported for objects yet');
+    case ARRAY_T: return thing.arr.reduce(
       (l, r) => {
         if (r.error) throw new Error(r.error);
         return l + sum1(r.value);
@@ -318,12 +318,12 @@ const sum1 = (thing) => {
 const count1 = (thing) => {
   const type = classify(thing);
   switch (type) {
-    case NUMBER: return 1;
-    case BOOL: return 1;
-    case NULL: return 0;
-    case STRING: return 1;
-    case OBJECT: return 1; // !!!
-    case ARRAY: return thing.arr.reduce(
+    case NUMBER_T: return 1;
+    case BOOL_T: return 1;
+    case NULL_T: return 0;
+    case STRING_T: return 1;
+    case OBJECT_T: return 1; // !!!
+    case ARRAY_T: return thing.arr.reduce(
       (l, r) => {
         if (r.error) throw new Error(r.error);
         return l + count1(r.value);
@@ -341,11 +341,11 @@ const cmp = (left, right) => {
     throw new Error('Cannot compare items of different type');
   }
   switch (leftType) {
-    case NUMBER:
-    case STRING:
-    case BOOL:
+    case NUMBER_T:
+    case STRING_T:
+    case BOOL_T:
       return (left > right) - (right > left);
-    case ARRAY:
+    case ARRAY_T:
       for (let i = 0; i < left.arr.length && i < right.arr.length; i += 1) {
         const c = cmp(left.arr[i], right.arr[i]);
         if (c !== 0) return c;

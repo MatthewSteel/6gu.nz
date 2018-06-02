@@ -82,7 +82,7 @@ export class TableArray {
 export const getType = (value) => {
   // Just for our complex data types for now. For display.
   // If it's a table literal, we might be able to tell by the cell type.
-  if (value === undefined) return 'primitive'; // for display, regular cell
+  if (value == null) return 'primitive'; // for display, regular cell
   if (value.byName) return 'object';
   if (value instanceof TableArray) {
     if (value.isTable()) return 'table';
@@ -114,7 +114,7 @@ export const getNumberedMember = (value, index) => {
   }
   if (value instanceof TableArray) {
     const ret = value.arr[index];
-    if (!ret) throw new Error(`No value at index ${index}`);
+    if (!ret) return null;
     if (ret.error) throw new Error(ret.error);
     return ret.value;
   }

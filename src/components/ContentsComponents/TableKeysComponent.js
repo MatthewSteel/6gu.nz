@@ -39,6 +39,9 @@ class TableKeysComponent extends ContentsBaseComponent {
     const { context } = this.props;
     if (context.formula) return undefined;
     const { selX } = this.localSelection();
+    const { columns } = this.props;
+    const col = columns[selX];
+    if (col) return { type: col.type, index: selX };
     return { type: TABLE_COLUMN, index: selX };
   }
 

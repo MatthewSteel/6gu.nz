@@ -1,5 +1,6 @@
 import { createSelector } from 'reselect';
 import {
+  computedColumnsByTableId,
   externalFacingDescendants,
   flattenExpr,
   getFormulaGraphs,
@@ -9,13 +10,14 @@ import {
   getChildrenOfRef,
   getTopoSortedRefIds,
   rewriteRefTermToParentLookup,
+  refsAtPosition,
   refError,
   translateExpr,
 } from './selectors';
 import { setIntersection, transitiveClosure } from '../algorithms/algorithms';
-import store, { ARRAY, OBJECT, SHEET, TABLE, TABLE_COLUMN, TABLE_ROW } from '../../redux/store';
+import store, { ARRAY, OBJECT, SHEET, TABLE, COMPUTED_TABLE_COLUMN, TABLE_COLUMN, TABLE_ROW } from '../../redux/store';
 import { getNamedMember, getNumberedMember, getIndexLookup, TableArray } from './tables';
-import builtins, { globalFunctions, globalFunctionArgs, binarySymbolToName, unarySymbolToName } from './builtins';
+import builtins, { ARRAY_T, classify, globalFunctions, globalFunctionArgs, binarySymbolToName, unarySymbolToName } from './builtins';
 
 // Functions to translate into formulas into code to be evaluated
 // We don't use `translateExpr`, mostly I think (?) because we need to
@@ -229,7 +231,7 @@ const tableValue = (tableId, globals) => {
   const ret = new TableArray(storage);
 
   const tableCols = getChildrenOfRef(store.getState(), tableId)
-    .filter(({ type }) => type === TABLE_COLUMN);
+    .filter(({ type }) => type === TABLE_COLUMN || type === COMPUTED_TABLE_COLUMN);
   ret.keys = [];
   ret.memoizedCols = {};
   tableCols.forEach(({ name, index, id }) => {
@@ -241,7 +243,6 @@ const tableValue = (tableId, globals) => {
 
 const tableRowValue = (tableRowId, globals) => {
   const ret = {
-    byId: {},
     byName: {},
   };
   const refsById = getRefsById(store.getState());
@@ -249,10 +250,30 @@ const tableRowValue = (tableRowId, globals) => {
   tableRowCells.forEach(({ id, arrayId }) => {
     const cellContents = globals[id];
     const { name } = refsById[arrayId];
-    ret.byId[id] = cellContents;
     ret.byName[name] = cellContents;
   });
+
+  const computedCols = computedColumnsByTableId(store.getState());
+  const { tableId, index } = refsById[tableRowId];
+  computedCols[tableId].forEach(({ id, name }) => {
+    ret.byName[name] = globals[id].value.arr[index];
+  });
   return ret;
+};
+
+const arrayify = (wrappedValue, wantedLength) => {
+  if (wrappedValue.error || classify(wrappedValue.value) !== ARRAY_T) {
+    return new TableArray((new Array(wantedLength)).fill(wrappedValue));
+  }
+  const { value } = wrappedValue;
+  const { arr } = value;
+  for (let i = arr.length; i < wantedLength; ++i) {
+    arr.push({ value: null });
+  }
+  if (arr.length > wantedLength) {
+    value.arr = arr.slice(0, wantedLength);
+  }
+  return value;
 };
 
 const tableColumnValue = (tableColumnId, globals) => {
@@ -297,6 +318,11 @@ const refExpression = (ref) => {
   if (ref.type === TABLE_COLUMN) {
     return `globals.tableColumnValue(${JSON.stringify(ref.id)}, globals)`;
   }
+  if (ref.type === COMPUTED_TABLE_COLUMN) {
+    const { tableId } = ref;
+    const arrayLen = refsAtPosition(store.getState())[tableId].rows.length;
+    return `globals.arrayify(${tryExpandExpr(ref.formula)}, ${arrayLen})`;
+  }
   if (ref.type === TABLE) {
     return `globals.tableValue(${JSON.stringify(ref.id)}, globals)`;
   }
@@ -330,6 +356,7 @@ export const getCellValuesById = createSelector(
       tableArray,
       tableValue,
       tableRowValue,
+      arrayify,
       tableColumnValue,
       ...builtins,
       ...globalFunctions,

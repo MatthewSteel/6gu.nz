@@ -29,6 +29,7 @@ export const OBJECT_CELL = 'object_cell';
 export const TABLE = 'table';
 export const TABLE_ROW = 'table_row';
 export const TABLE_COLUMN = 'table_column';
+export const COMPUTED_TABLE_COLUMN = 'computed_table_column';
 export const TABLE_CELL = 'table_cell';
 
 const DEFAULT_FORMULA = { value: '' };
@@ -148,6 +149,15 @@ const defaultTableColumn = (contextId, index, name = `c${index + 1}`) => ({
   type: TABLE_COLUMN,
 });
 
+const defaultComputedTableColumn = (contextId, index, name = `c${index + 1}`) => ({
+  id: uuidv4(),
+  tableId: contextId,
+  formula: DEFAULT_FORMULA,
+  name,
+  index,
+  type: COMPUTED_TABLE_COLUMN,
+});
+
 const defaultTableRow = (contextId, index) => ({
   id: uuidv4(),
   tableId: contextId,
@@ -228,7 +238,7 @@ const defaultSheetElemForLocation = (context, y, x, formula) => {
   return { baseCell, children };
 };
 
-const defaultTableElemForLocation = (context, y, x, locationSelected) => {
+const defaultTableElemForLocation = (context, y, x, locationSelected, formula) => {
   if (!locationSelected) {
     const tableRefsAtPosition = refsAtPosition(store.getState())[context.id];
     const children = [];
@@ -248,10 +258,11 @@ const defaultTableElemForLocation = (context, y, x, locationSelected) => {
     return { baseCell, children };
   }
   if (locationSelected.type === TABLE_COLUMN) {
-    return {
-      baseCell: defaultTableColumn(context.id, locationSelected.index),
-      children: [],
-    };
+    const baseCell = formula ?
+      defaultComputedTableColumn(context.id, locationSelected.index) :
+      defaultTableColumn(context.id, locationSelected.index);
+
+    return { baseCell, children: [] };
   }
   if (locationSelected.type !== TABLE_ROW) {
     throw new Error('Unknown locationSelected type');
@@ -267,7 +278,7 @@ const defaultCellForLocation = (context, y, x, locationSelected, formula) => {
     return defaultSheetElemForLocation(context, y, x, formula);
   }
   if (context.type === TABLE) {
-    return defaultTableElemForLocation(context, y, x, locationSelected);
+    return defaultTableElemForLocation(context, y, x, locationSelected, formula);
   }
   if (context.type === OBJECT) {
     return {
