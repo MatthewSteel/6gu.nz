@@ -104,6 +104,9 @@ const ucomplement = deepOp1(r => ~r);
 const asin = deepOp1(Math.asin);
 const acos = deepOp1(Math.acos);
 
+const lbound = deepOp2((num, bound) => ((num < bound) ? bound : num));
+const ubound = deepOp2((num, bound) => ((num > bound) ? bound : num));
+
 export const binarySymbolToName = {
   '+': 'plus',
   '-': 'minus',
@@ -198,6 +201,24 @@ const log = (args, kwargs) => {
       value: divide(deepLog(elem.value), deepLog(base)),
     };
   }));
+};
+
+const bound = (args, kwargs) => {
+  if (args.length !== 1) {
+    throw new Error('Bound takes exactly one position argument');
+  }
+  let lower = args[0];
+  let upper = args[0];
+  for (const [key, value] of Object.entries(kwargs)) {
+    if (key === 'lower') {
+      lower = value;
+    } else if (key === 'upper') {
+      upper = value;
+    } else {
+      throw new Error('bound only takes "lower" or "upper" as a keyword arguments');
+    }
+  }
+  return ubound(lbound(args[0], lower), upper);
 };
 
 const flatten = (args, kwargs) => {
@@ -466,6 +487,7 @@ export const globalFunctions = {
   count,
   transpose,
   flatten,
+  bound,
   average,
   filter: byFunction(filterFn, 'filter'),
   sort: byFunction(sortFn, 'sort'),
@@ -492,6 +514,7 @@ export const globalFunctionArgs = {
   transpose: new Set(),
   flatten: new Set(['depth']),
   average: new Set(),
+  bound: new Set(['lower', 'upper']),
   filter: new Set(['by']),
   sort: new Set(['by']),
   sin: new Set(['degrees', 'radians']),
