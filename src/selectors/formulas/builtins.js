@@ -62,7 +62,7 @@ export const deepOp2 = (op) => {
         rightElem => tryF({ value: left }, rightElem))));
     }
     if (type1 === OBJECT_T || type2 === OBJECT_T) {
-      throw new Error('Binary op not supported for objects');
+      throw new Error('Operator not supported for objects');
     }
     return op(left, right);
   };
@@ -73,7 +73,7 @@ export const deepOp1 = (op) => {
   const f = (right) => {
     const type1 = classify(right);
     if (type1 === OBJECT_T) {
-      throw new Error('Unary op not supported for objects');
+      throw new Error('Operator not supported for objects');
     }
     if (type1 === ARRAY_T) {
       return new TableArray(right.arr.map((elem) => {
@@ -202,11 +202,54 @@ const log = (args, kwargs) => {
     return divide(deepLog(args[0]), deepLog(base));
   }
   return new TableArray(args.map((elem) => {
-    if (base === Math.E) return { value: deepLog(elem) };
+    if (elem.error) return elem;
+    if (base === Math.E) return { value: deepLog(elem.value) };
     return {
-      value: divide(deepLog(elem), deepLog(base)),
+      value: divide(deepLog(elem.value), deepLog(base)),
     };
   }));
+};
+
+const flatten = (args, kwargs) => {
+  let depth = Infinity;
+  for (const [key, value] of Object.entries(kwargs)) {
+    if (key !== 'depth') {
+      throw new Error('log only takes "depth" as a keyword argument');
+    }
+    depth = value;
+  }
+  if (args.length === 0) return new TableArray([]);
+  if (args.length === 1) {
+    return flatten1(args[0], depth);
+  }
+  return new TableArray(args.map((elem) => {
+    if (elem.error) return elem.error;
+    try {
+      return { value: flatten1(elem.valu) };
+    } catch (e) {
+      return { error: e.toString() };
+    }
+  }));
+};
+
+const flatten1 = (thing, depth) => {
+  if (depth <= 0) return thing;
+  const ret = [];
+  if (classify(thing) !== ARRAY_T) return thing;
+
+  thing.arr.forEach((elem) => {
+    if (elem.error) {
+      ret.push(elem);
+    } else {
+      const flattenedElem = flatten1(elem.value, depth - 1);
+      if (classify(flattenedElem) === ARRAY_T) {
+        flattenedElem.arr.forEach((subElem) => { ret.push(subElem); });
+      } else {
+        ret.push(elem);
+      }
+    }
+  });
+  return new TableArray(ret);
 };
 
 const unaryFn = (fn, name) => (args, kwargs) => {
@@ -215,7 +258,14 @@ const unaryFn = (fn, name) => (args, kwargs) => {
   }
   if (!args.length) return fn(0);
   if (args.length === 1) return fn(args[0]);
-  return new TableArray(args.map(elem => ({ value: fn(elem) })));
+  return new TableArray(args.map((elem) => {
+    if (elem.error) return elem;
+    try {
+      return { value: fn(elem.value) };
+    } catch (e) {
+      return { error: e.toString() };
+    }
+  }));
 };
 
 const range1 = (thing) => {
@@ -315,6 +365,42 @@ const sum1 = (thing) => {
   }
 };
 
+const transpose1 = (thing) => {
+  if (classify(thing) !== ARRAY_T) {
+    throw new Error('Can only transpose arrays');
+  }
+  if (thing.arr.length === 0) return new TableArray([]); // ?
+
+  let retArr;
+  thing.arr.forEach((elem) => {
+    if (elem.error) {
+      throw new Error('Cannot transpose an array containing errors');
+    }
+    if (retArr === undefined) {
+      const elemLength = size1(elem.value);
+      retArr = new Array(elemLength);
+      for (let i = 0; i < elemLength; ++i) {
+        retArr[i] = { value: new TableArray([]) };
+      }
+    } else if (size1(elem.value) !== retArr.length) {
+      throw new Error('Can only transpose "rectangular" things');
+    }
+    const { value } = elem;
+    if (typeof value === 'string') {
+      for (let i = 0; i < value.length; ++i) {
+        retArr[i].value.arr.push({ value: value[i] });
+      }
+    } else if (value.arr) {
+      value.arr.forEach((valueOrError, index) => {
+        retArr[index].value.arr.push(valueOrError);
+      });
+    } else {
+      throw new Error('Can only transpose arrays containing arrays or strings');
+    }
+  });
+  return new TableArray(retArr);
+};
+
 const count1 = (thing) => {
   const type = classify(thing);
   switch (type) {
@@ -377,6 +463,7 @@ const size = unaryFn(size1, 'size');
 const range = unaryFn(range1, 'range');
 const sum = deepAggregate(sum1, 'sum');
 const count = deepAggregate(count1, 'count');
+const transpose = unaryFn(transpose1, 'transpose');
 
 const average = (args, kwargs) => {
   const s = sum(args, kwargs);
@@ -387,6 +474,8 @@ const average = (args, kwargs) => {
 export const globalFunctions = {
   sum,
   count,
+  transpose,
+  flatten,
   average,
   filter: byFunction(filterFn, 'filter'),
   sort: byFunction(sortFn, 'sort'),
@@ -410,6 +499,8 @@ export const globalFunctions = {
 export const globalFunctionArgs = {
   sum: new Set(),
   count: new Set(),
+  transpose: new Set(),
+  flatten: new Set(['depth']),
   average: new Set(),
   filter: new Set(['by']),
   sort: new Set(['by']),
