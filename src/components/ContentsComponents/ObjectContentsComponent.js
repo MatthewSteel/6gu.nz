@@ -41,7 +41,7 @@ class ObjectContentsComponent extends ContentsBaseComponent {
     if (context.formula) return undefined;
     const { selY, selX } = this.localSelection();
     if (selY !== 0) return undefined;
-    return { typeToDelete: OBJECT_CELL, indexToDelete: selX };
+    return { type: OBJECT_CELL, index: selX };
   }
 
   bounds() {

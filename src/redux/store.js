@@ -184,51 +184,52 @@ const defaultArray = (contextId, y, x) => {
   return { width, height, type: ARRAY, ...base };
 };
 
-const defaultCellForLocation = (context, y, x, formula) => {
-  if (context.type === SHEET) {
-    let baseCell = defaultCell(context.id, y, x);
-    let children = [];
-    if (formula && formula.array) {
-      if (formula.array.length > 0 && formula.array.every(t => t.object)) {
-        baseCell = defaultTable(context.id, y, x);
-        const keys = {}; // name -> new child
-        formula.array.forEach(({ object }, rowIndex) => {
-          const row = defaultTableRow(baseCell.id, rowIndex);
-          children.push(row);
-          object.forEach(({ key, value }) => {
-            if (!keys[key]) {
-              const numKeys = Object.keys(keys).length;
-              keys[key] = defaultTableColumn(baseCell.id, numKeys, key);
-              children.push(keys[key]);
-            }
-            children.push(defaultTableCell(keys[key].id, row.id, value));
-          });
+const defaultSheetElemForLocation = (context, y, x, formula) => {
+  let baseCell = defaultCell(context.id, y, x);
+  let children = [];
+  if (formula && formula.array) {
+    if (formula.array.length > 0 && formula.array.every(t => t.object)) {
+      baseCell = defaultTable(context.id, y, x);
+      const keys = {}; // name -> new child
+      formula.array.forEach(({ object }, rowIndex) => {
+        const row = defaultTableRow(baseCell.id, rowIndex);
+        children.push(row);
+        object.forEach(({ key, value }) => {
+          if (!keys[key]) {
+            const numKeys = Object.keys(keys).length;
+            keys[key] = defaultTableColumn(baseCell.id, numKeys, key);
+            children.push(keys[key]);
+          }
+          children.push(defaultTableCell(keys[key].id, row.id, value));
         });
-      } else {
-        baseCell = defaultArray(context.id, y, x);
-        children = formula.array.map((
-          (childFormula, index) => defaultArrayCell(
-            baseCell.id,
-            index,
-            childFormula,
-          )
-        ));
-      }
-    } else if (formula && formula.object) {
-      baseCell = defaultObject(context.id, y, x);
-      children = formula.object.map((
-        (childFormula, index) => defaultObjectCell(
+      });
+    } else {
+      baseCell = defaultArray(context.id, y, x);
+      children = formula.array.map((
+        (childFormula, index) => defaultArrayCell(
           baseCell.id,
           index,
-          childFormula.value,
-          childFormula.key,
+          childFormula,
         )
       ));
     }
-
-    return { baseCell, children };
+  } else if (formula && formula.object) {
+    baseCell = defaultObject(context.id, y, x);
+    children = formula.object.map((
+      (childFormula, index) => defaultObjectCell(
+        baseCell.id,
+        index,
+        childFormula.value,
+        childFormula.key,
+      )
+    ));
   }
-  if (context.type === TABLE) {
+
+  return { baseCell, children };
+};
+
+const defaultTableElemForLocation = (context, y, x, locationSelected) => {
+  if (!locationSelected) {
     const tableRefsAtPosition = refsAtPosition(store.getState())[context.id];
     const children = [];
     let array = tableRefsAtPosition.columns[x];
@@ -245,6 +246,28 @@ const defaultCellForLocation = (context, y, x, formula) => {
     }
     const baseCell = defaultTableCell(array.id, object.id);
     return { baseCell, children };
+  }
+  if (locationSelected.type === TABLE_COLUMN) {
+    return {
+      baseCell: defaultTableColumn(context.id, locationSelected.index),
+      children: [],
+    };
+  }
+  if (locationSelected.type !== TABLE_ROW) {
+    throw new Error('Unknown locationSelected type');
+  }
+  return {
+    baseCell: defaultTableRow(context.id, locationSelected.index),
+    children: [],
+  };
+};
+
+const defaultCellForLocation = (context, y, x, locationSelected, formula) => {
+  if (context.type === SHEET) {
+    return defaultSheetElemForLocation(context, y, x, formula);
+  }
+  if (context.type === TABLE) {
+    return defaultTableElemForLocation(context, y, x, locationSelected);
   }
   if (context.type === OBJECT) {
     return {
@@ -382,6 +405,7 @@ const rootReducer = (state, action) => {
         contextRef,
         selection.y,
         selection.x,
+        selection.locationSelected,
         newFormula.formula,
       );
 

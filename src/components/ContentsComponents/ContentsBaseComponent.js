@@ -235,8 +235,8 @@ export default class ContentsBaseComponent extends Component {
         const selection = this.selectedCellId();
         const { deleteCell, deleteLocation } = this.props;
         if (selection.locationSelected) {
-          const { typeToDelete, indexToDelete } = selection.locationSelected;
-          deleteLocation(selection.context, typeToDelete, indexToDelete);
+          const { type, index } = selection.locationSelected;
+          deleteLocation(selection.context, type, index);
         } else {
           deleteCell(selection.cellId);
         }

@@ -39,7 +39,7 @@ class TableKeysComponent extends ContentsBaseComponent {
     const { context } = this.props;
     if (context.formula) return undefined;
     const { selX } = this.localSelection();
-    return { typeToDelete: TABLE_COLUMN, indexToDelete: selX };
+    return { type: TABLE_COLUMN, index: selX };
   }
 
   bounds() {

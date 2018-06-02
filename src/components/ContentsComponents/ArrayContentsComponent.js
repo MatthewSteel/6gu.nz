@@ -35,7 +35,7 @@ class ArrayContentsComponent extends ContentsBaseComponent {
     if (context.formula) return undefined;
     const { selY, selX } = this.localSelection();
     if (selX !== 0) return undefined;
-    return { typeToDelete: ARRAY_CELL, indexToDelete: selY };
+    return { type: ARRAY_CELL, index: selY };
   }
 
   bounds() {

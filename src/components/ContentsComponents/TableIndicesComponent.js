@@ -39,7 +39,7 @@ class TableIndicesComponent extends ContentsBaseComponent {
     const { context } = this.props;
     if (context.formula) return undefined;
     const { selY } = this.localSelection();
-    return { typeToDelete: TABLE_ROW, indexToDelete: selY };
+    return { type: TABLE_ROW, index: selY };
   }
 
   bounds() {
