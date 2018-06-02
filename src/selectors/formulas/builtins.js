@@ -36,16 +36,6 @@ export const deepOp2 = (op) => {
     // Also: Consider getting rid of errors...
     if (type1 === ARRAY_T && type2 === ARRAY_T) {
       if (left.arr.length !== right.arr.length) {
-        if (left.arr.length === 1) {
-          const leftElem = left.arr[0];
-          return new TableArray(right.arr.map((
-            rightElem => tryF(leftElem, rightElem))));
-        }
-        if (right.arr.length === 1) {
-          const rightElem = right.arr[0];
-          return new TableArray(left.arr.map((
-            leftElem => tryF(leftElem, rightElem))));
-        }
         throw new Error('Mismatched array lengths');
       }
       return new TableArray(left.arr.map((leftElem, i) => {
