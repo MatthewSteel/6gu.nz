@@ -460,6 +460,41 @@ const stringLen = (thing) => {
   return thing.length;
 };
 
+const toRaw1 = (thing) => {
+  const objRet = {};
+  switch (classify(thing)) {
+    case ARRAY_T:
+      return thing.arr.map((elem) => {
+        if (elem.error) throw new Error(elem.error);
+        return toRaw1(elem.value);
+      });
+    case OBJECT_T:
+      for (const [k, v] of Object.entries(thing.byName)) {
+        if (v.error) throw new Error(v.error);
+        objRet[k] = toRaw1(v.value);
+      }
+      return objRet;
+    default:
+      return thing;
+  }
+};
+const toJson1 = thing => JSON.stringify(toRaw1(thing));
+
+const fromRaw1 = (thing) => {
+  if (thing instanceof Array) {
+    return new TableArray(thing.map(elem => ({ value: fromRaw1(elem) })));
+  }
+  if (thing instanceof Object) {
+    const byName = {};
+    for (const [k, v] of Object.entries(thing)) {
+      byName[k] = { value: fromRaw1(v) };
+    }
+    return { byName };
+  }
+  return thing;
+};
+const fromJson1 = thing => fromRaw1(JSON.parse(thing));
+
 
 const sin = trig(Math.sin, 'sin');
 const cos = trig(Math.cos, 'sin');
@@ -475,6 +510,8 @@ const range = unaryFn(range1, 'range');
 const sum = deepAggregate(sum1, 'sum');
 const count = deepAggregate(count1, 'count');
 const transpose = unaryFn(transpose1, 'transpose');
+const toJson = unaryFn(toJson1, 'toJson');
+const fromJson = unaryFn(fromJson1, 'fromJson');
 
 const average = (args, kwargs) => {
   const s = sum(args, kwargs);
@@ -506,6 +543,8 @@ export const globalFunctions = {
   size,
   length,
   range,
+  toJson,
+  fromJson,
 };
 
 export const globalFunctionArgs = {
@@ -531,6 +570,8 @@ export const globalFunctionArgs = {
   length: new Set(),
   range: new Set(),
   log: new Set(['base']),
+  toJson: new Set(),
+  fromJson: new Set(),
 };
 
 export default {
