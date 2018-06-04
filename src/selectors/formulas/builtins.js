@@ -478,7 +478,7 @@ const toRaw1 = (thing) => {
       return thing;
   }
 };
-const toJson1 = thing => JSON.stringify(toRaw1(thing));
+export const toJson1 = thing => JSON.stringify(toRaw1(thing));
 
 const fromRaw1 = (thing) => {
   if (thing instanceof Array) {
@@ -493,7 +493,7 @@ const fromRaw1 = (thing) => {
   }
   return thing;
 };
-const fromJson1 = thing => fromRaw1(JSON.parse(thing));
+export const fromJson1 = thing => fromRaw1(JSON.parse(thing));
 
 
 const sin = trig(Math.sin, 'sin');

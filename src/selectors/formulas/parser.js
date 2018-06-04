@@ -121,7 +121,7 @@ const parseArgsList = (tokens, i) => {
 };
 
 
-const parseTermFromName = (tokens, i) => {
+export const parseTermFromName = (tokens, i) => {
   const { term, newIndex } = parseLookups(tokens, i + 1, tokens[i]);
   const nextToken = tokens[newIndex];
   if (

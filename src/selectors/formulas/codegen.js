@@ -58,17 +58,14 @@ const tryExpandExpr = (expr) => {
   );
 };
 
-const expandUserCall = (callTerm) => {
+export const expandUserCall = (callTerm) => {
   const signature = callSignature(callTerm);
   if (!callTerm.kwargs.every(({ ref }) => ref.ref)) {
     return 'pleaseThrow("Call arguments must be plain references")';
   }
   const customArgs = callTerm.kwargs.map(({ expr }) =>
     expandExpr(expr));
-  const allArgs = [
-    'globals',
-    ...customArgs,
-  ].join(', ');
+  const allArgs = ['globals', ...customArgs].join(', ');
   return `globals[${JSON.stringify(signature)}](${allArgs})`;
 };
 
@@ -159,10 +156,9 @@ const expandExpr = (term) => {
   throw new Error(`unknown term type ${JSON.stringify(term)}`);
 };
 
-
 // Distinct spreadsheet "what-if" "calls" are translated into JS functions.
 // We store them based on input and output ref ids.
-const callSignature = (callTerm) => {
+export const callSignature = (callTerm) => {
   if (!callTerm.call.ref) {
     throw new Error('Can only call refs');
   }
@@ -332,19 +328,23 @@ const refExpression = (ref) => {
   return formulaExpression(ref.formula);
 };
 
-const getRefExpressions = (refs) => {
-  const ret = {};
-  refs.forEach((ref) => {
-    ret[ref.id] = refExpression(ref);
-  });
-  return ret;
-};
+export const getRefExpressions = createSelector(
+  getRefs,
+  (refs) => {
+    const ret = {};
+    refs.forEach((ref) => {
+      ret[ref.id] = refExpression(ref);
+    });
+    return ret;
+  },
+);
 
 // eslint-disable-next-line import/prefer-default-export
 export const getCellValuesById = createSelector(
   getRefs,
+  getRefExpressions,
   getTopoSortedRefIds,
-  (refs, sortedRefIds) => {
+  (refs, refExpressions, sortedRefIds) => {
     const globals = {
       arrayValue,
       getIndexLookup,
@@ -367,8 +367,6 @@ export const getCellValuesById = createSelector(
       globals[id] = { error: 'Error: Circular reference (or depends on one)' };
     });
 
-    // All expressions for cells and sheets
-    const refExpressions = getRefExpressions(refs);
 
     // Write all functions
     const allFormulas = refs.map(({ formula }) => formula).filter(Boolean);
@@ -459,7 +457,7 @@ class RefPusher {
 }
 
 // Actually building the code to eval and making a real function.
-const createFunction = (callTerm, refExpressions) => {
+export const createFunction = (callTerm, refExpressions) => {
   const refPusher = new RefPusher();
   // Set overrides
   callTerm.kwargs.forEach(({ ref }) => {
