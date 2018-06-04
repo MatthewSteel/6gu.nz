@@ -33,7 +33,6 @@ class ResizeHandleComponent extends PureComponent {
     };
     return (
       <div className="ResizeDivHover">
-        {children}
         {endDragCallback &&
           <div
             className={classNames(selected && 'ResizeThingSelected')}
@@ -51,6 +50,7 @@ class ResizeHandleComponent extends PureComponent {
             />
           </div>
         }
+        {children}
       </div>
     );
   }
