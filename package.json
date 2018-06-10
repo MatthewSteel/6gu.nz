@@ -1,24 +1,15 @@
 {
-  "name": "sheet",
+  "name": "sheet-monorepo",
   "version": "0.1.0",
   "private": true,
-  "dependencies": {
-    "classnames": "^2.2.5",
-    "esm": "^3.0.46",
-    "fast-deep-equal": "^2.0.1",
-    "react": "16.3.0",
-    "react-dom": "^16.3.2",
-    "react-redux": "^5.0.7",
-    "react-scripts": "1.1.1",
-    "redux": "^3.7.2",
-    "reselect": "^3.0.1",
-    "uuid-v4": "^0.1.0"
-  },
+  "dependencies": {},
   "scripts": {
-    "start": "react-scripts start",
-    "build": "react-scripts build",
-    "test": "react-scripts test --env=jsdom",
-    "eject": "react-scripts eject"
+    "dev": "cd client && yarn run start",
+    "build": "cd client && react-scripts build",
+    "test": "cd client && react-scripts test --env=jsdom"
   },
-  "devDependencies": {}
+  "devDependencies": {
+    "eslint": "^4.19.1"
+  },
+  "license": "UNLICENSED"
 }
