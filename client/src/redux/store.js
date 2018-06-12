@@ -13,6 +13,7 @@ import {
   transitiveChildren,
   translateExpr,
 } from '../selectors/formulas/selectors';
+import { digMut } from '../selectors/algorithms/algorithms';
 import {
   parseFormula,
   translateLookups,
@@ -34,19 +35,39 @@ export const TABLE_CELL = 'table_cell';
 
 const DEFAULT_FORMULA = { value: '' };
 
+const blankDocument = () => ({
+  data: {
+    sheets: [{
+      id: uuidv4(),
+      name: 's1',
+      type: SHEET,
+    }, {
+      id: uuidv4(),
+      name: 's2',
+      type: SHEET,
+    }],
+    cells: [],
+  },
+  metadata: {},
+  id: uuidv4(),
+  updateId: uuidv4(),
+});
+
+const loggedOutDocs = [];
+
 const initialState = {
-  sheets: [{
-    id: 'sheet0',
-    name: 's1',
-    type: SHEET,
-  }, {
-    id: 'sheet1',
-    name: 's2',
-    type: SHEET,
-  }],
-  cells: [],
+  openDocument: blankDocument(),
+  documents: loggedOutDocs,
   uistate: { dragState: {} },
 };
+
+const path = terminalName => ({
+  updateId: ['openDocument', 'updateId'],
+  cells: ['openDocument', 'data', 'cells'],
+  sheets: ['openDocument', 'data', 'sheets'],
+  data: ['openDocument', 'data'],
+  dragState: ['uistate', 'dragState'],
+}[terminalName]);
 
 export const createSheet = () => ({ type: 'CREATE_SHEET' });
 
@@ -295,17 +316,17 @@ const defaultCellForLocation = (context, y, x, locationSelected, formula) => {
   };
 };
 
-const scheduleSave = () => {
-  const updateId = uuidv4();
+const scheduleSave = (state) => {
+  const nextUpdateId = uuidv4();
 
   setTimeout(() => {
-    const { sheets, cells } = store.getState();
-    if (store.getState().updateId === updateId) {
-      localStorage.setItem('onlyFile', JSON.stringify({ sheets, cells }));
+    const { openDocument } = store.getState();
+    if (openDocument.updateId === nextUpdateId) {
+      localStorage.setItem('onlyFile', JSON.stringify(openDocument));
     }
   }, 1000);
 
-  return updateId;
+  return digMut(state, path('updateId'), () => nextUpdateId);
 };
 
 const newSheet = () => {
@@ -351,16 +372,19 @@ const translateDeletions = (newState, deletedRefIds) => {
     backwardsGraph[id].filter(predId => refsById[predId].formula)
   ))));
 
-  return {
-    ...newState,
-    cells: newState.cells.map((cell) => {
+  return digMut(newState, path('cells'), cells => (
+    cells.map((cell) => {
       if (!refIdsToRewrite.has(cell.id)) return cell;
       return {
         ...cell,
-        formula: translateExpr(cell.formula, undefined, translateTermForDeletions(deletedRefIds)),
+        formula: translateExpr(
+          cell.formula,
+          undefined,
+          translateTermForDeletions(deletedRefIds),
+        ),
       };
-    }),
-  };
+    })
+  ));
 };
 
 const rewireFormula = (cell, translateFn) => {
@@ -378,27 +402,24 @@ const rewireFormula = (cell, translateFn) => {
 
 const rewireBadRefs = (newState, updatedRefs) => {
   const translateFn = translateLookups(updatedRefs);
-  return {
-    ...newState,
-    cells: newState.cells.map(cell => rewireFormula(cell, translateFn)),
-  };
+  return digMut(newState, path('cells'), cells => (
+    cells.map(cell => rewireFormula(cell, translateFn))));
 };
 
 const rootReducer = (state, action) => {
   if (action.type === 'LOAD_FILE') {
     return {
+      ...state,
       uistate: { dragState: {} },
-      ...JSON.parse(localStorage.getItem('onlyFile')),
+      openDocument: JSON.parse(localStorage.getItem('onlyFile')),
     };
   }
 
   if (action.type === 'CREATE_SHEET') {
     // Re-wire? Dunno...
-    return {
-      ...state,
-      sheets: [...state.sheets, newSheet()],
-      updateId: scheduleSave(),
-    };
+    return scheduleSave((
+      digMut(state, path('sheets'), sheets => [...sheets, newSheet()])
+    ));
   }
 
   if (action.type === 'SET_CELL_FORMULA') {
@@ -409,7 +430,8 @@ const rootReducer = (state, action) => {
 
     const { baseCell, children } = selection.cellId ?
       {
-        baseCell: state.cells.find(({ id }) => id === selection.cellId),
+        baseCell: state.openDocument.data.cells
+          .find(({ id }) => id === selection.cellId),
         children: [],
       } :
       defaultCellForLocation(
@@ -443,16 +465,14 @@ const rootReducer = (state, action) => {
       ...newFormula,
     };
 
-    const stateWithCell = {
-      ...state,
-      cells: [
-        ...state.cells.filter(({ id }) => id !== selection.cellId),
-        cell,
-        ...children,
-      ],
-      updateId: scheduleSave(),
-    };
-    return rewireBadRefs(stateWithCell, [cell, ...children]);
+    const stateWithCell = digMut(state, path('cells'), cells => [
+      ...cells.filter(({ id }) => id !== selection.cellId),
+      cell,
+      ...children,
+    ]);
+    return scheduleSave((
+      rewireBadRefs(stateWithCell, [cell, ...children])
+    ));
   }
 
   if (action.type === 'DELETE_THING') {
@@ -462,13 +482,14 @@ const rootReducer = (state, action) => {
 
     const idsToDelete = transitiveChildren(refId);
 
-    const stateMinusDeletions = {
-      ...state,
-      sheets: state.sheets.filter(({ id }) => !idsToDelete.has(id)),
-      cells: state.cells.filter(({ id }) => !idsToDelete.has(id)),
-      updateId: scheduleSave(),
-    };
-    return translateDeletions(stateMinusDeletions, idsToDelete);
+    const stateMinusDeletions = digMut(state, path('data'), data => ({
+      ...data,
+      sheets: data.sheets.filter(({ id }) => !idsToDelete.has(id)),
+      cells: data.cells.filter(({ id }) => !idsToDelete.has(id)),
+    }));
+    return scheduleSave((
+      translateDeletions(stateMinusDeletions, idsToDelete)
+    ));
   }
 
   if (action.type === 'DELETE_LOCATION') {
@@ -483,20 +504,20 @@ const rootReducer = (state, action) => {
       transitiveChildren(refToDelete.id) :
       new Set();
 
-    const stateMinusDeletions = {
-      ...state,
-      sheets: state.sheets.filter(({ id }) => !idsToDelete.has(id)),
-      cells: state.cells
-        .filter(({ id }) => !idsToDelete.has(id))
+    const stateMinusDeletions = digMut(state, path('data'), data => ({
+      ...data,
+      sheets: data.sheets.filter(({ id }) => !idsToDelete.has(id)),
+      cells: data.cells.filter(({ id }) => !idsToDelete.has(id))
         .map((cell) => {
           if (typeToDelete !== cell.type) return cell;
           if (refParentId(cell) !== contextId) return cell;
           if (cell.index < indexToDelete) return cell;
           return { ...cell, index: cell.index - 1 };
         }),
-      updateId: scheduleSave(),
-    };
-    return translateDeletions(stateMinusDeletions, idsToDelete);
+    }));
+    return scheduleSave((
+      translateDeletions(stateMinusDeletions, idsToDelete)
+    ));
   }
 
   if (action.type === 'MOVE_THING') {
@@ -507,21 +528,14 @@ const rootReducer = (state, action) => {
       throw new Error('Can only move/resize things in sheets');
     }
 
-    return {
-      ...state,
-      cells: [
-        ...state.cells.filter(({ id }) => id !== refId),
-        { ...existingRef, ...newGeometry },
-      ],
-      updateId: scheduleSave(),
-    };
+    return scheduleSave(digMut(state, path('cells'), cells => [
+      ...cells.filter(({ id }) => id !== refId),
+      { ...existingRef, ...newGeometry },
+    ]));
   }
 
   if (action.type === 'START_DRAG') {
-    return {
-      ...state,
-      uistate: { ...state.uistate, dragState: action.payload },
-    };
+    return digMut(state, path('dragState'), action.payload);
   }
 
   if (action.type === 'UPDATE_DRAG') {
@@ -535,20 +549,11 @@ const rootReducer = (state, action) => {
     if (equal(dragState, newDragState)) {
       return state;
     }
-    return {
-      ...state,
-      uistate: {
-        ...state.uistate,
-        dragState: newDragState,
-      },
-    };
+    return digMut(state, path('dragState'), newDragState);
   }
 
   if (action.type === 'CLEAR_DRAG') {
-    return {
-      ...state,
-      uistate: { ...state.uistate, dragState: {} },
-    };
+    return digMut(state, path('dragState'), {});
   }
 
   return state;

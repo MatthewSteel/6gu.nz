@@ -9,8 +9,8 @@ import store, { ARRAY, ARRAY_CELL, CELL, OBJECT, OBJECT_CELL, SHEET, TABLE, TABL
 
 // Simple "get raw state" selectors (for the moment?)
 
-export const getCells = state => state.cells;
-export const getSheets = state => state.sheets;
+export const getCells = state => state.openDocument.data.cells;
+export const getSheets = state => state.openDocument.data.sheets;
 
 export const getRefs = createSelector(
   getCells,

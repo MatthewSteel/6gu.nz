@@ -84,3 +84,24 @@ export const nodesInLargeStronglyConnectedComponents = (
   );
   return ret;
 };
+
+// digMut(state, ['openDocument', 'data'], newData)
+//   ->
+//  {
+//    ...state,
+//    openDocument: {
+//      ...state.openDocument,
+//      data: newData,
+//    },
+//  }
+export const digMut = (orig, path, replacement, depth = 0) => {
+  if (depth === path.length) {
+    if (typeof replacement === 'function') return replacement(orig);
+    return replacement;
+  }
+  const key = path[depth];
+  return {
+    ...orig,
+    [key]: digMut(orig[key], path, replacement, depth + 1),
+  };
+};
