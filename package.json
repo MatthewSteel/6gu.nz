@@ -4,11 +4,15 @@
   "private": true,
   "dependencies": {},
   "scripts": {
-    "dev": "cd client && yarn run start",
+    "client": "cd client && yarn start",
+    "dev": "concurrently -k -r -n client \"yarn client\"",
     "build": "cd client && react-scripts build",
-    "test": "cd client && react-scripts test --env=jsdom"
+    "test": "cd client && react-scripts test --env=jsdom",
+    "setup": "(cd client && yarn install); (cd server && yarn setup)",
+    "clean": "cd server && yarn clean"
   },
   "devDependencies": {
+    "concurrently": "^3.5.1",
     "eslint": "^4.19.1"
   },
   "license": "UNLICENSED"
