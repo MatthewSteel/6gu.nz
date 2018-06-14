@@ -12,6 +12,8 @@
   background-color: #FAFAFA;
   border: 1px solid #EEE;
   text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
   z-index: 1;
   margin-right: -1px;
   margin-bottom: -1px;
@@ -23,6 +25,8 @@
   border: 1px solid #EEE;
   background-color: #FDFDFD;
   text-overflow: ellipsis;
+  overflow: hidden;
+  white-space: nowrap;
   z-index: 1;
   margin-right: -1px;
   margin-bottom: -1px;

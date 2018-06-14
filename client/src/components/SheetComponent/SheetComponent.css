@@ -1,9 +1,8 @@
 .SheetContainer {
   display: flex;
   flex-direction: column;
-  margin: 5px 10px;
   grid-area: 1 / 1 / 2 / 2;
-  width: 800px;
+  width: 100%;
   overflow: hidden;
 }
 

@@ -96,7 +96,7 @@ class SheetComponent extends Component {
       selX,
     } = this.state;
     const style = {
-      gridTemplateColumns: `repeat(${width}, auto)`,
+      gridTemplateColumns: `repeat(${width}, 1fr)`,
       gridTemplateRows: `repeat(${height * 2}, 2.5ex)`,
       zIndex: depth + 1,
     };
