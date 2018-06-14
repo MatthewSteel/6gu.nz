@@ -10,6 +10,7 @@ const PgSession = require('connect-pg-simple')(session);
 const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const FacebookStrategy = require('passport-facebook').Strategy;
+const FakeOauth2Strategy = require('./fakeOauthServer/fakeStrategy');
 
 const { pool, query } = require('../src/db');
 
@@ -21,17 +22,16 @@ if (!(environments.includes(process.env.ENVIRONMENT))) {
 const getOrPutUser = (how, authId, next) =>
   query(`
   INSERT INTO users (providerName, providerUserId)
-  SELECT $1, $2
-  WHERE NOT EXISTS (
-    SELECT id FROM users WHERE providerName=$1 AND providerUserId=$2
-  );
-  SELECT * FROM users WHERE providerName=$1 AND providerUserId=$2;
-  `, how, authId)
+  VALUES ($1, $2)
+  ON CONFLICT (providerName, providerUserId)
+    DO UPDATE SET providerName=EXCLUDED.providerName
+  RETURNING *;
+  `, [how, authId])
     .then(res => next(null, res.rows[0]))
     .catch(next);
 
 const getUser = (id, next) =>
-  query('SELECT * FROM users WHERE id=$1;')
+  query('SELECT * FROM users WHERE id=$1;', [id])
     .then(res => next(null, res.rows[0]))
     .catch(next);
 
@@ -44,10 +44,20 @@ passport.deserializeUser(getUser);
 
 
 // Oauth2
-const providers = process.env === 'prod' ? ['google', 'facebook'] : [];
+const providers = process.env === 'prod' ?
+  ['google', 'facebook'] :
+  ['fake'];
+
+
+// Host is really "this server" but in dev we have to redirect to the
+// right port because the dev server proxy only intercepts XHRs etc, not
+// navigation.
+const host = process.env.OAUTH2_CLIENT_HOST;
+
 const strategies = {
   google: GoogleStrategy,
   facebook: FacebookStrategy,
+  fake: FakeOauth2Strategy(host),
 };
 
 providers.forEach((provider) => {
@@ -55,9 +65,9 @@ providers.forEach((provider) => {
   const PROVIDER = provider.toUpperCase();
   passport.use(new Strategy(
     {
-      clientId: process.env[`OAUTH2_${PROVIDER}_CLIENT_ID`],
+      clientID: process.env[`OAUTH2_${PROVIDER}_CLIENT_ID`],
       clientSecret: process.env[`OAUTH2_${PROVIDER}_CLIENT_SECRET`],
-      callbackUrl: `/auth/${provider}/callback`,
+      callbackURL: `${host}/auth/${provider}/callback`,
     },
     (accessToken, refreshToken, profile, cb) =>
       getOrPutUser(provider, profile.id, cb),
@@ -67,6 +77,7 @@ providers.forEach((provider) => {
 
 const app = express();
 app.use(session({
+  saveUninitialized: true,
   store: new PgSession({ pool }),
   secret: process.env.COOKIE_SECRET,
   resave: false,
@@ -83,14 +94,7 @@ app.use((req, res, next) => {
 // ROUTES
 
 // login routes
-
 providers.forEach((provider) => {
-  // Route to redirect to their login
-  app.get(
-    `/auth/${provider}`,
-    passport.authenticate(provider, { display: 'popup' }),
-  );
-
   // They send users here after login on their site
   app.get(
     `/auth/${provider}/callback`,
@@ -106,7 +110,7 @@ providers.forEach((provider) => {
 
 ['loginSuccess', 'loginFailure'].forEach((route) => {
   app.get(
-    route,
+    `/${route}`,
     (req, res) => res.send(`
       <html><head><script>
       if (window.opener) {
@@ -119,14 +123,14 @@ providers.forEach((provider) => {
   );
 });
 
-// ??? TODO: test this...
-app.get('/logout', (req, res) => {
-  req.logout();
+// TODO: test this...
+app.get('/api/logout', (req, res) => {
+  req.logout(); // I think this just drops the session from the db.
   res.cookie('loggedIn', false);
   res.end();
 });
 
-app.get('/userInfo', async (req, res) => {
+app.get('/api/userInfo', async (req, res) => {
   if (!req.user) {
     res.end();
     return;
@@ -146,7 +150,7 @@ app.get('/userInfo', async (req, res) => {
   });
 });
 
-app.get('/documents/:documentId', async (req, res) => {
+app.get('/api/documents/:documentId', async (req, res) => {
   const results = await query(
     // TODO: access controls
     'SELECT * FROM documents WHERE id=$1;',
@@ -155,7 +159,25 @@ app.get('/documents/:documentId', async (req, res) => {
   res.json(results.rows[0]);
 });
 
-app.put('/documents/:documentId', async (req, res) => {
+app.delete('/api/documents/:documentId', async (req, res) => {
+  if (!req.user) {
+    res.status(401);
+    res.end();
+    return;
+  }
+  const results = await query(
+    // TODO: access controls
+    'DELETE FROM documents WHERE id=$1 AND userId=$2;',
+    [req.params.documentId, req.user.id],
+  );
+  if (results.rows[0]) {
+    res.end();
+  }
+  res.status(404);
+  res.end();
+});
+
+app.put('/api/documents/:documentId', async (req, res) => {
   if (!req.user) {
     res.status(401);
     res.end();
