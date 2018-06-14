@@ -2,6 +2,10 @@ module.exports = {
   extends: 'airbnb',
   rules: {
     'import/extensions': 0,
+    'import/no-extraneous-dependencies': [
+      'error',
+      { devDependencies: true },
+    ],
     'jsx-a11y/no-noninteractive-element-interactions': 0,
     'no-bitwise': 0,
     'no-continue': 0,
@@ -16,9 +20,7 @@ module.exports = {
     'jsx-a11y/click-events-have-key-events': 0,
     'object-curly-newline': [
       'error',
-      {
-        consistent: true,
-      },
+      { consistent: true },
     ],
   },
   env: {
