@@ -93,7 +93,7 @@ export const toggleMaximiseSheetElem = (dispatch, refId) => {
   const { y, x } = ref;
   const { width, height } = (ref.width * ref.height) > 1 ?
     { width: 1, height: 1 } :
-    idealWidthAndHeight(ref, ref.sheetId, y, x);
+    idealWidthAndHeight(refId, ref.sheetId, y, x);
 
   return dispatch(moveThing(refId, ref.sheetId, y, x, height, width));
 };

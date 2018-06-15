@@ -69,7 +69,7 @@ export const idealWidthAndHeight = (
   maxWidth = 3,
   maxHeight = 4,
 ) => {
-  const placedCellLocs = sheetPlacedCellLocs(store.getState());
+  const placedCellLocs = sheetPlacedCellLocs(store.getState())[sheetId];
   let best = { width: 1, height: 1 };
   for (let height = 1; height <= maxHeight; ++height) {
     for (let width = 1; width <= maxWidth; ++width) {
