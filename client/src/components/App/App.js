@@ -2,12 +2,12 @@ import React from 'react';
 import { Provider } from 'react-redux';
 import store from '../../redux/store.js';
 import './App.css';
-import BookComponent from '../BookComponent/BookComponent';
+import Workspace from '../Workspace/Workspace';
 
 const App = () => (
   <Provider store={store}>
     <div className="App">
-      <BookComponent />
+      <Workspace />
     </div>
   </Provider>
 );

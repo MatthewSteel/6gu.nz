@@ -1,8 +1,46 @@
-The long list:
- - MVP built-in functions,
- - MVP operations on sheets -- rename, copy.
- - V2? Microservices
- - V2 Permanent storage, file select
+Short-term TODO list:
+ - Split up the reducer code,
+ - Cell-size stuff :-/.
+  - Cells are reasonably consistently sized, go all the way to the edges.
+  - Probably have to do some pixel-density stuff?
+    - css "resolution" or JS devicePixelRatio?
+
+ - Rename, delete sheets and documents,
+   - Click on "path elements" to pop,
+   - Click on "last path element" to rename (if sheet/doc),
+ - Load documents,
+   - Drop-down for opening other files and deletion. Maybe copy?
+ - Load from URL,
+ - Url reflects location,
+ - [index] on objects,
+ - deploy it to some real server,
+ - Google + Facebook login.
+ - Favicon,
+ - Page title text,
+ - Don't try to save things that aren't ours (or if we're logged in)
+ - Handle localStorage being full,
+ - Clear localStorage before putting the thing in it, just in case.
+ - Check unsaved docs that aren't in "the list" have never been saved.
+ - document ids are "nicer",
+ - Handle "unexpected logouts"?
+ - `if` function (not lazy), iferror(?), stdev(?)
+ - `atan2(0.5, in: ["degrees", "radians", "degrees"])`
+ - first, last, reverse, slice, group, max, "not-deep order"/comparison
+ - intro video/website/docs
+ - browse into more things -- arrays etc, complex table elements.
+ - cut down the number of renders.
+ - Overridden deep values look special? Hrm... "parent overridden" prop?
+ - Arr "looks like a table" if _every_ element is an obj or error?
+   - work out `keys` at display time still?
+ - Always display "special arrays" as arrays. Ditto special objects.
+   - They should not look like tables for now.
+Something something "unexpected logouts" too?
+
+That's a lot...
+
+
+
+The longer-term list:
  - V2 cut, copy, paste,
  - V2 Multi-select,
  - V2 "native" map/for etc?
@@ -21,51 +59,25 @@ The long list:
  - ?? laziness
  - ?? a website, some vids.
  - ?? putting it online
-
-
-MVP:
- - Rename sheets,
- - Complex writes (`sheet(arr: range(10))`)
-   - a function per written complex ref to update children and fake refs
-     ("recursive"). Also update the thing itself, I think, and any
-     externally referenced descendants. And blank out their formulas...
-   - Overridden deep values look special? Hrm... "parent overridden" prop?
- - Some built-in functions. A subset of:
-   - *args and **kwargs. "An array called `a1`"? Uses a complex-write.
-   - if, iferror, lookup (and/or table[name: "Fred"]), sum, average, stdev.
-   - String functions, sin, atan2, sqrt, abs, round(s)?, last, reverse,
-   - sort, filter, countif, group, max, length/size
-     - Maybe `sort(arrToSort, by: sortKeys)`? Nice.
- - A website with intro video.
- - Maybe relative references (?). `$row - 1`?
- - Reasonable page layout? Animations? No!
- - Value writes -- `cellObject(k1.k2.k3: v)`?
-   - k1 lookup order "table cols, local cell names, sheet names, cObj prop"
-   - cellArray(0: v) ? OK.
-
-Fuuck.
-
-
-
- - Select external-facing descendants of complex data types,
- - Write external-facing descendants when we write complex data types,
-      `expandExpr(lookupExpression(setThing, ref))` I think.
- - Fix up functionCellsInOrder to include external-facing descendants.
+ - Totally offline: docs, scripts, _everything_ in storage/indexeddb.
 
 
 
 Out of scope for MVP:
+ - Browse into table/sheet cells (not "browse into anything complicated")
+ - each
  - Concatenating tables/arrays, zip functions,
  - Date, time, random functions.
  - Range selection :-(
  - Cut copy paste :-((,
  - Undo/redo,
- - "microservices"?
-   - How does hosting interact with modules/npm? "Don't do it"? Sandbox?
-     - Maybe this is how we charge...
  - Better formula input (clicking),
  - Type tagging,
- - Multiple files, persistent storage.
+ - Maybe relative table/array references in formulas (?). `$row - 1`?
+ - Animations, "Fly-in-from-side"
+ - Value writes -- `cellObject(k1.k2.k3: v)`?
+   - k1 lookup order "local sheet-element names, sheet names, cellObj prop"
+   - cellArray(0: v) ? OK.
 
 
 Next up:
@@ -85,23 +97,10 @@ Next up:
      - We can make the "effective view" a selector, I guess?
        - Righto. But later.
 
- - Create table columns with no cells,
- - Rename table columns by renaming cells,
 
- - Make sure to fill arrays with nulls?
- - Just get nulls when looking up things that don't exist?
-
- - Arr "looks like a table" if _every_ element is an obj or error?
-   - work out `keys` at display time still.
-
- - Does an "array input" always look like an array? Hrm :-/
-   - Maybe if the base is table-like we can edit rows or something?
-
-
-
-Work out tsort implications of `table[name: "Fred"].bar`:
- - just `name` and `bar`? Somehow? That would be ideal.
-
+What do we think about multiple indexes to dig?
+  arr[range(n), 0] could get the first column of a matrix.
+Dunno... Doesn't seem powerful enough? I don't think it can transpose...
 
 
 Philosophical differences:
@@ -126,37 +125,9 @@ Possible projects after/during MVP work:
  - Row/column headers (or scroll indicators of some other kind.)
     - Simple fake scroll bars, maybe?
     - Just shadows?
- - keyboard scrolling -- [shift or ctrl]+down scrolls current viewport
+ - keyboard scrolling -- [shift or ctrl]+down scrolls current viewport?
  - Better sheet select, scratch-space,
  - Rethought book layout, maybe pop-over preview.
-
-
-Array formula thoughts:
-  - Looked at "J". Verbs have "natural rank" in J, you say "apply this to scalars" and it does the right thing.
-  - Annoyingly, that scheme doesn't work with nested data types -- what rank should "flattenDeep" have? What if we often have heterogeneous depth?
-  - We can get a fair bit of mileage out of "applies to scalars" and recurse down lists (and maybe objects).
-    - Rank 0 is fine, but Rank >=1 are no good, basically.
-
-  Other ideas:
-    - Users can loop manually over things,
-    - We can provide a "broadcast array" type, for which all function calls are applied to elements.
-    - Boxing? If we have things we want to apply to lists of numbers...
-      - Not sure this works.
-    - `each`, `each1` etc macros around formula arguments.
-      - My favourite at the moment.
-
-    From looking at Q: It's not especially important that everything works "at every level" -- J's "natural depth" thing is great, but not necessary.
-    Do as well as we can for the standard library.
-      max(each(a), each(b)).
-        Maybe shortcuts for each(each(a)) etc. I do kinda like 1#2#...
-          No more J/Q for today :-)
-            each(var, key=1, depth=2)
-            So difficult though... map=each(key=1, depth=d); max(map(x))
-              Too hard -- user might use variables :-/. each1, each2...
-  max2 = zip(a, b)[a > b]. Or if(each(a) > each(b), each(a), each(b)).
-    Hmm, each(if)(a > b, a, b)... Not lazy, though...
-      None of them are lazy, _or really can be_. Fine.
-
 
 
 Different views of data. Hmm. If it's small you can "browse to it", if it's big you can see it?

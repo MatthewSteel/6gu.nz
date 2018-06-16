@@ -1,6 +1,7 @@
 import { createStore } from 'redux';
 import uuidv4 from 'uuid-v4';
 import equal from 'fast-deep-equal';
+import cookie from 'cookie';
 import {
   getChildrenOfRef,
   getContextIdForRefId,
@@ -48,16 +49,25 @@ const blankDocument = () => ({
     }],
     cells: [],
   },
-  metadata: {},
+  metadata: { name: 'New document' },
   id: uuidv4(),
-  updateId: uuidv4(),
 });
 
 const loggedOutDocs = [];
 
+export const LOGIN_STATES = {
+  UNKNOWN: 'UNKNOWN',
+  LOGGED_IN: 'LOGGED_IN',
+  LOGGED_OUT: 'LOGGED_OUT',
+};
+const UNSAVED_DOCUMENT = 'unsavedDocument';
+const LAST_SAVE = 'lastSave';
+
 const initialState = {
-  openDocument: blankDocument(),
-  documents: loggedOutDocs,
+  userState: {
+    loginState: LOGIN_STATES.UNKNOWN,
+    documents: loggedOutDocs,
+  },
   uistate: { dragState: {} },
 };
 
@@ -117,7 +127,83 @@ export const updateDrag = (targetViewId, targetSheetId, y, x) => ({
 
 export const clearDrag = () => ({ type: 'CLEAR_DRAG' });
 
-export const loadFile = () => ({ type: 'LOAD_FILE' });
+const recentUnsavedWork = (stringDoc, unsavedWork, documents) => {
+  if (!stringDoc || !unsavedWork) return false;
+  const doc = JSON.parse(stringDoc);
+  const [docId, lastUpdateId] = unsavedWork.split(',');
+
+  if (docId !== doc.id) return false;
+  const maybeDoc = documents.find(({ id }) => id === docId);
+
+  // New document of ours that we didn't manage to persist
+  // FIXME (maybe) -- check that it's actually a "never persisted" doc?
+  if (!maybeDoc) return doc;
+
+  // Old document of ours with "expected" persisted state.
+  return maybeDoc.updateId === lastUpdateId && doc;
+};
+
+export const fetchUserInfo = async (dispatch) => {
+  // TODO: Send a document id if there's one in the URL, for page loads.
+  // (Just for page loads?)
+  // Should logged-out users get sent to unmodified last-viewed docs?
+  //  nah...
+  const result = await fetch('/userInfo', { credentials: 'same-origin' });
+  const body = await result.json() || { documents: [] };
+
+  const loginState = {
+    true: LOGIN_STATES.LOGGED_IN,
+    false: LOGIN_STATES.LOGGED_OUT,
+  }[cookie.parse(document.cookie).loggedIn];
+
+  const { openDocument } = store.getState();
+
+  const unsavedWork = recentUnsavedWork(
+    localStorage[UNSAVED_DOCUMENT],
+    localStorage[LAST_SAVE],
+    body.documents,
+  );
+
+  let newOpenDocument;
+  if (openDocument && openDocument.updateId) {
+    // Non-pageload: Stay where we are if it's "interesting"
+    newOpenDocument = openDocument;
+  } else if (!openDocument && unsavedWork) {
+    // Page load.
+    // Use the unsaved document if the unsaved edit is newer than than
+    // the doc's latest edit in the database (or it's not in the db)
+    newOpenDocument = unsavedWork;
+    fetchQueue.push(unsavedWork);
+  } else if (body.maybeRecentDocument) {
+    // Not already looking at an interesting document, no unsaved work
+    // from a previous session, go back to something we were on before.
+    // Don't schedule a save.
+    newOpenDocument = body.maybeRecentDocument;
+  } else {
+    // (Or a blank document if we're new or it has been deleted)
+    // Don't schedule a save.
+    newOpenDocument = blankDocument();
+  }
+
+  dispatch({
+    type: 'USER_STATE',
+    payload: {
+      userState: {
+        loginState,
+        documents: body.documents,
+      },
+      openDocument: newOpenDocument,
+    },
+  });
+};
+
+export const doLogout = async (dispatch) => {
+  // Just
+  //  - Make a logout request to the server,
+  //  - call fetchUserInfo.
+  await fetch('/logout', { credentials: 'same-origin' });
+  await fetchUserInfo(dispatch);
+};
 
 const defaultArrayCell = (contextId, index, formula = DEFAULT_FORMULA) => ({
   id: uuidv4(),
@@ -316,17 +402,70 @@ const defaultCellForLocation = (context, y, x, locationSelected, formula) => {
   };
 };
 
+const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
+
+class FetchQueue {
+  constructor() {
+    this.syncing = false;
+    this.queuedItem = null;
+  }
+
+  push(doc) {
+    this.queuedItem = doc;
+    if (!this.syncing) {
+      this.sync();
+    }
+  }
+
+  async sync() {
+    this.syncing = true;
+    while (this.queuedItem) {
+      /* eslint-disable no-await-in-loop */
+      // It's ok to sleep in this loop, we're not doing "parallel
+      // processing".
+
+      // important: sleep before fetching the queued item, but after
+      // setting this.syncing to true.
+      await sleep(1000);
+      const doc = this.queuedItem;
+      try {
+        const stringDoc = JSON.stringify(doc);
+        localStorage[UNSAVED_DOCUMENT] = stringDoc;
+        // eslint-disable-next-line no-await-in-loop
+        const response = await fetch(
+          `/documents/${doc.id}`,
+          {
+            method: 'PUT',
+            headers: { 'content-type': 'application/json' },
+            body: stringDoc,
+            credentials: 'same-origin',
+          },
+        );
+        if (response.status !== 200) throw new Error('Bad response');
+        // TODO: "saved" status
+        delete localStorage[UNSAVED_DOCUMENT];
+        localStorage[LAST_SAVE] = `${doc.id},${doc.updateId}`;
+      } finally {
+        if (doc === this.queuedItem) {
+          // No new thing to sync, exit the function.
+          this.queuedItem = null;
+        }
+        // keep looping if someone pushed while the request was in flight
+      }
+      /* eslint-enable no-await-in-loop */
+    }
+    this.syncing = false;
+  }
+}
+const fetchQueue = new FetchQueue();
+
 const scheduleSave = (state) => {
   const nextUpdateId = uuidv4();
+  const ret = digMut(state, path('updateId'), () => nextUpdateId);
+  fetchQueue.push(ret.openDocument);
 
-  setTimeout(() => {
-    const { openDocument } = store.getState();
-    if (openDocument.updateId === nextUpdateId) {
-      localStorage.setItem('onlyFile', JSON.stringify(openDocument));
-    }
-  }, 1000);
-
-  return digMut(state, path('updateId'), () => nextUpdateId);
+  // TODO: "unsaved" status.
+  return ret;
 };
 
 const newSheet = () => {
@@ -407,14 +546,6 @@ const rewireBadRefs = (newState, updatedRefs) => {
 };
 
 const rootReducer = (state, action) => {
-  if (action.type === 'LOAD_FILE') {
-    return {
-      ...state,
-      uistate: { dragState: {} },
-      openDocument: JSON.parse(localStorage.getItem('onlyFile')),
-    };
-  }
-
   if (action.type === 'CREATE_SHEET') {
     // Re-wire? Dunno...
     return scheduleSave((
@@ -554,6 +685,13 @@ const rootReducer = (state, action) => {
 
   if (action.type === 'CLEAR_DRAG') {
     return digMut(state, path('dragState'), {});
+  }
+
+  if (action.type === 'USER_STATE') {
+    return {
+      ...state,
+      ...action.payload,
+    };
   }
 
   return state;

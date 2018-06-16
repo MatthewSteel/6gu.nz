@@ -11,6 +11,7 @@ import store, { ARRAY, ARRAY_CELL, CELL, OBJECT, OBJECT_CELL, SHEET, TABLE, TABL
 
 export const getCells = state => state.openDocument.data.cells;
 export const getSheets = state => state.openDocument.data.sheets;
+export const getLoginState = state => state.userState.loginState;
 
 export const getRefs = createSelector(
   getCells,

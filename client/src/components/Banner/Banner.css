@@ -1,0 +1,19 @@
+.Banner {
+  font-size: 0.8em;
+  display: flex;
+  flex-direction: row;
+  justify-content: flex-end;
+  align-items: baseline;
+  width: 100%;
+  border-bottom: 1px solid #AAA;
+}
+
+.LoginButton {
+  border-radius: 4px;
+  background-color: #5361a5;
+  color: white;
+  padding: 4px;
+  margin: 4px;
+  text-decoration: none;
+  border: none;
+}

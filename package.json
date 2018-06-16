@@ -5,7 +5,9 @@
   "dependencies": {},
   "scripts": {
     "client": "cd client && yarn start",
-    "dev": "concurrently -k -r -n client \"yarn client\"",
+    "server": "cd server && yarn dev",
+    "fakeOauth": "cd server && yarn nodemon src/fakeOauthServer/fakeOauthServer.js",
+    "dev": "concurrently -k -r -n client,server,oauth \"yarn client\" \"yarn server\" \"yarn fakeOauth\"",
     "build": "cd client && react-scripts build",
     "test": "cd client && react-scripts test --env=jsdom",
     "setup": "(cd client && yarn install); (cd server && yarn setup)",

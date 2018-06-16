@@ -1,3 +1,4 @@
+import sizeMe from 'react-sizeme';
 import React, { Component } from 'react';
 import equal from 'fast-deep-equal';
 import FormulaComponent from '../FormulaComponent/FormulaComponent';
@@ -97,7 +98,7 @@ class SheetComponent extends Component {
     } = this.state;
     const style = {
       gridTemplateColumns: `repeat(${width}, 1fr)`,
-      gridTemplateRows: `repeat(${height * 2}, 2.5ex)`,
+      gridTemplateRows: `repeat(${height * 2}, 2.2ex)`,
       zIndex: depth + 1,
     };
 
@@ -160,4 +161,9 @@ class SheetComponent extends Component {
   }
 }
 
-export default SheetComponent;
+const sizeMeHoc = sizeMe({
+  monitorWidth: true,
+  monitorHeight: true,
+});
+
+export default sizeMeHoc(SheetComponent);

@@ -2,13 +2,8 @@ import React, { PureComponent } from 'react';
 import { connect } from 'react-redux';
 import { getSheets, getSheetsById, getRefsById } from '../../selectors/formulas/selectors';
 import { getCellValuesById } from '../../selectors/formulas/codegen';
-import store, {
-  createSheet,
-  deleteThing,
-  loadFile,
-} from '../../redux/store';
+import store, { createSheet, deleteThing } from '../../redux/store';
 import SheetComponent from '../SheetComponent/SheetComponent';
-import FileComponent from '../FileComponent/FileComponent';
 
 const mapStateToProps = state => ({
   cellValuesById: getCellValuesById(state),
@@ -18,7 +13,6 @@ const mapStateToProps = state => ({
 });
 
 const mapDispatchToProps = dispatch => ({
-  loadFileProp: () => dispatch(loadFile()),
   createSheetProp: () => dispatch(createSheet()),
   deleteSheet: sheetId => dispatch(deleteThing(sheetId)),
 });
@@ -37,10 +31,6 @@ class BookComponent extends PureComponent {
         id: '0',
         stack: [],
         sheetId: props.sheets[0].id,
-      }, {
-        id: '1',
-        stack: [],
-        sheetId: props.sheets[1].id,
       }],
     };
   }
@@ -133,7 +123,6 @@ class BookComponent extends PureComponent {
       refsById,
       cellValuesById,
       sheets,
-      loadFileProp,
       sheetsById,
     } = this.props;
     const { selectedViewId, views } = this.state;
@@ -173,8 +162,8 @@ class BookComponent extends PureComponent {
           deleteSheet={this.deleteSelectedSheet}
           popViewStack={this.popStack}
           pushViewStack={this.pushStack}
-          height={5}
-          width={6}
+          height={13}
+          width={10}
           depth={i}
         >
           <select
@@ -210,9 +199,6 @@ class BookComponent extends PureComponent {
     return (
       <div>
         {sheetComponents}
-        <FileComponent
-          loadFile={loadFileProp}
-        />
       </div>
     );
   }

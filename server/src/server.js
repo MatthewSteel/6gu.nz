@@ -21,10 +21,10 @@ if (!(environments.includes(process.env.ENVIRONMENT))) {
 
 const getOrPutUser = (how, authId, next) =>
   query(`
-  INSERT INTO users (providerName, providerUserId)
+  INSERT INTO users ("providerName", "providerUserId")
   VALUES ($1, $2)
-  ON CONFLICT (providerName, providerUserId)
-    DO UPDATE SET providerName=EXCLUDED.providerName
+  ON CONFLICT ("providerName", "providerUserId")
+    DO UPDATE SET "providerName"=EXCLUDED."providerName"
   RETURNING *;
   `, [how, authId])
     .then(res => next(null, res.rows[0]))
@@ -52,12 +52,12 @@ const providers = process.env === 'prod' ?
 // Host is really "this server" but in dev we have to redirect to the
 // right port because the dev server proxy only intercepts XHRs etc, not
 // navigation.
-const host = process.env.OAUTH2_CLIENT_HOST;
+const oauthHost = process.env.OAUTH2_CLIENT_HOST;
 
 const strategies = {
   google: GoogleStrategy,
   facebook: FacebookStrategy,
-  fake: FakeOauth2Strategy(host),
+  fake: FakeOauth2Strategy(oauthHost),
 };
 
 providers.forEach((provider) => {
@@ -67,7 +67,7 @@ providers.forEach((provider) => {
     {
       clientID: process.env[`OAUTH2_${PROVIDER}_CLIENT_ID`],
       clientSecret: process.env[`OAUTH2_${PROVIDER}_CLIENT_SECRET`],
-      callbackURL: `${host}/auth/${provider}/callback`,
+      callbackURL: `${oauthHost}/auth/${provider}/callback`,
     },
     (accessToken, refreshToken, profile, cb) =>
       getOrPutUser(provider, profile.id, cb),
@@ -76,6 +76,7 @@ providers.forEach((provider) => {
 
 
 const app = express();
+app.use(express.json());
 app.use(session({
   saveUninitialized: true,
   store: new PgSession({ pool }),
@@ -108,6 +109,7 @@ providers.forEach((provider) => {
   );
 });
 
+const appHost = process.env.APP_HOST;
 ['loginSuccess', 'loginFailure'].forEach((route) => {
   app.get(
     `/${route}`,
@@ -115,7 +117,7 @@ providers.forEach((provider) => {
       <html><head><script>
       if (window.opener) {
         window.opener.focus();
-        window.opener.postMessage('${route}');
+        window.opener.postMessage('${route}', '${appHost}');
       }
       window.close();
       </script></head></html>
@@ -124,42 +126,62 @@ providers.forEach((provider) => {
 });
 
 // TODO: test this...
-app.get('/api/logout', (req, res) => {
+app.get('/logout', (req, res) => {
   req.logout(); // I think this just drops the session from the db.
-  res.cookie('loggedIn', false);
+  // res.cookie('loggedIn', false);
   res.end();
 });
 
-app.get('/api/userInfo', async (req, res) => {
+app.get('/userInfo', async (req, res) => {
   if (!req.user) {
-    res.end();
+    res.json(null);
     return;
   }
   const documentResults = await query(
-    `SELECT id, metadata, createdAt, modifiedAt
-     FROM documents WHERE userId=$1;`,
+    `SELECT id, metadata, "createdAt", "modifiedAt"
+     FROM documents WHERE "userId"=$1;`,
     [req.user.id],
   );
   const userResults = await query(
-    'SELECT signupAt, metadata FROM users WHERE id=$1',
+    'SELECT "signupAt", metadata FROM users WHERE id=$1;',
     [req.user.id],
   );
+
+  // TODO: Let the user ask for a specific document (id from localStorage)
+  // so we can show different documents in different sessions/logins.
+  // NOTE: the user may have no documents.
+  const recentDocumentResults = await query(
+    `SELECT *
+     FROM documents d
+     JOIN users u ON d.id=u."lastViewedDocumentId"
+     WHERE u.id=$1;`
+    ,
+    [req.user.id],
+  );
+  const maybeRecentDocument = recentDocumentResults.rows[0];
+
   res.json({
     user: userResults.rows[0],
     documents: documentResults.rows,
+    maybeRecentDocument,
   });
 });
 
-app.get('/api/documents/:documentId', async (req, res) => {
-  const results = await query(
-    // TODO: access controls
-    'SELECT * FROM documents WHERE id=$1;',
-    [req.params.documentId],
-  );
+app.get('/documents/:documentId', async (req, res) => {
+  const id = req.params.documentId;
+
+  const results = await query('SELECT * FROM documents WHERE id=$1', [id]);
   res.json(results.rows[0]);
+
+  if (req.user) {
+    query(
+      'UPDATE users SET "lastViewedDocumentId"=$1 WHERE id=$2',
+      [id, req.user.id],
+    );
+  }
 });
 
-app.delete('/api/documents/:documentId', async (req, res) => {
+app.delete('/documents/:documentId', async (req, res) => {
   if (!req.user) {
     res.status(401);
     res.end();
@@ -167,7 +189,7 @@ app.delete('/api/documents/:documentId', async (req, res) => {
   }
   const results = await query(
     // TODO: access controls
-    'DELETE FROM documents WHERE id=$1 AND userId=$2;',
+    'DELETE FROM documents WHERE id=$1 AND "userId"=$2;',
     [req.params.documentId, req.user.id],
   );
   if (results.rows[0]) {
@@ -177,35 +199,52 @@ app.delete('/api/documents/:documentId', async (req, res) => {
   res.end();
 });
 
-app.put('/api/documents/:documentId', async (req, res) => {
+app.put('/documents/:documentId', async (req, res) => {
   if (!req.user) {
     res.status(401);
     res.end();
     return;
   }
   const existingDocuments = await query(
-    'SELECT userId FROM documents WHERE id=$1;',
+    'SELECT "userId" FROM documents WHERE id=$1;',
     [req.params.documentId],
   );
   const doc = existingDocuments.rows[0];
-  const { nextUpdateId, data, metadata } = req.post();
+  const { updateId, data, metadata } = req.body;
 
   // Small race conditions here, I don't care.
   if (!doc) {
     await query(
-      `INSERT INTO documents (id, data, updateId, userId, metadata)
+      `INSERT INTO documents (id, data, "updateId", "userId", metadata)
        VALUES ($1, $2, $3, $4, $5);`,
-      [req.params.documentId, data, nextUpdateId, req.user.id, metadata],
+      [req.params.documentId, data, updateId, req.user.id, metadata],
+    );
+    query(
+      'UPDATE users SET "lastViewedDocumentId"=$1 where id=$2',
+      [req.params.documentId, req.user.id],
     );
   } else if (req.user.id === doc.userId) {
     // TODO: compare previous update id so we don't stomp on concurrent
     // edits
-    await query(
-      `UPDATE documents SET
-         data=$2, updateId=$3, userId=$4, metadata=$5, modifiedAt=NOW()
-       WHERE id=$1;`,
-      [req.params.documentId, data, nextUpdateId, req.user.id, metadata],
-    );
+    try {
+      await query(
+        `UPDATE documents SET
+           data=$2,
+           "updateId"=$3,
+           "userId"=$4,
+           metadata=$5,
+           "modifiedAt"=NOW()
+         WHERE id=$1;`,
+        [req.params.documentId, data, updateId, req.user.id, metadata],
+      );
+      res.end();
+      query(
+        'UPDATE users SET "lastViewedDocumentId"=$1 where id=$2',
+        [req.params.documentId, req.user.id],
+      );
+    } catch (e) {
+      res.status(500);
+    }
   } else {
     res.status(401);
   }

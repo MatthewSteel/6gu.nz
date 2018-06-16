@@ -8,7 +8,8 @@
 
 .CellName {
   color: #55C;
-  font: helvetica;
+  font-family: "Trebuchet MS", "Lucida Grande", "Lucida Sans Unicode", "Lucida Sans", Tahoma, sans-serif;;
+  font-size: 0.9em;
   background-color: #FAFAFA;
   border: 1px solid #EEE;
   text-overflow: ellipsis;
@@ -21,7 +22,8 @@
 
 .CellValue {
   color: #666;
-  font: helvetica;
+  font-family: "Trebuchet MS", "Lucida Grande", "Lucida Sans Unicode", "Lucida Sans", Tahoma, sans-serif;;
+  font-size: 0.9em;
   border: 1px solid #EEE;
   background-color: #FDFDFD;
   text-overflow: ellipsis;

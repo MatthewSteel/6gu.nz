@@ -4,8 +4,10 @@ const { query } = require('../src/db');
 const fs = require('fs');
 
 module.exports.up = async () => {
-  // pg_dump -wh localhost -U sheets_user_dev sheets_db_dev \
-  //       --schema-only -n public > src/sql/initial_db.sql
+  // Something like:
+  // pg_dump --quote-all-identifiers --schema-only -n public
+  //       -wh localhost -U sheets_user_dev sheets_db_dev >
+  //        src/sql/initial_db.sql
   const initialState = fs.readFileSync('src/sql/initial_db.sql', 'utf8');
   await query(initialState);
 };
