@@ -1,6 +1,7 @@
 import React, { PureComponent } from 'react';
 import { connect } from 'react-redux';
-import { LOGIN_STATES, fetchUserInfo, doLogout } from '../../redux/store.js';
+import { LOGIN_STATES } from '../../redux/stateConstants';
+import { fetchUserInfo, doLogout } from '../../redux/backend.js';
 import './Banner.css';
 
 const mapDispatchToProps = dispatch => ({

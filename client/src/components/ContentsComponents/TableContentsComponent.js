@@ -7,7 +7,8 @@ import CellSelectionComponent from '../CellComponent/CellSelectionComponent';
 import ContentsBaseComponent from './ContentsBaseComponent';
 
 import { getRefsById, refsAtPosition } from '../../selectors/formulas/selectors';
-import { COMPUTED_TABLE_COLUMN, deleteLoc, deleteThing } from '../../redux/store';
+import { COMPUTED_TABLE_COLUMN } from '../../redux/stateConstants';
+import { deleteLoc, deleteThing } from '../../redux/documentEditing';
 
 
 class TableContentsComponent extends ContentsBaseComponent {

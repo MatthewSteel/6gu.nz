@@ -5,7 +5,19 @@ import {
   nodesInLargeStronglyConnectedComponents,
 } from '../algorithms/algorithms';
 import { globalFunctions, globalFunctionArgs } from './builtins';
-import store, { ARRAY, ARRAY_CELL, CELL, OBJECT, OBJECT_CELL, SHEET, TABLE, TABLE_CELL, COMPUTED_TABLE_COLUMN, TABLE_COLUMN, TABLE_ROW } from '../../redux/store';
+import {
+  ARRAY,
+  ARRAY_CELL,
+  CELL,
+  OBJECT,
+  OBJECT_CELL,
+  SHEET,
+  TABLE,
+  TABLE_CELL,
+  COMPUTED_TABLE_COLUMN,
+  TABLE_COLUMN,
+  TABLE_ROW,
+} from '../../redux/stateConstants';
 
 // Simple "get raw state" selectors (for the moment?)
 
@@ -49,25 +61,12 @@ export const getChildrenOfRef = (state, parentId) => {
   return childIds.map(id => refsById[id]);
 };
 
-export const transitiveChildren = (refId) => {
+export const transitiveChildren = (state, refId) => {
   // Sheet -> table -> cell etc. Not formula references.
-  const childrenByParentId = getChildIdsByParentId(store.getState());
+  const childrenByParentId = getChildIdsByParentId(state);
   const descendants = transitiveClosure([refId], childrenByParentId);
   descendants.add(refId);
   return descendants;
-};
-
-export const externalFacingDescendants = (refId) => {
-  if (refId === undefined) return []; // Ugh, bad "call" arguments...
-  const descendants = transitiveChildren(refId);
-  const { backwardsGraph } = getFormulaGraphs(store.getState());
-  const ret = new Set([refId]);
-  descendants.forEach((descendantId) => {
-    backwardsGraph[descendantId].forEach((referrerId) => {
-      if (!descendants.has(referrerId)) ret.add(descendantId);
-    });
-  });
-  return [...ret];
 };
 
 export const getCellsById = createSelector(
@@ -196,11 +195,6 @@ export const refParentId = (ref) => {
   return undefined;
 };
 
-export const refIdParentId = (refId) => {
-  const refsById = getRefsById(store.getState());
-  return refParentId(refsById[refId]);
-};
-
 const refHeight = (ref) => {
   if (ref === undefined) return 0;
   if (ref.type === SHEET) return 1;
@@ -216,9 +210,8 @@ const refHeight = (ref) => {
   return 2;
 };
 
-export const rewriteRefTermToParentLookup = (innermostLookup) => {
+export const rewriteRefTermToParentLookup = (refsById, innermostLookup) => {
   if (!innermostLookup.ref) throw new Error('Must pass lookup on `refId`');
-  const refsById = getRefsById(store.getState());
   const ref = refsById[innermostLookup.ref];
 
   if (ref.type === ARRAY_CELL) {
@@ -244,15 +237,14 @@ export const rewriteRefTermToParentLookup = (innermostLookup) => {
 };
 
 
-export const lookupExpression = (contextRefId, targetRefId) => {
+export const lookupExpression = (refsById, contextRefId, targetRefId) => {
   // We might "statically resolve" foo.bar[12] to a particular table cell
   // (and not depend on the whole column `bar` being evaluated first.)
   // This function turns a formula { ref } to that cell into a bunch of
   // index- and name-lookups.
   // This is kinda the opposite of the "subNames" procedure when parsing.
-  const refsById = getRefsById(store.getState());
   let sourceContextRef = refsById[contextRefId];
-  let targetContextRef = refsById[refIdParentId(targetRefId)];
+  let targetContextRef = refsById[refParentId(refsById[targetRefId])];
 
   // Kinda ugly: The "rewrite" function replaces the `on` property with
   // a different `on` property. We return `ret.on` at the end.
@@ -262,7 +254,10 @@ export const lookupExpression = (contextRefId, targetRefId) => {
   while (refHeight(targetContextRef) > refHeight(sourceContextRef)) {
     // If we are a table-cell, the table-context will need to be provided
     // to anyone in a sheet
-    innermostLookup.on = rewriteRefTermToParentLookup(innermostLookup.on);
+    innermostLookup.on = rewriteRefTermToParentLookup(
+      refsById,
+      innermostLookup.on,
+    );
     innermostLookup = innermostLookup.on;
     targetContextRef = refsById[refParentId(targetContextRef)];
   }
@@ -273,13 +268,17 @@ export const lookupExpression = (contextRefId, targetRefId) => {
   }
   while (targetContextRef !== sourceContextRef) {
     // Similar levels of context, but "far" from each other.
-    innermostLookup.on = rewriteRefTermToParentLookup(innermostLookup.on);
+    innermostLookup.on = rewriteRefTermToParentLookup(
+      refsById,
+      innermostLookup.on,
+    );
     innermostLookup = innermostLookup.on;
     targetContextRef = refsById[refParentId(targetContextRef)];
     sourceContextRef = refsById[refParentId(sourceContextRef)];
   }
   return ret.on;
 };
+
 
 // Formula translation functions: Generic ways to iterate over a forumla's
 // contents, applying a function to every element from the leaves up.
@@ -293,8 +292,7 @@ export const lookupExpression = (contextRefId, targetRefId) => {
 // `table[0].col`. Not sure what to do about that, tbh.
 const isContext = type => type === SHEET;
 
-export const getContextIdForRefId = (refId, defaultContextId) => {
-  const refsById = getRefsById(store.getState());
+export const getContextIdForRefId = (refsById, refId, defaultContextId) => {
   let maybeContext = refsById[refId];
   while (maybeContext && !isContext(maybeContext.type)) {
     maybeContext = refsById[refParentId(maybeContext)];
@@ -322,96 +320,129 @@ const callRef = (preTranslate, postTranslate) => {
 };
 
 
-const translateCall = (term, contextId, f) => {
-  const call = translateExpr(term.call, contextId, f);
-  const globalCall = isGlobalCall(term.call, call);
-  const callContextId = globalCall || getContextIdForRefId(callRef(term.call, call), contextId);
-  const args = term.args.map(expr => (
-    translateExpr(expr, contextId, f)));
-  const kwargs = term.kwargs.map(({ ref, expr }) => ({
-    ref: translateExpr(ref, callContextId, f),
-    expr: translateExpr(expr, contextId, f),
-  }));
-  return f({ call, args, kwargs }, contextId);
-};
-
-const translateLookup = (term, contextId, f) => {
-  const on = translateExpr(term.on, contextId, f);
-  return f({ lookup: term.lookup, on }, contextId);
-};
-
-
-const translateLookupIndex = (term, contextId, f) => {
-  const lookupIndex = translateExpr(term.lookupIndex, contextId, f);
-  const on = translateExpr(term.on, contextId, f);
-  return f({ lookupIndex, on }, contextId);
-};
-
-const translateArray = (term, contextId, f) => {
-  const array = term.array.map(t => translateExpr(t, contextId, f));
-  return f({ array }, contextId);
-};
-
-const translateObject = (term, contextId, f) => {
-  const object = term.object.map(({ key, value }) => ({
-    key,
-    value: translateExpr(value, contextId, f),
-  }));
-  return f({ object }, contextId);
-};
-
-const translateIndexLookup = (term, contextId, f) => {
-  const indexLookup = translateExpr(term.indexLookup, contextId, f);
-  const on = translateExpr(term.on, contextId, f);
-  const keyCol = translateExpr(term.keyCol, contextId, f);
-  return f({ indexLookup, on, keyCol }, contextId, f);
-};
-
-export const translateExpr = (term, contextId, f) => {
-  if (term.lookup) return translateLookup(term, contextId, f);
-  if ('lookupIndex' in term) return translateLookupIndex(term, contextId, f);
-  if (term.indexLookup) return translateIndexLookup(term, contextId, f);
-  if (term.name || term.ref) return f(term, contextId);
-  if ('value' in term || term.op) return f(term, contextId);
-  if (term.call) return translateCall(term, contextId, f);
-  if (term.unary) {
-    return f(
-      { unary: term.unary, on: translateExpr(term.on, contextId, f) },
-      contextId,
-    );
+// Term-rewriting, more or less. The function argument "transforms" the
+// term, but can be a closure that just logs it or whatever instead etc.
+export const translateExpr = (...fnArgs) => {
+  let outerTerm, outerContextId, f, state;
+  if (fnArgs.length === 4) {
+    [outerTerm, outerContextId, state, f] = fnArgs;
+  } else if (fnArgs.length === 3) {
+    [outerTerm, state, f] = fnArgs;
+  } else if (fnArgs.length === 2) {
+    [outerTerm, f] = fnArgs;
   }
-  if (term.array) return translateArray(term, contextId, f);
-  if (term.object) return translateObject(term, contextId, f);
-  if (term.binary) {
-    return f(
-      {
-        binary: term.binary,
-        left: translateExpr(term.left, contextId, f),
-        right: translateExpr(term.right, contextId, f),
-      },
-      contextId,
+
+  const refsById = state && getRefsById(state);
+
+  const getCallContextId = (preTranslate, postTranslate, fallback) => {
+    if (!state) return outerContextId;
+    const globalCall = isGlobalCall(preTranslate, postTranslate);
+    if (globalCall) return globalCall;
+    return getContextIdForRefId(
+      refsById,
+      callRef(postTranslate, preTranslate),
+      fallback,
     );
-  }
-  if (term.expression) {
-    return f(
-      { expression: translateExpr(term.expression, contextId, f) },
-      contextId,
-    );
-  }
-  if (term.badFormula) return f(term, contextId);
-  throw new Error('Unknown term type');
+  };
+
+  const doCall = (term, contextId) => {
+    const call = doExpr(term.call, contextId);
+    const callContextId = getCallContextId(term.call, call, contextId);
+
+    const args = term.args.map(expr => (
+      doExpr(expr, contextId)));
+    const kwargs = term.kwargs.map(({ ref, expr }) => ({
+      ref: doExpr(ref, callContextId),
+      expr: doExpr(expr, contextId),
+    }));
+    return f({ call, args, kwargs }, contextId, state);
+  };
+
+  const doLookup = (term, contextId) => {
+    const on = doExpr(term.on, contextId);
+    return f({ lookup: term.lookup, on }, contextId, state);
+  };
+
+  const doLookupIndex = (term, contextId) => {
+    const lookupIndex = doExpr(term.lookupIndex, contextId);
+    const on = doExpr(term.on, contextId);
+    return f({ lookupIndex, on }, contextId, state);
+  };
+
+  const doArray = (term, contextId) => {
+    const array = term.array.map(t => doExpr(t, contextId));
+    return f({ array }, contextId, state);
+  };
+
+  const doObject = (term, contextId) => {
+    const object = term.object.map(({ key, value }) => ({
+      key,
+      value: doExpr(value, contextId),
+    }));
+    return f({ object }, contextId, state);
+  };
+
+  const doIndexLookup = (term, contextId) => {
+    const indexLookup = doExpr(term.indexLookup, contextId);
+    const on = doExpr(term.on, contextId);
+    const keyCol = doExpr(term.keyCol, contextId);
+    return f({ indexLookup, on, keyCol }, contextId, state);
+  };
+
+  const doExpr = (term, contextId) => {
+    if (term.lookup) return doLookup(term, contextId);
+    if ('lookupIndex' in term) return doLookupIndex(term, contextId);
+    if (term.indexLookup) return doIndexLookup(term, contextId);
+    if (term.name || term.ref) return f(term, contextId, state);
+    if ('value' in term || term.op) return f(term, contextId, state);
+    if (term.call) return doCall(term, contextId);
+    if (term.unary) {
+      return f(
+        { unary: term.unary, on: doExpr(term.on, contextId) },
+        contextId,
+        state,
+      );
+    }
+    if (term.array) return doArray(term, contextId);
+    if (term.object) return doObject(term, contextId);
+    if (term.binary) {
+      return f(
+        {
+          binary: term.binary,
+          left: doExpr(term.left, contextId),
+          right: doExpr(term.right, contextId),
+        },
+        contextId,
+        state,
+      );
+    }
+    if (term.expression) {
+      return f(
+        { expression: doExpr(term.expression, contextId) },
+        contextId,
+        state,
+      );
+    }
+    if (term.badFormula) return f(term, contextId, state);
+    throw new Error('Unknown term type');
+  };
+
+  return doExpr(outerTerm, outerContextId);
 };
 
-export const runTranslations = (input, contextId, fs) => {
-  let term = input;
-  fs.forEach((f) => { term = translateExpr(term, contextId, f); });
+
+export const runTranslations = (...fnArgs) => {
+  let term = fnArgs[0];
+  fnArgs[fnArgs.length - 1].forEach((f) => {
+    term = translateExpr(...[term, ...fnArgs.slice(1, -1), f]);
+  });
   return term;
 };
 
 export const flattenExpr = (expr) => {
   // Get every element inside the formula (not just leaves)
   const ret = [];
-  translateExpr(expr, null, (term) => {
+  translateExpr(expr, (term) => {
     if (term === undefined) {
       throw new Error('ahoy!');
     }
@@ -423,7 +454,7 @@ export const flattenExpr = (expr) => {
 
 const refErrorMessage = name => `(${JSON.stringify(name)} + ' does not exist.')`;
 
-export const refError = (term, contextId) => {
+export const refError = (refsById, term, contextId) => {
   if (term.badFormula) return { str: '"Bad formula"' };
   if (term.name) {
     if (term.name in globalFunctions) return false;
@@ -435,7 +466,7 @@ export const refError = (term, contextId) => {
   if (term.lookup && term.on.ref) {
     // Unresolved lookups are bad on sheets and "static" objects, but fine
     // on computed cells etc.
-    const ref = getRefsById(store.getState())[term.on.ref];
+    const ref = refsById[term.on.ref];
     if (!ref.formula) {
       return { str: refErrorMessage(term.lookup), ref: term.on.ref };
     }
@@ -457,11 +488,11 @@ export const computedColumnsByTableId = createSelector(
   },
 );
 
-const refEdges = (ref) => {
+const refEdges = (ref, refsById, childIdsByParentId, computedColsByTableId) => {
   if (ref.formula) {
     const errorRefs = new Set();
-    translateExpr(ref.formula, null, (term, contextId) => {
-      const err = refError(term, contextId);
+    translateExpr(ref.formula, (term, contextId) => {
+      const err = refError(refsById, term, contextId);
       if (err && err.ref) errorRefs.add(err.ref);
       return term;
     });
@@ -469,20 +500,23 @@ const refEdges = (ref) => {
       .filter(term => term.ref && !errorRefs.has(term.ref))
       .map(term => term.ref);
   }
-  const children = getChildIdsByParentId(store.getState())[ref.id];
+  const children = childIdsByParentId[ref.id];
   if (ref.type !== TABLE_ROW) return children;
 
   // Each table row in a table depends on the computed columns in the table
   // being computed (so we can steal elements from them)
-  const allComputedCols = computedColumnsByTableId(store.getState());
-  const computedColumnIds = allComputedCols[ref.tableId].map(({ id }) => id);
+  const myComputedCols = computedColsByTableId[ref.tableId];
+  const computedColumnIds = myComputedCols.map(({ id }) => id);
   return [...children, ...computedColumnIds];
 };
 
 // Predecessor/successor relations in the formula/computation graph.
 export const getFormulaGraphs = createSelector(
   getRefs,
-  (refs) => {
+  getRefsById,
+  getChildIdsByParentId,
+  computedColumnsByTableId,
+  (refs, refsById, childIdsByParentId, computedColsByTableId) => {
     const forwardsGraph = {};
     const backwardsGraph = {};
     refs.forEach(({ id }) => {
@@ -490,7 +524,12 @@ export const getFormulaGraphs = createSelector(
       backwardsGraph[id] = [];
     });
     refs.forEach((ref) => {
-      refEdges(ref).forEach((jNodeId) => {
+      refEdges(
+        ref,
+        refsById,
+        childIdsByParentId,
+        computedColsByTableId,
+      ).forEach((jNodeId) => {
         forwardsGraph[ref.id].push(jNodeId);
         backwardsGraph[jNodeId].push(ref.id);
       });

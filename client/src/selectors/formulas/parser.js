@@ -1,4 +1,4 @@
-import store, { ARRAY, OBJECT, SHEET, TABLE, COMPUTED_TABLE_COLUMN, TABLE_COLUMN, TABLE_ROW } from '../../redux/store';
+import { ARRAY, OBJECT, SHEET, TABLE, COMPUTED_TABLE_COLUMN, TABLE_COLUMN, TABLE_ROW } from '../../redux/stateConstants';
 import { lexFormula } from './lexer';
 
 import {
@@ -6,7 +6,6 @@ import {
   getRefsById,
   getRefsByNameForContextId,
   getSheetsByName,
-  refIdParentId,
   refParentId,
   runTranslations,
 } from './selectors';
@@ -327,20 +326,24 @@ export const translateLookups = (newRefs) => {
   };
 };
 
-const subNamesForRefsInName = (term, contextId) => {
+const subNamesForRefsInName = (term, contextId, state) => {
   // Check cols in table, cells in sheet.
   let thisContextId = contextId;
   while (thisContextId) {
     const maybeMyRef = getRefsByNameForContextId(
-      store.getState(),
+      state,
       thisContextId,
     )[term.name];
     if (maybeMyRef) return { ref: maybeMyRef.id };
-    thisContextId = getContextIdForRefId(refIdParentId(thisContextId));
+    const refsById = getRefsById(state);
+    thisContextId = getContextIdForRefId(
+      refsById,
+      refParentId(refsById[thisContextId]),
+    );
   }
 
   // Check sheets in book
-  const maybeSheet = getSheetsByName(store.getState())[term.name];
+  const maybeSheet = getSheetsByName(state)[term.name];
   if (maybeSheet) {
     return { ref: maybeSheet.id };
   }
@@ -354,20 +357,20 @@ const subNamesForRefsInName = (term, contextId) => {
   return { lookup: term.name, on: { ref: contextId } };
 };
 
-const subNamesForRefsInLookup = (term) => {
+const subNamesForRefsInLookup = (term, state) => {
   // This turns "tableRef.cellName" into "cellRef" etc.
   if (!term.on.ref) return term;
   const { ref: refId } = term.on;
-  const ref = getRefsById(store.getState())[refId];
+  const ref = getRefsById(state)[refId];
 
   if (ref.type === SHEET || ref.type === OBJECT || ref.type === TABLE || ref.type === TABLE_ROW) {
-    const maybeCell = getRefsByNameForContextId(store.getState(), refId)[term.lookup];
+    const maybeCell = getRefsByNameForContextId(state, refId)[term.lookup];
     if (maybeCell) return { ref: maybeCell.id };
   }
   return term;
 };
 
-const subNamesForRefsInLookupIndex = (term) => {
+const subNamesForRefsInLookupIndex = (term, state) => {
   // This turns "arrayRef[arrIndex]" into "arrayCellRef" etc.
   if (!term.on.ref) return term;
   if (!('value' in term.lookupIndex)) return term;
@@ -375,19 +378,19 @@ const subNamesForRefsInLookupIndex = (term) => {
   if (typeof index !== 'number') return term;
 
   const { ref: refId } = term.on;
-  const ref = getRefsById(store.getState())[refId];
+  const ref = getRefsById(state)[refId];
 
   if ([ARRAY, TABLE, TABLE_COLUMN, COMPUTED_TABLE_COLUMN].includes(ref.type)) {
-    const maybeCell = getRefsByNameForContextId(store.getState(), refId)[index];
+    const maybeCell = getRefsByNameForContextId(state, refId)[index];
     if (maybeCell) return { ref: maybeCell.id };
   }
   return term;
 };
 
-export const subNamesForRefsInTerm = (term, contextId) => {
-  if (term.name) return subNamesForRefsInName(term, contextId);
-  if (term.lookup) return subNamesForRefsInLookup(term);
-  if (term.lookupIndex) return subNamesForRefsInLookupIndex(term);
+export const subNamesForRefsInTerm = (term, contextId, state) => {
+  if (term.name) return subNamesForRefsInName(term, contextId, state);
+  if (term.lookup) return subNamesForRefsInLookup(term, state);
+  if (term.lookupIndex) return subNamesForRefsInLookupIndex(term, state);
   if (term.call) {
     const argRefs = term.kwargs.map(({ ref }) => ref);
     if ([term.call, ...argRefs].some(({ lookup }) => lookup)) {
@@ -434,21 +437,22 @@ const translateIndexLookups = (term) => {
   return term;
 };
 
-const postProcessFormula = (nameFormula, contextId) => {
+const postProcessFormula = (nameFormula, contextId, state) => {
   if (!nameFormula) return {};
   return {
     formula: runTranslations(
       nameFormula,
       contextId,
+      state,
       [translateIndexLookups, subNamesForRefsInTerm, fixPrecedence],
     ),
   };
 };
 
-const parseFormulaExpr = (tokens, formulaStart, contextId, s) => {
+const parseFormulaExpr = (tokens, formulaStart, contextId, s, state) => {
   try {
     return {
-      ...postProcessFormula(parseTokens(tokens, formulaStart), contextId),
+      ...postProcessFormula(parseTokens(tokens, formulaStart), contextId, state),
     };
   } catch (e) {
     // Bad formula, but we might at least have a name. Stick everything
@@ -460,13 +464,13 @@ const parseFormulaExpr = (tokens, formulaStart, contextId, s) => {
   }
 };
 
-export const parseFormula = (s, contextId) => {
+export const parseFormula = (s, contextId, state) => {
   try {
     const tokens = lexFormula(s);
     const { formulaStart, formulaName } = getNameFromTokens(tokens);
     return {
       ...formulaName,
-      ...parseFormulaExpr(tokens, formulaStart, contextId, s),
+      ...parseFormulaExpr(tokens, formulaStart, contextId, s, state),
     };
   } catch (e) {
     // Really bad -- can't lex or get a name... Formula is totally

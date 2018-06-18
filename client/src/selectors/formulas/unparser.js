@@ -1,10 +1,8 @@
-import store from '../../redux/store';
-
 import { canStartName, isNameChar } from './lexer';
 import {
   getRefsById,
-  lookupExpression,
   getContextIdForRefId,
+  lookupExpression,
   refParentId,
   runTranslations,
 } from './selectors';
@@ -26,8 +24,8 @@ const unparseName = (name) => {
   return toJoin.join('');
 };
 
-const unparseRef = (id) => {
-  const ref = getRefsById(store.getState())[id];
+const unparseRef = (id, state) => {
+  const ref = getRefsById(state)[id];
   if (!ref || !ref.name) throw new Error('ugh');
   return unparseName(ref.name);
 };
@@ -49,7 +47,7 @@ const unparseObject = (object) => {
   return `{ ${args.join(', ')} }`;
 };
 
-export const unparseTerm = (term) => {
+export const unparseTerm = (term, contextId, state) => {
   if (term.lookup) return `${term.on}.${unparseName(term.lookup)}`;
   if (term.lookupIndex) return `${term.on}[${term.lookupIndex}]`;
   if (term.indexLookup) {
@@ -65,7 +63,7 @@ export const unparseTerm = (term) => {
   if (term.expression) return `(${term.expression})`;
   if (term.badFormula) return term.badFormula;
   if (term.op) return term.op;
-  if (term.ref) return unparseRef(term.ref);
+  if (term.ref) return unparseRef(term.ref, state);
   if (term.name) return unparseName(term.name);
   if ('value' in term) return JSON.stringify(term.value);
   if (term.unary) return `${term.unary}${term.on}`;
@@ -75,8 +73,14 @@ export const unparseTerm = (term) => {
   throw new Error('Unknown term type');
 };
 
-const subRefsForLookupsInTerm = (term, contextId) => {
-  if (term.ref) return lookupExpression(contextId, term.ref);
+const subRefsForLookupsInTerm = (term, contextId, state) => {
+  if (term.ref) {
+    return lookupExpression(
+      getRefsById(state),
+      contextId,
+      term.ref,
+    );
+  }
   return term;
 };
 
@@ -113,21 +117,22 @@ const undoTranslateIndexLookups = (term) => {
   return term;
 };
 
-const formulaExpressionString = (ref) => {
+const formulaExpressionString = (ref, state) => {
   if (!ref.formula) return [];
   const refParent = refParentId(ref);
   return runTranslations(
     ref.formula,
-    getContextIdForRefId(refParent, refParent),
+    getContextIdForRefId(getRefsById(state), refParent, refParent),
+    state,
     [subRefsForLookupsInTerm, undoTranslateIndexLookups, unparseTerm],
   );
 };
 
-export const stringFormula = (refId) => {
-  const ref = getRefsById(store.getState())[refId];
+export const stringFormula = (state, refId) => {
+  const ref = getRefsById(state)[refId];
   if (!ref) return '';
 
-  const expressionString = formulaExpressionString(ref);
+  const expressionString = formulaExpressionString(ref, state);
   if (!ref.name) return expressionString;
   return `${unparseName(ref.name)}: ${expressionString}`;
 };

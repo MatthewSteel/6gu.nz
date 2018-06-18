@@ -1,7 +1,6 @@
 import { createSelector } from 'reselect';
 import {
   computedColumnsByTableId,
-  externalFacingDescendants,
   flattenExpr,
   getFormulaGraphs,
   getTopoLocationById,
@@ -12,10 +11,20 @@ import {
   rewriteRefTermToParentLookup,
   refsAtPosition,
   refError,
+  transitiveChildren,
   translateExpr,
 } from './selectors';
 import { setIntersection, transitiveClosure } from '../algorithms/algorithms';
-import store, { ARRAY, OBJECT, SHEET, TABLE, COMPUTED_TABLE_COLUMN, TABLE_COLUMN, TABLE_ROW } from '../../redux/store';
+import store from '../../redux/store';
+import {
+  ARRAY,
+  OBJECT,
+  SHEET,
+  TABLE,
+  COMPUTED_TABLE_COLUMN,
+  TABLE_COLUMN,
+  TABLE_ROW,
+} from '../../redux/stateConstants';
 import { getNamedMember, getNumberedMember, getIndexLookup, TableArray } from './tables';
 import builtins, { ARRAY_T, classify, globalFunctions, globalFunctionArgs, binarySymbolToName, unarySymbolToName } from './builtins';
 
@@ -286,10 +295,10 @@ const tableColumnValue = (tableColumnId, globals) => {
 // eslint-disable-next-line no-unused-vars
 const pleaseThrow = (s) => { throw new Error(s); };
 
-const formulaExpression = (formula) => {
+const formulaExpression = (refsById, formula) => {
   const termErrors = [];
   translateExpr(formula, null, (term, contextId) => {
-    const err = refError(term, contextId);
+    const err = refError(refsById, term, contextId);
     if (err) termErrors.push(err);
     return term;
   });
@@ -299,7 +308,7 @@ const formulaExpression = (formula) => {
   return expandExpr(formula);
 };
 
-const refExpression = (ref) => {
+const refExpression = (refsById, ref) => {
   // TODO: Maybe we should store lists of children in globals so sheetValue
   // etc don't have to read redux data.
   if (ref.type === SHEET || ref.type === OBJECT) {
@@ -325,15 +334,16 @@ const refExpression = (ref) => {
   if (!ref.formula) {
     throw new Error(`unknown object type ${ref.type}`);
   }
-  return formulaExpression(ref.formula);
+  return formulaExpression(refsById, ref.formula);
 };
 
 export const getRefExpressions = createSelector(
   getRefs,
-  (refs) => {
+  getRefsById,
+  (refs, refsById) => {
     const ret = {};
     refs.forEach((ref) => {
-      ret[ref.id] = refExpression(ref);
+      ret[ref.id] = refExpression(refsById, ref);
     });
     return ret;
   },
@@ -386,6 +396,20 @@ export const getCellValuesById = createSelector(
     return globals;
   },
 );
+
+
+const externalFacingDescendants = (refId) => {
+  if (refId === undefined) return []; // Ugh, bad "call" arguments...
+  const descendants = transitiveChildren(store.getState(), refId);
+  const { backwardsGraph } = getFormulaGraphs(store.getState());
+  const ret = new Set([refId]);
+  descendants.forEach((descendantId) => {
+    backwardsGraph[descendantId].forEach((referrerId) => {
+      if (!descendants.has(referrerId)) ret.add(descendantId);
+    });
+  });
+  return [...ret];
+};
 
 const functionCellsInOrder = (call) => {
   const {
@@ -447,7 +471,10 @@ class RefPusher {
     const outermostLookup = { on: { ref: id } };
     let innermostLookup = outermostLookup;
     while (innermostLookup.on.ref !== contextId) {
-      innermostLookup.on = rewriteRefTermToParentLookup(innermostLookup.on);
+      innermostLookup.on = rewriteRefTermToParentLookup(
+        getRefsById(store.getState()),
+        innermostLookup.on,
+      );
       innermostLookup = innermostLookup.on;
     }
     const expr = expandExpr(outermostLookup.on);

@@ -1,6 +1,9 @@
-import store, { ARRAY, deleteThing, setFormula } from '../../redux/store';
-import { getCells, getSheets, lookupExpression } from './selectors';
+import store from '../../redux/store';
+import { setFormula } from '../../redux/documentEditing';
+import { getCells, getRefsById, getSheets, lookupExpression } from './selectors';
 import { getCellValuesById } from './codegen';
+import { ARRAY, LOGIN_STATES } from '../../redux/stateConstants';
+import { blankDocument } from '../../redux/backend';
 
 const getCell = cellName =>
   getCells(store.getState()).find(({ name }) => name === cellName);
@@ -12,8 +15,12 @@ const makeFormula = (context, formula) => (
 
 describe('formula selectors', () => {
   beforeEach(() => {
-    getCells(store.getState()).forEach((cell) => {
-      store.dispatch(deleteThing(cell.id));
+    store.dispatch({
+      type: 'USER_STATE',
+      payload: {
+        userState: { loginState: LOGIN_STATES.LOGGED_IN, documents: [] },
+        openDocument: blankDocument(),
+      },
     });
   });
 
@@ -22,13 +29,14 @@ describe('formula selectors', () => {
     makeFormula({ context: s1.id }, 'x:1');
 
     const xId = getCell('x').id;
-    expect(lookupExpression(s1.id, xId)).toEqual({ ref: xId });
-    expect(lookupExpression(s2.id, xId)).toEqual({
+    const refsById = getRefsById(store.getState());
+    expect(lookupExpression(refsById, s1.id, xId)).toEqual({ ref: xId });
+    expect(lookupExpression(refsById, s2.id, xId)).toEqual({
       lookup: 'x',
       on: { ref: s1.id },
     });
 
-    expect(lookupExpression(s2.id, s1.id)).toEqual({ ref: s1.id });
+    expect(lookupExpression(refsById, s2.id, s1.id)).toEqual({ ref: s1.id });
   });
 
   it('gives good errors for bad formulas', () => {

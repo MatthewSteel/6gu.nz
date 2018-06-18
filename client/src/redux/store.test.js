@@ -1,19 +1,25 @@
-import store, { CELL, createSheet, deleteThing, setFormula } from './store';
+import store from './store';
+import { CELL, LOGIN_STATES } from './stateConstants';
+import { deleteThing, setFormula } from './documentEditing';
 import { getCells, getSheets } from '../selectors/formulas/selectors';
 import { getCellValuesById } from '../selectors/formulas/codegen';
 import { stringFormula } from '../selectors/formulas/unparser';
+import { blankDocument } from './backend';
 
 const allCells = () => getCells(store.getState());
 const find = f => allCells().find(f);
 const getCellValue = cell => getCellValuesById(store.getState())[cell.id];
+const getStr = id => stringFormula(store.getState(), id);
 
 describe('actions/the store', () => {
   beforeEach(() => {
-    getSheets(store.getState()).forEach((sheet) => {
-      store.dispatch(deleteThing(sheet.id));
+    store.dispatch({
+      type: 'USER_STATE',
+      payload: {
+        userState: { loginState: LOGIN_STATES.LOGGED_IN, documents: [] },
+        openDocument: blankDocument(),
+      },
     });
-    store.dispatch(createSheet());
-    store.dispatch(createSheet());
   });
 
   it('sets up simple cells and calculates their values ok', () => {
@@ -31,7 +37,7 @@ describe('actions/the store', () => {
       height: 1,
       type: CELL,
     });
-    expect(stringFormula(cells[0].id)).toBe('x: 12');
+    expect(getStr(cells[0].id)).toBe('x: 12');
 
     // test changing the name
     store.dispatch(setFormula({ context: sheet.id, cellId: cells[0].id }, 'y:'));
@@ -44,12 +50,12 @@ describe('actions/the store', () => {
       value: 12,
       override: false,
     });
-    expect(stringFormula(cells[0].id)).toBe('y: 12');
+    expect(getStr(cells[0].id)).toBe('y: 12');
 
     store.dispatch(setFormula({ context: sheet.id, y: 2, x: 0 }, ':"hi"'));
     const newCell = find(({ y }) => y === 2);
     expect(newCell.name).toBe('a3');
-    expect(stringFormula(newCell.id)).toBe('a3: "hi"');
+    expect(getStr(newCell.id)).toBe('a3: "hi"');
   });
 
   it('handles cross-sheet formulas', () => {
@@ -64,7 +70,7 @@ describe('actions/the store', () => {
       value: 10,
       override: false,
     });
-    expect(stringFormula(x2.id)).toBe(`x: ${s1Name}.y(x: 10)`);
+    expect(getStr(x2.id)).toBe(`x: ${s1Name}.y(x: 10)`);
 
     store.dispatch(setFormula({ context: sheet2.id, y: 4, x: 0 }, `y: ${s1Name}.y`));
     const y2 = find(({ y }) => y === 4);
@@ -91,8 +97,8 @@ describe('actions/the store', () => {
 
     // "Broken" references become lookups by name on parent refs. We end
     // up with the parent name in the cell.
-    expect(stringFormula(y1.id)).toBe('y: s1.x');
-    expect(stringFormula(x2.id)).toBe(`x: ${s1Name}.y(${s1Name}.x: 10)`);
+    expect(getStr(y1.id)).toBe('y: s1.x');
+    expect(getStr(x2.id)).toBe(`x: ${s1Name}.y(${s1Name}.x: 10)`);
 
     expect(getCellValue(y1)).toEqual({
       error: 'Error: x does not exist.',
@@ -113,8 +119,8 @@ describe('actions/the store', () => {
       override: false,
     });
 
-    expect(stringFormula(y1.id)).toBe('y: x');
-    expect(stringFormula(x2.id)).toBe(`x: ${s1Name}.y(x: 10)`);
+    expect(getStr(y1.id)).toBe('y: x');
+    expect(getStr(x2.id)).toBe(`x: ${s1Name}.y(x: 10)`);
   });
 
   it('deletes sheets ok', () => {

@@ -1,5 +1,5 @@
 import React, { Component } from 'react';
-import { CELL } from '../../redux/store';
+import { CELL } from '../../redux/stateConstants';
 import { clampValue, clampOverlap, rangesOverlap, truncateOverlap } from '../../selectors/geom/geom';
 import '../CellComponent/CellComponent.css';
 

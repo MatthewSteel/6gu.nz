@@ -1,5 +1,4 @@
-import store from '../../redux/store';
-import { getRefsById, sheetPlacedCellLocs } from '../formulas/selectors';
+import { sheetPlacedCellLocs } from '../formulas/selectors';
 
 export const DRAG_MOVE = 'move';
 export const DRAG_RESIZE = 'resize';
@@ -24,21 +23,22 @@ const resizeDragGeom = (cell, y, x) => {
   return { x: newX, y: newY, width, height };
 };
 
-export const getDragRefId = state => state.uistate.dragState.refId;
+export const getDragState = state => state.dragState;
+export const getDragRefId = state => getDragState(state).refId;
 
-export default (sheetId) => {
+export default (dragState, refsById, sheetId) => {
   const {
     targetSheetId,
     y,
     x,
     type,
     refId,
-  } = store.getState().uistate.dragState;
+  } = dragState;
   if (!refId) return undefined;
   if (x === undefined) return undefined; // dragOver may not have happened
   if (targetSheetId !== sheetId) return undefined;
 
-  const ref = getRefsById(store.getState())[refId];
+  const ref = refsById[refId];
   if (!ref || !ref.sheetId) throw new Error('Bad ref in dragGeom');
   if (type === DRAG_MOVE) return moveDragGeom(ref, y, x);
   if (type !== DRAG_RESIZE) throw new Error(`Bad drag type: ${type}`);
@@ -62,6 +62,7 @@ export const canPlaceWithoutConflict = (
 };
 
 export const idealWidthAndHeight = (
+  state,
   refId,
   sheetId,
   y,
@@ -69,7 +70,7 @@ export const idealWidthAndHeight = (
   maxWidth = 3,
   maxHeight = 4,
 ) => {
-  const placedCellLocs = sheetPlacedCellLocs(store.getState())[sheetId];
+  const placedCellLocs = sheetPlacedCellLocs(state)[sheetId];
   let best = { width: 1, height: 1 };
   for (let height = 1; height <= maxHeight; ++height) {
     for (let width = 1; width <= maxWidth; ++width) {

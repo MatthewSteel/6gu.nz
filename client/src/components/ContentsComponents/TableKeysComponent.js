@@ -6,7 +6,8 @@ import CellSelectionComponent from '../CellComponent/CellSelectionComponent';
 import ContentsBaseComponent from './ContentsBaseComponent';
 
 import { getRefsById, refsAtPosition } from '../../selectors/formulas/selectors';
-import { TABLE_COLUMN, deleteLoc, deleteThing } from '../../redux/store';
+import { TABLE_COLUMN } from '../../redux/stateConstants';
+import { deleteLoc, deleteThing } from '../../redux/documentEditing';
 
 
 class TableKeysComponent extends ContentsBaseComponent {

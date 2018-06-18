@@ -9,7 +9,7 @@ import ResizeHandleComponent from '../DragComponents/ResizeHandleComponent';
 
 import { getRefsById } from '../../selectors/formulas/selectors';
 import { DRAG_MOVE } from '../../selectors/geom/dragGeom';
-import { deleteLoc, deleteThing, toggleMaximiseSheetElem } from '../../redux/store';
+import { deleteLoc, deleteThing, toggleMaximiseSheetElem } from '../../redux/documentEditing';
 
 
 class ObjectComponent extends ContentsBaseComponent {

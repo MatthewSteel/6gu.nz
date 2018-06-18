@@ -11,7 +11,7 @@ import ResizeHandleComponent from '../DragComponents/ResizeHandleComponent';
 
 import { getRefsById } from '../../selectors/formulas/selectors';
 import { DRAG_MOVE } from '../../selectors/geom/dragGeom';
-import { deleteThing, toggleMaximiseSheetElem } from '../../redux/store';
+import { deleteThing, toggleMaximiseSheetElem } from '../../redux/documentEditing';
 
 
 class TableComponent extends ContentsBaseComponent {

@@ -3,7 +3,7 @@ import { connect } from 'react-redux';
 import equal from 'fast-deep-equal';
 
 import { stringFormula } from '../../selectors/formulas/unparser';
-import { deleteThing, setFormula } from '../../redux/store';
+import { deleteThing, setFormula } from '../../redux/documentEditing';
 import './FormulaComponent.css';
 
 
@@ -11,24 +11,22 @@ class FormulaComponent extends Component {
   constructor(props) {
     super(props);
     this.inputRef = null;
-    const selectedCellId = this.props.selection && this.props.selection.cellId;
-    const initialValue = selectedCellId ?
-      stringFormula(selectedCellId) :
-      '';
-    this.state = { value: initialValue };
+    this.state = { value: props.initialValue };
 
     this.handleChange = this.handleChange.bind(this);
     this.handleOnBlur = this.handleOnBlur.bind(this);
     this.handleOnFocus = this.handleOnFocus.bind(this);
     this.submit = this.submit.bind(this);
-    this.resetValue = this.resetValue.bind(this);
     this.setFormula = this.setFormula.bind(this);
     this.setRef = this.setRef.bind(this);
   }
 
   componentWillReceiveProps(nextProps) {
-    if (!equal(nextProps.selection, this.props.selection)) {
-      this.resetValue(nextProps.selection.cellId);
+    if (
+      nextProps.initialValue !== this.props.initialValue ||
+      !equal(nextProps.selection, this.props.selection)
+    ) {
+      this.setState({ value: nextProps.initialValue });
     }
   }
 
@@ -51,12 +49,12 @@ class FormulaComponent extends Component {
     }
   }
 
-  resetValue(selection) {
-    this.setState({ value: stringFormula(selection) });
+  resetValue() {
+    this.setState({ value: this.props.initialValue });
   }
 
   blur() {
-    this.resetValue(this.props.selection);
+    this.resetValue();
     this.inputRef.blur();
   }
 
@@ -85,7 +83,7 @@ class FormulaComponent extends Component {
     this.setFormula(this.state.value);
     this.inputRef.blur();
     // Selection often doesn't change when setting the name of an array
-    if (selection.cellId) this.resetValue(selection.cellId);
+    this.resetValue();
   }
 
   handleOnBlur() {
@@ -112,13 +110,22 @@ class FormulaComponent extends Component {
   }
 }
 
+const mapStateToProps = (state, ownProps) => {
+  const selectedCellId = ownProps.selection && ownProps.selection.cellId;
+  return {
+    initialValue: selectedCellId ?
+      stringFormula(state, selectedCellId) :
+      '',
+  };
+};
+
 const mapDispatchToProps = dispatch => ({
   deleteCell: cellId => dispatch(deleteThing(cellId)),
   setCellFormula: (context, cellId, formula) => dispatch(setFormula(context, cellId, formula)),
 });
 
 export default connect(
-  null, // mapStateToProps
+  mapStateToProps,
   mapDispatchToProps,
   null, // mergeProps
   { withRef: true }, // so we can access member functions

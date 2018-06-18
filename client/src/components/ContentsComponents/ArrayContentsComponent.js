@@ -8,7 +8,8 @@ import CellSelectionComponent from '../CellComponent/CellSelectionComponent';
 import EmptyCellComponent from '../CellComponent/EmptyCellComponent';
 
 import { getRefsById, refsAtPosition } from '../../selectors/formulas/selectors';
-import { ARRAY_CELL, deleteLoc, deleteThing } from '../../redux/store';
+import { ARRAY_CELL } from '../../redux/stateConstants';
+import { deleteLoc, deleteThing } from '../../redux/documentEditing';
 
 
 class ArrayContentsComponent extends ContentsBaseComponent {

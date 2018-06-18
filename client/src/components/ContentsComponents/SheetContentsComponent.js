@@ -12,11 +12,16 @@ import ArrayComponent from './ArrayComponent';
 import ObjectComponent from './ObjectComponent';
 import TableComponent from './TableComponent';
 
-import { getChildrenOfRef, sheetPlacedCellLocs } from '../../selectors/formulas/selectors';
+import { getChildrenOfRef, getRefsById, sheetPlacedCellLocs } from '../../selectors/formulas/selectors';
 import { overlaps, truncateOverlap } from '../../selectors/geom/geom';
-import getDragGeom, { canPlaceWithoutConflict, getDragRefId } from '../../selectors/geom/dragGeom';
+import getDragGeom, {
+  canPlaceWithoutConflict,
+  getDragRefId,
+  getDragState,
+} from '../../selectors/geom/dragGeom';
 import { getType } from '../../selectors/formulas/tables';
-import { clearDrag, deleteLoc, startDrag, updateDrag, deleteThing, moveThing, toggleMaximiseSheetElem } from '../../redux/store';
+import { deleteLoc, deleteThing, moveThing, toggleMaximiseSheetElem } from '../../redux/documentEditing';
+import { clearDrag, startDrag, updateDrag } from '../../redux/drag';
 
 
 class SheetContentsComponent extends ContentsBaseComponent {
@@ -308,7 +313,11 @@ class SheetContentsComponent extends ContentsBaseComponent {
 const mapStateToProps = (state, ownProps) => ({
   cells: getChildrenOfRef(state, ownProps.contextId),
   dragRefId: getDragRefId(state),
-  dragGeom: !ownProps.readOnly && getDragGeom(ownProps.contextId),
+  dragGeom: !ownProps.readOnly && getDragGeom(
+    getDragState(state),
+    getRefsById(state),
+    ownProps.contextId,
+  ),
   placedCellLocs: sheetPlacedCellLocs(state)[ownProps.contextId],
   viewOffsetX: 0,
   viewOffsetY: 0,

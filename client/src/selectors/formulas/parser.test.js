@@ -1,8 +1,11 @@
 import { lexFormula } from './lexer';
 import { getCells, getSheets } from './selectors';
 import { getCellValuesById } from './codegen';
-import store, { setFormula } from '../../redux/store';
+import store from '../../redux/store';
+import { setFormula } from '../../redux/documentEditing';
 import { parseFormula, parseTokens } from './parser';
+import { LOGIN_STATES } from '../../redux/stateConstants';
+import { blankDocument } from '../../redux/backend';
 
 const getCellValue = (cellName) => {
   const cell = getCells(store.getState())
@@ -10,7 +13,20 @@ const getCellValue = (cellName) => {
   return getCellValuesById(store.getState())[cell.id].value;
 };
 
+const parse = (formula, contextId) => (
+  parseFormula(formula, contextId, store.getState()));
+
 describe('parser', () => {
+  beforeEach(() => {
+    store.dispatch({
+      type: 'USER_STATE',
+      payload: {
+        userState: { loginState: LOGIN_STATES.LOGGED_IN, documents: [] },
+        openDocument: blankDocument(),
+      },
+    });
+  });
+
   it('parses a complicated call', () => {
     const formula = 'a.b(foo:bar.baz.arf[10], quux:1+"hi").fi\\ eld';
     const tokens = [
@@ -68,17 +84,17 @@ describe('parser', () => {
 
   it('parses strings appropriately', () => {
     const s1 = getSheets(store.getState())[0];
-    expect(parseFormula(':')).toEqual({});
-    expect(parseFormula('foo :')).toEqual({ name: 'foo' });
-    expect(parseFormula('foo : bar', s1.id)).toEqual({
+    expect(parse(':')).toEqual({});
+    expect(parse('foo :')).toEqual({ name: 'foo' });
+    expect(parse('foo : bar', s1.id)).toEqual({
       name: 'foo',
       formula: { lookup: 'bar', on: { ref: s1.id } },
     });
-    expect(parseFormula('foo : bar +')).toEqual({
+    expect(parse('foo : bar +')).toEqual({
       name: 'foo',
       formula: { badFormula: 'bar +' },
     });
-    expect(parseFormula('foo =: bar +')).toEqual({
+    expect(parse('foo =: bar +')).toEqual({
       formula: { badFormula: 'foo =: bar +' },
     });
   });

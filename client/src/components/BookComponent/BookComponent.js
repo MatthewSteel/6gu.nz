@@ -2,7 +2,8 @@ import React, { PureComponent } from 'react';
 import { connect } from 'react-redux';
 import { getSheets, getSheetsById, getRefsById } from '../../selectors/formulas/selectors';
 import { getCellValuesById } from '../../selectors/formulas/codegen';
-import store, { createSheet, deleteThing } from '../../redux/store';
+import store from '../../redux/store';
+import { createSheet, deleteThing } from '../../redux/documentEditing';
 import SheetComponent from '../SheetComponent/SheetComponent';
 
 const mapStateToProps = state => ({

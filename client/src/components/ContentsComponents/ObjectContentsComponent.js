@@ -8,7 +8,8 @@ import EmptyCellComponent from '../CellComponent/EmptyCellComponent';
 import ContentsBaseComponent from './ContentsBaseComponent';
 
 import { getRefsById, refsAtPosition } from '../../selectors/formulas/selectors';
-import { OBJECT_CELL, deleteLoc, deleteThing } from '../../redux/store';
+import { OBJECT_CELL } from '../../redux/stateConstants';
+import { deleteLoc, deleteThing } from '../../redux/documentEditing';
 
 
 class ObjectContentsComponent extends ContentsBaseComponent {

@@ -1,7 +1,7 @@
 import React, { PureComponent } from 'react';
 import { connect } from 'react-redux';
 import { getLoginState } from '../../selectors/formulas/selectors';
-import { LOGIN_STATES } from '../../redux/store';
+import { LOGIN_STATES } from '../../redux/stateConstants';
 import BookComponent from '../BookComponent/BookComponent';
 import NoBook from '../BookComponent/NoBook';
 import Banner from '../Banner/Banner';
