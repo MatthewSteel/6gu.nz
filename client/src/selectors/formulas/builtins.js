@@ -339,6 +339,17 @@ const byFunction = (fn, name) => (args, kwargs) => {
   if (by.arr.length !== args[0].arr.length) {
     throw new Error(`"by" parameter to ${name} must have the right length.`);
   }
+  for (let i = 0; i < by.arr.length; ++i) {
+    const elem = by.arr[i];
+    if (elem.error) continue;
+    const type = classify(elem.value);
+    if (type === ARRAY_T) {
+      throw new Error('"by:" arguments cannot be arrays.');
+    }
+    if (type === OBJECT_T) {
+      throw new Error('"by:" arguments cannot be objects.');
+    }
+  }
   return fn(args[0], by);
 };
 
@@ -395,6 +406,25 @@ const sortFn = (arr, by) => {
   retIndices.sort((leftIndex, rightIndex) => (
     cmp(by.arr[leftIndex].value, by.arr[rightIndex].value)));
   return new TableArray(retIndices.map(index => arr.arr[index]));
+};
+
+const groupFn = (arr, by) => {
+  by.arr.forEach((elem) => { if (elem.error) throw new Error(elem.error); });
+  const hashes = {};
+  for (let i = 0; i < by.arr.length; ++i) {
+    const byValue = by.arr[i].value;
+    if (!hashes[byValue]) hashes[byValue] = [arr.arr[i]];
+    else hashes[byValue].push(arr.arr[i]);
+  }
+  const ret = Object.entries(hashes).map(([byValue, items]) => ({
+    value: {
+      byName: {
+        by: { value: byValue },
+        group: { value: new TableArray(items) },
+      },
+    },
+  }));
+  return new TableArray(ret);
 };
 
 const sum1 = (thing) => {
@@ -569,6 +599,7 @@ export const globalFunctions = {
   average,
   filter: byFunction(filterFn, 'filter'),
   sort: byFunction(sortFn, 'sort'),
+  group: byFunction(groupFn, 'group'),
   sin,
   cos,
   tan,
@@ -598,6 +629,7 @@ export const globalFunctionArgs = {
   bound: new Set(['lower', 'upper']),
   filter: new Set(['by']),
   sort: new Set(['by']),
+  group: new Set(['by']),
   sin: new Set(['degrees', 'radians']),
   cos: new Set(['degrees', 'radians']),
   tan: new Set(['degrees', 'radians']),

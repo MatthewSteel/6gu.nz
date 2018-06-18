@@ -30,7 +30,7 @@ class TableContentsComponent extends ContentsBaseComponent {
     const { selY, selX } = this.localSelection();
     if (!cells) return { ...context, selY, selX };
 
-    const maybeCol = columns[selX];
+    const maybeCol = columns && columns[selX];
     if (maybeCol && maybeCol.type === COMPUTED_TABLE_COLUMN) {
       return { ...maybeCol, selX, selY };
     }
