@@ -1,6 +1,6 @@
 import store from './store';
-import { CELL, LOGIN_STATES } from './stateConstants';
-import { deleteThing, setFormula } from './documentEditing';
+import { ARRAY, CELL, OBJECT, TABLE, TABLE_CELL, TABLE_COLUMN, TABLE_ROW, LOGIN_STATES } from './stateConstants';
+import { deleteLoc, deleteThing, setFormula } from './documentEditing';
 import { getCells, getSheets } from '../selectors/formulas/selectors';
 import { getCellValuesById } from '../selectors/formulas/codegen';
 import { stringFormula } from '../selectors/formulas/unparser';
@@ -208,6 +208,65 @@ describe('actions/the store', () => {
       error: 'Error: sin does not exist',
       override: false,
     });
+  });
+
+  it('builds complex objects', () => {
+    const [sheet] = getSheets(store.getState());
+    store.dispatch(setFormula(
+      { context: sheet.id, y: 10, x: 10 },
+      'x: []',
+    ));
+    store.dispatch(setFormula(
+      { context: sheet.id, y: 5, x: 5 },
+      'y: {}',
+    ));
+    store.dispatch(setFormula(
+      { context: sheet.id, y: 0, x: 0 },
+      'z: [{}]',
+    ));
+    store.dispatch(setFormula(
+      { context: sheet.id, y: 5, x: 3 },
+      'w: [{}]',
+    ));
+
+    expect(find(({ name }) => name === 'x').type).toBe(ARRAY);
+    expect(find(({ name }) => name === 'y').type).toBe(OBJECT);
+    const z = find(({ name }) => name === 'z');
+    expect(z.type).toBe(TABLE);
+    expect(z.width).toBe(3);
+    expect(z.height).toBe(4);
+
+    const w = find(({ name }) => name === 'w');
+    expect(w.width).toBe(2); // does not cover y
+    expect(w.height).toBe(4);
+  });
+
+  it('cleans up when we delete complex objects', () => {
+    const [sheet] = getSheets(store.getState());
+    store.dispatch(setFormula(
+      { context: sheet.id, y: 0, x: 0 },
+      'fred: [{a: 10, b: 20}, { a: "hi", b: 22 }]',
+    ));
+    const cells = getCells(store.getState());
+    expect(cells.map(({ type }) => type).sort()).toEqual([
+      TABLE,
+      TABLE_CELL, TABLE_CELL, TABLE_CELL, TABLE_CELL,
+      TABLE_COLUMN, TABLE_COLUMN,
+      TABLE_ROW, TABLE_ROW,
+    ]);
+
+    const table = find(({ name }) => name === 'fred');
+    store.dispatch(deleteLoc(table.id, TABLE_ROW, 1));
+    const cells2 = getCells(store.getState());
+    expect(cells2.map(({ type }) => type).sort()).toEqual([
+      TABLE,
+      TABLE_CELL, TABLE_CELL,
+      TABLE_COLUMN, TABLE_COLUMN,
+      TABLE_ROW,
+    ]);
+
+    store.dispatch(deleteThing(table.id));
+    expect(getCells(store.getState())).toEqual([]);
   });
 });
 
