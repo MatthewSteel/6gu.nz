@@ -189,6 +189,7 @@ describe('actions/the store', () => {
       // args: [{ value: 'arg' }],
       kwargs: [{ ref: { name: 'degrees' }, expr: { value: 90 } }],
     });
+    expect(getCellValue(x).value).toBe(1);
     const y = find(({ name }) => name === 'y');
     expect(y.formula).toEqual({
       call: { name: 'sin' },

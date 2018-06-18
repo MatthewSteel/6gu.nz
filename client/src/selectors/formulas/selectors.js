@@ -335,9 +335,9 @@ export const translateExpr = (...fnArgs) => {
   const refsById = state && getRefsById(state);
 
   const getCallContextId = (preTranslate, postTranslate, fallback) => {
-    if (!state) return outerContextId;
     const globalCall = isGlobalCall(preTranslate, postTranslate);
     if (globalCall) return globalCall;
+    if (!state) return outerContextId;
     return getContextIdForRefId(
       refsById,
       callRef(postTranslate, preTranslate),

@@ -22,90 +22,95 @@ export const classify = (o) => {
   }[t];
 };
 
-export const deepOp2 = (op) => {
-  const tryF = (leftElem, rightElem) => {
-    if (leftElem.error) return leftElem;
-    if (rightElem.error) return rightElem;
-    return { value: f(leftElem.value, rightElem.value) };
-  };
-
-  const f = (left, right) => {
-    const type1 = classify(left);
-    const type2 = classify(right);
-    // TODO: Some switch on a bitmask, I think.
-    // Also: Consider getting rid of errors...
-    if (type1 === ARRAY_T && type2 === ARRAY_T) {
-      if (left.arr.length !== right.arr.length) {
-        throw new Error('Mismatched array lengths');
+export const deepOp = (op) => {
+  const f = (elems) => {
+    const types = [];
+    let someArrays = false;
+    let arrayLengths;
+    for (let i = 0; i < elems.length; ++i) {
+      const elem = elems[i];
+      const type = classify(elem);
+      if (type === OBJECT_T) {
+        throw new Error('Operator not supported for objects');
       }
-      return new TableArray(left.arr.map((leftElem, i) => {
-        const rightElem = right.arr[i];
-        return tryF(leftElem, rightElem);
-      }));
+      if (type === ARRAY_T) {
+        const { length } = elem.arr;
+        if (someArrays && length !== arrayLengths) {
+          throw new Error('Mismatched array lengths');
+        }
+        someArrays = true;
+        arrayLengths = length;
+      }
+      types.push(type);
     }
-    if (type1 === ARRAY_T) {
-      return new TableArray(left.arr.map((
-        leftElem => tryF(leftElem, { value: right }))));
+    if (!someArrays) return op(...elems);
+
+    const ret = [];
+    for (let i = 0; i < arrayLengths; ++i) {
+      const args = [];
+      let someError;
+      for (let j = 0; j < elems.length; ++j) {
+        if (types[j] === ARRAY_T) {
+          const elem = elems[j].arr[i];
+          if (elem.error) someError = elem;
+          else args.push(elems[j].arr[i].value);
+        } else {
+          args.push(elems[j]);
+        }
+      }
+      ret.push(someError || { value: f(args) });
     }
-    if (type2 === ARRAY_T) {
-      return new TableArray(right.arr.map((
-        rightElem => tryF({ value: left }, rightElem))));
-    }
-    if (type1 === OBJECT_T || type2 === OBJECT_T) {
-      throw new Error('Operator not supported for objects');
-    }
-    return op(left, right);
+    return new TableArray(ret);
   };
   return f;
 };
 
-export const deepOp1 = (op) => {
-  const f = (right) => {
-    const type1 = classify(right);
-    if (type1 === OBJECT_T) {
-      throw new Error('Operator not supported for objects');
-    }
-    if (type1 === ARRAY_T) {
-      return new TableArray(right.arr.map((elem) => {
-        if (elem.error) return elem;
-        return { value: f(elem.value) };
-      }));
-    }
-    return op(right);
-  };
-  return f;
+const deepOpFixed = (fn) => {
+  const generatedFn = deepOp(fn);
+  return (...args) => generatedFn(args);
 };
 
-const plus = deepOp2((l, r) => l + r);
-const minus = deepOp2((l, r) => l - r);
-const times = deepOp2((l, r) => l * r);
-const divide = deepOp2((l, r) => l / r);
-const mod = deepOp2((l, r) => l % r);
-const pow = deepOp2((l, r) => l ** r);
-const eq = deepOp2((l, r) => l === r);
-const ne = deepOp2((l, r) => l !== r);
-const ge = deepOp2((l, r) => l >= r);
-const gt = deepOp2((l, r) => l > r);
-const le = deepOp2((l, r) => l <= r);
-const lt = deepOp2((l, r) => l < r);
-const lshift = deepOp2((l, r) => l << r);
-const rshift = deepOp2((l, r) => l >> r);
-const logicalAnd = deepOp2((l, r) => l && r);
-const logicalOr = deepOp2((l, r) => l || r);
-const arithmeticAnd = deepOp2((l, r) => l & r);
-const arithmeticOr = deepOp2((l, r) => l | r);
-const arithmeticXor = deepOp2((l, r) => l | r);
-const atan2 = deepOp2(Math.atan2);
+const plus = deepOpFixed((l, r) => l + r);
+const minus = deepOpFixed((l, r) => l - r);
+const times = deepOpFixed((l, r) => l * r);
+const divide = deepOpFixed((l, r) => l / r);
+const mod = deepOpFixed((l, r) => l % r);
+const pow = deepOpFixed((l, r) => l ** r);
+const eq = deepOpFixed((l, r) => l === r);
+const ne = deepOpFixed((l, r) => l !== r);
+const ge = deepOpFixed((l, r) => l >= r);
+const gt = deepOpFixed((l, r) => l > r);
+const le = deepOpFixed((l, r) => l <= r);
+const lt = deepOpFixed((l, r) => l < r);
+const lshift = deepOpFixed((l, r) => l << r);
+const rshift = deepOpFixed((l, r) => l >> r);
+const logicalAnd = deepOpFixed((l, r) => l && r);
+const logicalOr = deepOpFixed((l, r) => l || r);
+const arithmeticAnd = deepOpFixed((l, r) => l & r);
+const arithmeticOr = deepOpFixed((l, r) => l | r);
+const arithmeticXor = deepOpFixed((l, r) => l | r);
 
-const uplus = deepOp1(r => +r);
-const uminus = deepOp1(r => -r);
-const unot = deepOp1(r => !r);
-const ucomplement = deepOp1(r => ~r);
-const asin = deepOp1(Math.asin);
-const acos = deepOp1(Math.acos);
+const uplus = deepOpFixed(r => +r);
+const uminus = deepOpFixed(r => -r);
+const unot = deepOpFixed(r => !r);
+const ucomplement = deepOpFixed(r => ~r);
 
-const lbound = deepOp2((num, bound) => ((num < bound) ? bound : num));
-const ubound = deepOp2((num, bound) => ((num > bound) ? bound : num));
+const boundOp = deepOp((lb, x, ub) => {
+  if (x < lb) return lb;
+  if (x > ub) return ub;
+  return x;
+});
+
+const ifOpClosure = deepOp((cond, t, f) => (cond ? t : f));
+const ifOp = (args, kwargs) => {
+  if (args.length !== 3) {
+    throw new Error('"if" takes 3 arguments');
+  }
+  if (kwargs.length) {
+    throw new Error('"if" takes no keyword arguments');
+  }
+  return ifOpClosure(args);
+};
 
 export const binarySymbolToName = {
   '+': 'plus',
@@ -167,22 +172,24 @@ const trig = (fn, name) => (args, kwargs) => {
     throw new Error(`If ${name} takes a keyword parameter is must take only that parameter.`);
   }
   if (args.length) {
-    if (args.length === 1) return deepOp1(fn)(args[0]);
-    return new TableArray(args.map(elem => ({ value: deepOp1(fn)(elem) })));
+    if (args.length === 1) return deepOp(fn)([args[0]]);
+    return new TableArray(args.map(elem => ({
+      value: deepOp(fn)([elem]),
+    })));
   }
   if (Object.keys(kwargs).length === 0) return fn(0);
   if (kwargs.radians) {
-    return deepOp1(fn)(kwargs.radians);
+    return deepOp(fn)([kwargs.radians]);
   }
   if (kwargs.degrees) {
-    return deepOp1(fn)(times(Math.PI / 180, kwargs.degrees));
+    return deepOp(fn)([times(Math.PI / 180, kwargs.degrees)]);
   }
   throw new Error(`Unexpected argument to ${name}: ${Object.keys(kwargs)[0]}`);
 };
 
 const log = (args, kwargs) => {
   let base = Math.E;
-  const deepLog = deepOp1(Math.log);
+  const deepLog = deepOpFixed(Math.log);
   for (const [key, value] of Object.entries(kwargs)) {
     if (key !== 'base') {
       throw new Error('log only takes "base" as a keyword argument');
@@ -218,7 +225,7 @@ const bound = (args, kwargs) => {
       throw new Error('bound only takes "lower" or "upper" as a keyword arguments');
     }
   }
-  return ubound(lbound(args[0], lower), upper);
+  return boundOp([lower, args[0], upper]);
 };
 
 const flatten = (args, kwargs) => {
@@ -334,6 +341,39 @@ const byFunction = (fn, name) => (args, kwargs) => {
   }
   return fn(args[0], by);
 };
+
+const oneKwargFunction = (fn, name, kwargName, kwargDefault) => (args, kwargs) => {
+  if (args.length !== 1) {
+    throw new Error(`${name} takes one parameter (and maybe "${kwargName}:")`);
+  }
+  let kwarg = kwargDefault;
+  for (const [key, value] of Object.entries(kwargs)) {
+    if (key !== kwargName) {
+      throw new Error(`${name} does not take a parameter ${key} (just "${kwargName}:")`);
+    }
+    kwarg = value;
+  }
+  return fn(args[0], kwarg);
+};
+
+const atan2 = oneKwargFunction(deepOpFixed((l, r, unit) => {
+  const angle = Math.atan2(l, r);
+  if (unit === 'degrees') return angle * 180 / Math.PI;
+  if (unit === 'radians') return angle;
+  throw new Error('"in:" must be "degrees" or "radians"');
+}), 'atan2', 'in', 'radians');
+const asin = oneKwargFunction(deepOpFixed((l, unit) => {
+  const angle = Math.asin(l);
+  if (unit === 'degrees') return angle * 180 / Math.PI;
+  if (unit === 'radians') return angle;
+  throw new Error('"in:" must be "degrees" or "radians"');
+}), 'asin', 'in', 'radians');
+const acos = oneKwargFunction(deepOpFixed((l, unit) => {
+  const angle = Math.acos(l);
+  if (unit === 'degrees') return angle * 180 / Math.PI;
+  if (unit === 'radians') return angle;
+  throw new Error('"in:" must be "degrees" or "radians"');
+}), 'acos', 'in', 'radians');
 
 const filterFn = (arr, by) => {
   const retArr = [];
@@ -501,10 +541,10 @@ const cos = trig(Math.cos, 'sin');
 const tan = trig(Math.tan, 'sin');
 const pi = () => Math.PI;
 const e = () => Math.E;
-const sqrt = unaryFn(deepOp1(Math.sqrt), 'sqrt');
-const abs = unaryFn(deepOp1(Math.abs), 'abs');
-const round = unaryFn(deepOp1(Math.round), 'round');
-const length = unaryFn(deepOp1(stringLen), 'length');
+const sqrt = unaryFn(deepOpFixed(Math.sqrt), 'sqrt');
+const abs = unaryFn(deepOpFixed(Math.abs), 'abs');
+const round = unaryFn(deepOpFixed(Math.round), 'round');
+const length = unaryFn(deepOpFixed(stringLen), 'length');
 const size = unaryFn(size1, 'size');
 const range = unaryFn(range1, 'range');
 const sum = deepAggregate(sum1, 'sum');
@@ -520,6 +560,7 @@ const average = (args, kwargs) => {
 };
 
 export const globalFunctions = {
+  if: ifOp,
   sum,
   count,
   transpose,
@@ -548,6 +589,7 @@ export const globalFunctions = {
 };
 
 export const globalFunctionArgs = {
+  if: new Set(),
   sum: new Set(),
   count: new Set(),
   transpose: new Set(),
@@ -559,9 +601,9 @@ export const globalFunctionArgs = {
   sin: new Set(['degrees', 'radians']),
   cos: new Set(['degrees', 'radians']),
   tan: new Set(['degrees', 'radians']),
-  asin: new Set(),
-  acos: new Set(),
-  atan2: new Set(),
+  asin: new Set(['in']),
+  acos: new Set(['in']),
+  atan2: new Set(['in']),
   pi: new Set(),
   sqrt: new Set(),
   abs: new Set(),
