@@ -11,7 +11,8 @@
     "passport-facebook": "^2.1.1",
     "passport-google-oauth20": "^1.0.0",
     "passport-oauth": "^1.0.0",
-    "pg": "^7.4.3"
+    "pg": "^7.4.3",
+    "shortid": "^2.2.8"
   },
   "scripts": {
     "setup": "yarn install; /bin/bash scripts/init_dev.sh",

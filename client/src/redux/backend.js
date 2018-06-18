@@ -26,15 +26,19 @@ const LAST_SAVE = 'lastSave';
 
 const recentUnsavedWork = (stringDoc, unsavedWork, documents) => {
   if (!stringDoc || !unsavedWork) return false;
-  const doc = JSON.parse(stringDoc);
-  const [docId, lastUpdateId] = unsavedWork.split(',');
 
-  if (docId !== doc.id) return false;
+
+  const doc = JSON.parse(stringDoc);
+  // New document of ours that we didn't manage to persist. Pretty ids
+  // come from the server.
+  if (!doc.prettyId) return doc;
+
+  const [docId, lastUpdateId] = unsavedWork.split(',');
+  if (docId !== doc.id) return false; // a bug, maybe?
   const maybeDoc = documents.find(({ id }) => id === docId);
 
-  // New document of ours that we didn't manage to persist
-  // FIXME (maybe) -- check that it's actually a "never persisted" doc?
-  if (!maybeDoc) return doc;
+  // Probably something we deleted on another computer
+  if (!maybeDoc) return false;
 
   // Old document of ours with "expected" persisted state.
   return maybeDoc.updateId === lastUpdateId && doc;
@@ -103,6 +107,11 @@ export const doLogout = async (dispatch) => {
   await fetchUserInfo(dispatch);
 };
 
+const setPrettyDocId = (id, prettyId) => ({
+  type: 'SET_PRETTY_DOC_ID',
+  payload: { id, prettyId },
+});
+
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 class FetchQueue {
@@ -153,6 +162,8 @@ class FetchQueue {
           // TODO: "saved" status in new redux state
           delete localStorage[UNSAVED_DOCUMENT];
           localStorage[LAST_SAVE] = `${doc.id},${doc.updateId}`;
+          const body = await response.json();
+          store.dispatch(setPrettyDocId(doc.id, body));
         }
       } finally {
         if (doc === this.queuedItem) {
@@ -177,6 +188,29 @@ export const scheduleSave = (state) => {
   return ret;
 };
 
+const mutDocProperty = (state, id, updates) => {
+  // Set updates in two places:
+  //  - User's documents,
+  //  - Document itself.
+  // Slightly annoying that it's denormalised, but kinda necessary because
+  // we might be looking at a document we don't own and want to keep some
+  // of this data id in the state in that case.
+  const mutatedDocsState = digMut(
+    state,
+    ['userState', 'documents'],
+    documents => documents.map((doc) => {
+      if (doc.id !== id) return doc;
+      return { ...doc, ...updates };
+    }),
+  );
+  if (state.openDocument.id !== id) {
+    return mutatedDocsState;
+  }
+  return digMut(mutatedDocsState, ['openDocument'], doc => ({
+    ...doc,
+    ...updates,
+  }));
+};
 
 export const userStateReducer = (state, action) => {
   if (action.type === 'USER_STATE') {
@@ -184,6 +218,9 @@ export const userStateReducer = (state, action) => {
       ...state,
       ...action.payload,
     };
+  }
+  if (action.type === 'SET_PRETTY_DOC_ID') {
+    return mutDocProperty(state, action.payload.id, action.payload);
   }
   return state;
 };

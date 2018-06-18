@@ -1,6 +1,7 @@
 'use strict';
 
 const express = require('express');
+const shortid = require('shortid');
 
 // TODO: Use some "cookie session" lib?
 // ALSO FIXME: Put sessions in the db so we can expire them properly...
@@ -214,11 +215,13 @@ app.put('/documents/:documentId', async (req, res) => {
 
   // Small race conditions here, I don't care.
   if (!doc) {
+    const prettyId = shortid.generate();
     await query(
-      `INSERT INTO documents (id, data, "updateId", "userId", metadata)
-       VALUES ($1, $2, $3, $4, $5);`,
-      [req.params.documentId, data, updateId, req.user.id, metadata],
+      `INSERT INTO documents (id, data, "prettyId", "updateId", "userId", metadata)
+       VALUES ($1, $2, $3, $4, $5, $6);`,
+      [req.params.documentId, data, prettyId, updateId, req.user.id, metadata],
     );
+    res.json(prettyId);
     query(
       'UPDATE users SET "lastViewedDocumentId"=$1 where id=$2',
       [req.params.documentId, req.user.id],
@@ -227,17 +230,18 @@ app.put('/documents/:documentId', async (req, res) => {
     // TODO: compare previous update id so we don't stomp on concurrent
     // edits
     try {
-      await query(
+      const result = await query(
         `UPDATE documents SET
            data=$2,
            "updateId"=$3,
            "userId"=$4,
            metadata=$5,
            "modifiedAt"=NOW()
-         WHERE id=$1;`,
+         WHERE id=$1 RETURNING "prettyId";`,
         [req.params.documentId, data, updateId, req.user.id, metadata],
       );
-      res.end();
+      const { prettyId } = result.rows[0]
+      res.json(prettyId);
       query(
         'UPDATE users SET "lastViewedDocumentId"=$1 where id=$2',
         [req.params.documentId, req.user.id],
@@ -248,7 +252,6 @@ app.put('/documents/:documentId', async (req, res) => {
   } else {
     res.status(401);
   }
-  res.end();
 });
 
 app.listen(3001);
