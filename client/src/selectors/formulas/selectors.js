@@ -17,6 +17,7 @@ import {
   COMPUTED_TABLE_COLUMN,
   TABLE_COLUMN,
   TABLE_ROW,
+  LOGIN_STATES,
 } from '../../redux/stateConstants';
 
 // Simple "get raw state" selectors (for the moment?)
@@ -24,6 +25,7 @@ import {
 export const getCells = state => state.openDocument.data.cells;
 export const getSheets = state => state.openDocument.data.sheets;
 export const getLoginState = state => state.userState.loginState;
+export const loggedIn = state => state.userState.loginState === LOGIN_STATES.LOGGED_IN;
 
 export const getRefs = createSelector(
   getCells,

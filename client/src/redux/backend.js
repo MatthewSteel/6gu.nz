@@ -2,6 +2,8 @@ import uuidv4 from 'uuid-v4';
 import cookie from 'cookie';
 import { digMut } from '../selectors/algorithms/algorithms';
 import { path, SHEET, loggedOutDocs, LOGIN_STATES } from './stateConstants';
+import { loggedIn } from '../selectors/formulas/selectors';
+
 import store from './store';
 
 export const blankDocument = () => ({
@@ -114,6 +116,25 @@ const setPrettyDocId = (id, prettyId) => ({
 
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
+const persistDocToServer = async (doc, stringDoc) => {
+  const response = await fetch(
+    `/documents/${doc.id}`,
+    {
+      method: 'PUT',
+      headers: { 'content-type': 'application/json' },
+      body: stringDoc,
+      credentials: 'same-origin',
+    },
+  );
+  if (response.status === 200) {
+    // TODO: "saved" status in new redux state
+    delete localStorage[UNSAVED_DOCUMENT];
+    localStorage[LAST_SAVE] = `${doc.id},${doc.updateId}`;
+    const body = await response.json();
+    store.dispatch(setPrettyDocId(doc.id, body));
+  }
+};
+
 class FetchQueue {
   constructor() {
     this.syncing = false;
@@ -148,22 +169,8 @@ class FetchQueue {
           // unsaved copy in there.
           delete localStorage[UNSAVED_DOCUMENT];
         }
-        // eslint-disable-next-line no-await-in-loop
-        const response = await fetch(
-          `/documents/${doc.id}`,
-          {
-            method: 'PUT',
-            headers: { 'content-type': 'application/json' },
-            body: stringDoc,
-            credentials: 'same-origin',
-          },
-        );
-        if (response.status === 200) {
-          // TODO: "saved" status in new redux state
-          delete localStorage[UNSAVED_DOCUMENT];
-          localStorage[LAST_SAVE] = `${doc.id},${doc.updateId}`;
-          const body = await response.json();
-          store.dispatch(setPrettyDocId(doc.id, body));
+        if (loggedIn(store.getState())) {
+          await persistDocToServer(doc, stringDoc);
         }
       } finally {
         if (doc === this.queuedItem) {
