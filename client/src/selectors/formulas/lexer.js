@@ -85,6 +85,7 @@ const lexOne = (input, i) => {
 
 // eslint-disable-next-line import/prefer-default-export
 export const lexFormula = (input) => {
+  if (input[0] === "'") return [{ value: input.slice(1) }];
   let i = 0;
   const ret = [];
   while (i < input.length) {

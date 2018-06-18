@@ -42,4 +42,8 @@ describe('lexFormula', () => {
       { value: false },
     ]);
   });
+
+  it('interprets a leading apostrophe as "literal string follows"', () => {
+    expect(lexFormula("'tr:evor=\\n")).toEqual([{ value: 'tr:evor=\\n' }]);
+  });
 });
