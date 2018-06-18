@@ -1,5 +1,4 @@
 Short-term TODO list:
- - Split up the reducer code,
  - Cell-size stuff :-/.
   - Cells are reasonably consistently sized, go all the way to the edges.
   - Probably have to do some pixel-density stuff?
@@ -18,14 +17,9 @@ Short-term TODO list:
  - Favicon,
  - Page title text,
  - Don't try to save things that aren't ours (or if we're logged in)
- - Handle localStorage being full,
  - Clear localStorage before putting the thing in it, just in case.
  - Check unsaved docs that aren't in "the list" have never been saved.
- - document ids are "nicer",
  - Handle "unexpected logouts"?
- - `if` function (not lazy), iferror(?), stdev(?)
- - `atan2(0.5, in: ["degrees", "radians", "degrees"])`
- - first, last, reverse, slice, group, max, "not-deep order"/comparison
  - intro video/website/docs
  - browse into more things -- arrays etc, complex table elements.
  - cut down the number of renders.
@@ -34,7 +28,7 @@ Short-term TODO list:
    - work out `keys` at display time still?
  - Always display "special arrays" as arrays. Ditto special objects.
    - They should not look like tables for now.
-Something something "unexpected logouts" too?
+ - max, deep equals?
 
 That's a lot...
 
