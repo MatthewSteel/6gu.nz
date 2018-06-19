@@ -16,10 +16,10 @@ class Workspace extends PureComponent {
         <Banner
           loginState={loginState}
         />
-        {loginState === LOGIN_STATES.UNKNOWN ?
-          <NoBook /> :
+        {loginState !== LOGIN_STATES.UNKNOWN &&
           <BookComponent />
         }
+        <NoBook loginState={loginState} />
       </div>
     );
   }
