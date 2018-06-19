@@ -75,13 +75,14 @@ class ObjectComponent extends ContentsBaseComponent {
 
     return (
       <Fragment>
-        <CellSelectionComponent
-          selected={viewSelected && !selectedCell.childSelected}
-          x={viewOffsetX}
-          y={viewOffsetY}
-          width={viewWidth}
-          height={viewHeight}
-        />
+        {viewSelected && !selectedCell.childSelected && (
+          <CellSelectionComponent
+            x={viewOffsetX}
+            y={viewOffsetY}
+            width={viewWidth}
+            height={viewHeight}
+          />
+        )}
         <ResizeHandleComponent
           y={viewOffsetY + viewHeight - 1}
           x={viewOffsetX + viewWidth - 1}

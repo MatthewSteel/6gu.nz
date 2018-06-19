@@ -116,13 +116,15 @@ class TableComponent extends ContentsBaseComponent {
       !valuesSelected;
     return (
       <Fragment>
-        <CellSelectionComponent
-          selected={wholeTableSelected}
-          x={viewOffsetX}
-          y={viewOffsetY}
-          width={viewWidth}
-          height={viewHeight}
-        />
+        {wholeTableSelected && (
+          <CellSelectionComponent
+            selected={wholeTableSelected}
+            x={viewOffsetX}
+            y={viewOffsetY}
+            width={viewWidth}
+            height={viewHeight}
+          />
+        )}
         <ResizeHandleComponent
           y={viewOffsetY + viewHeight - 1}
           x={viewOffsetX + viewWidth - 1}

@@ -230,16 +230,18 @@ class SheetContentsComponent extends ContentsBaseComponent {
         const cellSelected = !dragInProgress && viewSelected &&
           cy + scrollY === selection.y &&
           cx + scrollX === selection.x;
-        emptyCells.push((
-          <CellSelectionComponent
-            key={screenPlace}
-            x={cx}
-            y={cy}
-            width={1}
-            height={1}
-            selected={cellSelected}
-          />
-        ));
+        if (cellSelected) {
+          emptyCells.push((
+            <CellSelectionComponent
+              key={screenPlace}
+              x={cx}
+              y={cy}
+              width={1}
+              height={1}
+              selected={cellSelected}
+            />
+          ));
+        }
         emptyCells.push((
           <EmptyCellComponent
             key={`empty-${screenPlace}`}

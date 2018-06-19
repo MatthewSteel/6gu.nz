@@ -81,16 +81,18 @@ class TableIndicesComponent extends ContentsBaseComponent {
 
       // labels
       const nameSelected = viewSelected && selY === row;
-      children.push((
-        <CellSelectionComponent
-          x={viewOffsetX}
-          height={0.5}
-          y={worldRow}
-          width={outerViewWidth}
-          selected={nameSelected}
-          key={`name-${row}`}
-        />
-      ));
+      if (nameSelected) {
+        children.push((
+          <CellSelectionComponent
+            x={viewOffsetX}
+            height={0.5}
+            y={worldRow}
+            width={outerViewWidth}
+            selected={nameSelected}
+            key="selection"
+          />
+        ));
+      }
       children.push((
         <CellNameComponent
           x={viewOffsetX}
@@ -99,6 +101,7 @@ class TableIndicesComponent extends ContentsBaseComponent {
           height={0.5}
           name={row}
           setSelection={this.setViewSelection}
+          key={`name-${row}`}
         />
       ));
     }

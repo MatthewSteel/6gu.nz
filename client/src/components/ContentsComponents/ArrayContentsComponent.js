@@ -79,16 +79,18 @@ class ArrayContentsComponent extends ContentsBaseComponent {
       // labels
       if (scrollX === 0) {
         const cellSelected = viewSelected && selX === 0 && selY === row;
-        children.push((
-          <CellSelectionComponent
-            x={viewOffsetX}
-            width={viewWidth}
-            y={worldRow}
-            height={0.5}
-            selected={cellSelected}
-            key={`name-${row}`}
-          />
-        ));
+        if (cellSelected) {
+          children.push((
+            <CellSelectionComponent
+              x={viewOffsetX}
+              width={viewWidth}
+              y={worldRow}
+              height={0.5}
+              selected={cellSelected}
+              key="selection"
+            />
+          ));
+        }
         children.push((
           <CellNameComponent
             x={viewOffsetX}
@@ -97,6 +99,7 @@ class ArrayContentsComponent extends ContentsBaseComponent {
             height={0.5}
             name={`${row}`}
             setSelection={this.setViewSelection}
+            key={`name-${row}`}
           />
         ));
       }
@@ -113,23 +116,27 @@ class ArrayContentsComponent extends ContentsBaseComponent {
         height: 0.5,
       };
 
-      children.push((
-        <CellSelectionComponent
-          {...geomProps}
-          selected={cellSelected}
-          key={`cell-${row}`}
-        />
-      ));
+      if (cellSelected) {
+        children.push((
+          <CellSelectionComponent
+            {...geomProps}
+            selected={cellSelected}
+            key="selection"
+          />
+        ));
+      }
       children.push(maybeValue ? (
         <CellValueComponent
           {...geomProps}
           value={maybeValue}
           setSelection={this.setViewSelection}
+          key={`cell-${row}`}
         />
       ) : (
         <EmptyCellComponent
           {...geomProps}
           setSelection={this.setViewSelection}
+          key={`cell-${row}`}
         />
       ));
     }

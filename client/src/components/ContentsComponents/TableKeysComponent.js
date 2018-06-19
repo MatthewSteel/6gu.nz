@@ -85,16 +85,18 @@ class TableKeysComponent extends ContentsBaseComponent {
 
       // labels
       const nameSelected = viewSelected && selX === col;
-      children.push((
-        <CellSelectionComponent
-          x={worldCol}
-          height={outerViewHeight}
-          y={viewOffsetY}
-          width={1}
-          selected={nameSelected}
-          key={`name-${col}`}
-        />
-      ));
+      if (nameSelected) {
+        children.push((
+          <CellSelectionComponent
+            x={worldCol}
+            height={outerViewHeight}
+            y={viewOffsetY}
+            width={1}
+            selected={nameSelected}
+            key="selection"
+          />
+        ));
+      }
       children.push((
         <CellNameComponent
           x={worldCol}
@@ -103,6 +105,7 @@ class TableKeysComponent extends ContentsBaseComponent {
           height={0.5}
           name={tableData.keys[col]}
           setSelection={this.setViewSelection}
+          key={`name-${col}`}
         />
       ));
     }

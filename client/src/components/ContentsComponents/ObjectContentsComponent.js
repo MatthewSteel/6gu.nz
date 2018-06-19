@@ -84,16 +84,18 @@ class ObjectContentsComponent extends ContentsBaseComponent {
 
       // labels
       const nameSelected = viewSelected && selY === 0 && selX === col;
-      children.push((
-        <CellSelectionComponent
-          x={worldCol}
-          height={1}
-          y={viewOffsetY}
-          width={1}
-          selected={nameSelected}
-          key={`name-${col}`}
-        />
-      ));
+      if (nameSelected) {
+        children.push((
+          <CellSelectionComponent
+            x={worldCol}
+            height={1}
+            y={viewOffsetY}
+            width={1}
+            selected={nameSelected}
+            key="selection"
+          />
+        ));
+      }
       children.push((
         <CellNameComponent
           x={worldCol}
@@ -102,6 +104,7 @@ class ObjectContentsComponent extends ContentsBaseComponent {
           height={0.5}
           name={colsByIndex[col]}
           setSelection={this.setViewSelection}
+          key={`name-${col}`}
         />
       ));
 
@@ -115,23 +118,27 @@ class ObjectContentsComponent extends ContentsBaseComponent {
         height: 0.5,
       };
 
-      children.push((
-        <CellSelectionComponent
-          {...geomProps}
-          selected={cellSelected}
-          key={`cell-${col}`}
-        />
-      ));
+      if (cellSelected) {
+        children.push((
+          <CellSelectionComponent
+            {...geomProps}
+            selected={cellSelected}
+            key="selection"
+          />
+        ));
+      }
       children.push(maybeValue ? (
         <CellValueComponent
           {...geomProps}
           value={maybeValue}
           setSelection={this.setViewSelection}
+          key={`cell-${col}`}
         />
       ) : (
         <EmptyCellComponent
           {...geomProps}
           setSelection={this.setViewSelection}
+          key={`cell-${col}`}
         />
       ));
     }

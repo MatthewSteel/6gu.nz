@@ -39,13 +39,12 @@ class SheetCellComponent extends PureComponent {
 
     return (
       <Fragment>
-        <CellSelectionComponent
+        {selected && <CellSelectionComponent
           x={x}
           y={y}
           width={width}
           height={height}
-          selected={selected}
-        />
+        />}
         <ResizeHandleComponent
           y={y + height - 1}
           x={x + width - 1}
