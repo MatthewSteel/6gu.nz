@@ -127,11 +127,17 @@ describe('actions/the store', () => {
     const [sheet1, sheet2] = getSheets(store.getState());
     store.dispatch(setFormula({ context: sheet1.id, y: 1, x: 0 }, '0'));
     store.dispatch(setFormula({ context: sheet2.id, y: 2, x: 0 }, '1'));
+    store.dispatch(setFormula({ context: sheet1.id, y: 5, x: 5 }, 'x:1'));
 
     store.dispatch(deleteThing(sheet1.id));
     store.dispatch(deleteThing(sheet2.id));
     expect(allCells()).toEqual([]);
-    expect(getSheets(store.getState())).toEqual([]);
+
+    // Never allow no sheets
+    expect(getSheets(store.getState()).length).toEqual(1);
+    const sheetId = getSheets(store.getState())[0].id;
+    expect(sheetId).not.toBe(sheet1.id);
+    expect(sheetId).not.toBe(sheet2.id);
   });
 
   it('gives us good formula errors when sheets are deleted', () => {

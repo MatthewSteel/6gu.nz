@@ -442,11 +442,20 @@ export const documentReducer = (state, action) => {
 
     const idsToDelete = transitiveChildren(state, refId);
 
-    const stateMinusDeletions = digMut(state, path('data'), data => ({
+    let stateMinusDeletions = digMut(state, path('data'), data => ({
       ...data,
       sheets: data.sheets.filter(({ id }) => !idsToDelete.has(id)),
       cells: data.cells.filter(({ id }) => !idsToDelete.has(id)),
     }));
+    if (!stateMinusDeletions.openDocument.data.sheets.length) {
+      // Don't let any documents not have any sheets.
+      const sheets = [newSheet(stateMinusDeletions)];
+      stateMinusDeletions = digMut(
+        stateMinusDeletions,
+        path('sheets'),
+        sheets,
+      );
+    }
     return scheduleSave((
       translateDeletions(state, stateMinusDeletions, idsToDelete)
     ));

@@ -11,7 +11,9 @@ const mapDispatchToProps = dispatch => ({
 
 class NoBook extends PureComponent {
   componentDidMount() {
-    this.props.fetchUserInfoProp();
+    if (this.props.loginState === LOGIN_STATES.UNKNOWN) {
+      this.props.fetchUserInfoProp();
+    }
   }
   render() {
     const { loginState } = this.props;
