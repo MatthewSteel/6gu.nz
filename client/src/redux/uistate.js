@@ -54,16 +54,19 @@ export const uistateReducer = (state, action) => {
   }
 
   if (action.type === 'SET_VIEW_SELECTION') {
+    if (action.payload === state.uistate.selectedViewId) return state;
     return digMut(state, ['uistate', 'selectedViewId'], action.payload);
   }
 
   if (action.type === 'UPDATE_VIEW') {
     const { newView } = action.payload;
-    return digMut(state, ['uistate'], oldUiState => ({
+    const newState = digMut(state, ['uistate'], oldUiState => ({
       selectedViewId: newView.id,
       views: oldUiState.views.map(view => (
         view.id === newView.id ? newView : view)),
     }));
+    if (equal(newState.uistate, state.uistate)) return state;
+    return newState;
   }
 
   return state;

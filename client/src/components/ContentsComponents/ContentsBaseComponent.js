@@ -1,4 +1,5 @@
 import React, { Component } from 'react';
+import equal from 'fast-deep-equal';
 import { CELL } from '../../redux/stateConstants';
 import { clampValue, clampOverlap, rangesOverlap, truncateOverlap } from '../../selectors/geom/geom';
 import '../CellComponent/CellComponent.css';
@@ -58,7 +59,10 @@ export default class ContentsBaseComponent extends Component {
   }
 
   scroll(coords) {
-    this.setState(coords);
+    const { scrollX, scrollY } = this.state;
+    if (!equal({ scrollX, scrollY }, coords)) {
+      this.setState(coords);
+    }
   }
 
   worldToLocal(world) {
