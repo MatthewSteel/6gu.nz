@@ -39,25 +39,24 @@ const normaliseView = (view, sheets, sheetsById, cellValuesById) => {
   return ret;
 };
 
-const rawUiState = state => state.uistate;
+const rawViews = state => state.uistate.views;
 
-export const getUiState = createSelector(
-  rawUiState,
+export const getSelectedViewId = state => state.uistate.selectedViewId;
+
+export const getViews = createSelector(
+  rawViews,
   getSheets,
   getSheetsById,
   getCellValuesById,
-  (uistate, sheets, sheetsById, cellValuesById) => ({
-    selectedViewId: uistate.selectedViewId,
-    views: uistate.views.map(view => (
-      normaliseView(view, sheets, sheetsById, cellValuesById))),
-  }),
+  (views, sheets, sheetsById, cellValuesById) => views.map(view => (
+    normaliseView(view, sheets, sheetsById, cellValuesById))),
 );
 
 export const getDisplayViews = createSelector(
   getCellValuesById,
   getRefsById,
-  getUiState,
-  (cellValuesById, refsById, uistate) => uistate.views.map((view) => {
+  getViews,
+  (cellValuesById, refsById, views) => views.map((view) => {
     const pathElem = refsById[view.sheetId].name;
     const stack = [{
       value: cellValuesById[view.sheetId].value,

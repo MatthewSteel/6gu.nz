@@ -1,7 +1,7 @@
 import React, { PureComponent } from 'react';
 import { connect } from 'react-redux';
 import { getSheets } from '../../selectors/formulas/selectors';
-import { getDisplayViews, getUiState } from '../../selectors/uistate/uistate';
+import { getDisplayViews, getSelectedViewId, getViews } from '../../selectors/uistate/uistate';
 import { getCellValuesById } from '../../selectors/formulas/codegen';
 import store from '../../redux/store';
 import { createSheet, deleteThing } from '../../redux/documentEditing';
@@ -10,7 +10,8 @@ import SheetComponent from '../SheetComponent/SheetComponent';
 
 const mapStateToProps = state => ({
   cellValuesById: getCellValuesById(state),
-  uistate: getUiState(state),
+  selectedViewId: getSelectedViewId(state),
+  views: getViews(state),
   displayViews: getDisplayViews(state),
   sheets: getSheets(state),
 });
@@ -38,7 +39,7 @@ class BookComponent extends PureComponent {
   }
 
   getView(viewId) {
-    const { views } = this.props.uistate;
+    const { views } = this.props;
     return views.find(({ id }) => id === viewId);
   }
 
@@ -89,8 +90,7 @@ class BookComponent extends PureComponent {
   }
 
   render() {
-    const { displayViews, sheets, uistate } = this.props;
-    const { selectedViewId, views } = uistate;
+    const { displayViews, sheets, selectedViewId, views } = this.props;
 
     const sheetComponents = displayViews.map((displayView, viewIndex) => {
       const viewId = views[viewIndex].id;
