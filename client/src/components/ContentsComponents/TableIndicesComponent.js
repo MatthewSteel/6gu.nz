@@ -89,16 +89,17 @@ class TableIndicesComponent extends ContentsBaseComponent {
           width={outerViewWidth}
           selected={nameSelected}
           key={`name-${row}`}
-        >
-          <CellNameComponent
-            x={viewOffsetX}
-            width={1}
-            y={worldRow}
-            height={0.5}
-            name={row}
-            setSelection={this.setViewSelection}
-          />
-        </CellSelectionComponent>
+        />
+      ));
+      children.push((
+        <CellNameComponent
+          x={viewOffsetX}
+          width={1}
+          y={worldRow}
+          height={0.5}
+          name={row}
+          setSelection={this.setViewSelection}
+        />
       ));
     }
 

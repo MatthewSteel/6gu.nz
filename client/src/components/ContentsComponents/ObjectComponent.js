@@ -75,6 +75,13 @@ class ObjectComponent extends ContentsBaseComponent {
 
     return (
       <Fragment>
+        <CellSelectionComponent
+          selected={viewSelected && !selectedCell.childSelected}
+          x={viewOffsetX}
+          y={viewOffsetY}
+          width={viewWidth}
+          height={viewHeight}
+        />
         <ResizeHandleComponent
           y={viewOffsetY + viewHeight - 1}
           x={viewOffsetX + viewWidth - 1}
@@ -84,24 +91,16 @@ class ObjectComponent extends ContentsBaseComponent {
           endDragCallback={endDragCallback}
           onClick={toggleElementSize}
         >
-          <CellSelectionComponent
-            selected={viewSelected && !selectedCell.childSelected}
+          <CellNameComponent
+            name={object.name}
             x={viewOffsetX}
             y={viewOffsetY}
-            width={viewWidth}
-            height={viewHeight}
-          >
-            <CellNameComponent
-              name={object.name}
-              x={viewOffsetX}
-              y={viewOffsetY}
-              width={1}
-              height={1}
-              setSelection={this.setViewSelection}
-              onDragStart={this.onNameDragStart}
-              onDragEnd={endDragCallback}
-            />
-          </CellSelectionComponent>
+            width={1}
+            height={1}
+            setSelection={this.setViewSelection}
+            onDragStart={this.onNameDragStart}
+            onDragEnd={endDragCallback}
+          />
           <ObjectContentsComponent
             ref={contentsSelected && this.setChildSelectionTableRef}
             contextId={id}

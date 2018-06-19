@@ -87,16 +87,17 @@ class ArrayContentsComponent extends ContentsBaseComponent {
             height={0.5}
             selected={cellSelected}
             key={`name-${row}`}
-          >
-            <CellNameComponent
-              x={viewOffsetX}
-              width={1}
-              y={worldRow}
-              height={0.5}
-              name={`${row}`}
-              setSelection={this.setViewSelection}
-            />
-          </CellSelectionComponent>
+          />
+        ));
+        children.push((
+          <CellNameComponent
+            x={viewOffsetX}
+            width={1}
+            y={worldRow}
+            height={0.5}
+            name={`${row}`}
+            setSelection={this.setViewSelection}
+          />
         ));
       }
 
@@ -117,20 +118,19 @@ class ArrayContentsComponent extends ContentsBaseComponent {
           {...geomProps}
           selected={cellSelected}
           key={`cell-${row}`}
-        >
-          {maybeValue ? (
-            <CellValueComponent
-              {...geomProps}
-              value={maybeValue}
-              setSelection={this.setViewSelection}
-            />
-          ) : (
-            <EmptyCellComponent
-              {...geomProps}
-              setSelection={this.setViewSelection}
-            />
-          )}
-        </CellSelectionComponent>
+        />
+      ));
+      children.push(maybeValue ? (
+        <CellValueComponent
+          {...geomProps}
+          value={maybeValue}
+          setSelection={this.setViewSelection}
+        />
+      ) : (
+        <EmptyCellComponent
+          {...geomProps}
+          setSelection={this.setViewSelection}
+        />
       ));
     }
 

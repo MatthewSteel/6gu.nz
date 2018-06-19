@@ -120,20 +120,19 @@ class TableContentsComponent extends ContentsBaseComponent {
             {...geomProps}
             selected={cellSelected}
             key={`name-${col},${row}`}
-          >
-            {maybeCellData ? (
-              <CellValueComponent
-                {...geomProps}
-                value={maybeCellData}
-                setSelection={this.setViewSelection}
-              />
-            ) : (
-              <EmptyCellComponent
-                {...geomProps}
-                setSelection={this.setViewSelection}
-              />
-            )}
-          </CellSelectionComponent>
+          />
+        ));
+        children.push(maybeCellData ? (
+          <CellValueComponent
+            {...geomProps}
+            value={maybeCellData}
+            setSelection={this.setViewSelection}
+          />
+        ) : (
+          <EmptyCellComponent
+            {...geomProps}
+            setSelection={this.setViewSelection}
+          />
         ));
       }
     }

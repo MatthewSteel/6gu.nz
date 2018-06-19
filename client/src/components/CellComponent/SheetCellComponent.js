@@ -1,4 +1,4 @@
-import React, { PureComponent } from 'react';
+import React, { Fragment, PureComponent } from 'react';
 import CellNameComponent from './CellNameComponent';
 import CellValueComponent from './CellValueComponent';
 import CellSelectionComponent from './CellSelectionComponent';
@@ -38,13 +38,14 @@ class SheetCellComponent extends PureComponent {
     } = this.props;
 
     return (
-      <CellSelectionComponent
-        x={x}
-        y={y}
-        width={width}
-        height={height}
-        selected={selected}
-      >
+      <Fragment>
+        <CellSelectionComponent
+          x={x}
+          y={y}
+          width={width}
+          height={height}
+          selected={selected}
+        />
         <ResizeHandleComponent
           y={y + height - 1}
           x={x + width - 1}
@@ -77,7 +78,7 @@ class SheetCellComponent extends PureComponent {
             id={id}
           />
         </ResizeHandleComponent>
-      </CellSelectionComponent>
+      </Fragment>
     );
   }
 }

@@ -92,16 +92,17 @@ class ObjectContentsComponent extends ContentsBaseComponent {
           width={1}
           selected={nameSelected}
           key={`name-${col}`}
-        >
-          <CellNameComponent
-            x={worldCol}
-            width={1}
-            y={viewOffsetY}
-            height={0.5}
-            name={colsByIndex[col]}
-            setSelection={this.setViewSelection}
-          />
-        </CellSelectionComponent>
+        />
+      ));
+      children.push((
+        <CellNameComponent
+          x={worldCol}
+          width={1}
+          y={viewOffsetY}
+          height={0.5}
+          name={colsByIndex[col]}
+          setSelection={this.setViewSelection}
+        />
       ));
 
       // values + blanks
@@ -119,20 +120,19 @@ class ObjectContentsComponent extends ContentsBaseComponent {
           {...geomProps}
           selected={cellSelected}
           key={`cell-${col}`}
-        >
-          {(maybeValue) ? (
-            <CellValueComponent
-              {...geomProps}
-              value={maybeValue}
-              setSelection={this.setViewSelection}
-            />
-          ) : (
-            <EmptyCellComponent
-              {...geomProps}
-              setSelection={this.setViewSelection}
-            />
-          )}
-        </CellSelectionComponent>
+        />
+      ));
+      children.push(maybeValue ? (
+        <CellValueComponent
+          {...geomProps}
+          value={maybeValue}
+          setSelection={this.setViewSelection}
+        />
+      ) : (
+        <EmptyCellComponent
+          {...geomProps}
+          setSelection={this.setViewSelection}
+        />
       ));
     }
 

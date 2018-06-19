@@ -78,6 +78,13 @@ class ArrayComponent extends ContentsBaseComponent {
 
     return (
       <Fragment>
+        <CellSelectionComponent
+          selected={viewSelected && !selectedCell.childSelected}
+          x={viewOffsetX}
+          y={viewOffsetY}
+          width={viewWidth}
+          height={viewHeight}
+        />
         <ResizeHandleComponent
           y={viewOffsetY + viewHeight - 1}
           x={viewOffsetX + viewWidth - 1}
@@ -87,24 +94,16 @@ class ArrayComponent extends ContentsBaseComponent {
           endDragCallback={endDragCallback}
           onClick={toggleElementSize}
         >
-          <CellSelectionComponent
-            selected={viewSelected && !selectedCell.childSelected}
+          <CellNameComponent
+            name={array.name}
             x={viewOffsetX}
             y={viewOffsetY}
-            width={viewWidth}
-            height={viewHeight}
-          >
-            <CellNameComponent
-              name={array.name}
-              x={viewOffsetX}
-              y={viewOffsetY}
-              width={width}
-              height={0.5}
-              setSelection={this.setViewSelection}
-              onDragStart={this.onNameDragStart}
-              onDragEnd={endDragCallback}
-            />
-          </CellSelectionComponent>
+            width={width}
+            height={0.5}
+            setSelection={this.setViewSelection}
+            onDragStart={this.onNameDragStart}
+            onDragEnd={endDragCallback}
+          />
           <ArrayContentsComponent
             ref={contentsSelected && this.setChildSelectionTableRef}
             contextId={id}

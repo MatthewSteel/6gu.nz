@@ -223,30 +223,33 @@ class SheetContentsComponent extends ContentsBaseComponent {
         // Do not over-draw empty cells. We *could* draw them, but we don't
         // want to because a half-empty child table may not draw over the
         // top of them.
-        const place = `${cy + scrollY},${cx + scrollX}`;
-        if (placedCellLocs[place]) continue;
+        const worldPlace = `${cy + scrollY},${cx + scrollX}`;
+        if (placedCellLocs[worldPlace]) continue;
+        const screenPlace = `${cy},${cx}`;
 
         const cellSelected = !dragInProgress && viewSelected &&
           cy + scrollY === selection.y &&
           cx + scrollX === selection.x;
         emptyCells.push((
           <CellSelectionComponent
-            key={place}
+            key={screenPlace}
             x={cx}
             y={cy}
             width={1}
             height={1}
             selected={cellSelected}
-          >
-            <EmptyCellComponent
-              x={cx}
-              y={cy}
-              width={1}
-              height={1}
-              selected={cellSelected}
-              setSelection={this.setViewSelection}
-            />
-          </CellSelectionComponent>
+          />
+        ));
+        emptyCells.push((
+          <EmptyCellComponent
+            key={`empty-${screenPlace}`}
+            x={cx}
+            y={cy}
+            width={1}
+            height={1}
+            selected={cellSelected}
+            setSelection={this.setViewSelection}
+          />
         ));
       }
     }

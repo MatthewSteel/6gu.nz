@@ -116,6 +116,13 @@ class TableComponent extends ContentsBaseComponent {
       !valuesSelected;
     return (
       <Fragment>
+        <CellSelectionComponent
+          selected={wholeTableSelected}
+          x={viewOffsetX}
+          y={viewOffsetY}
+          width={viewWidth}
+          height={viewHeight}
+        />
         <ResizeHandleComponent
           y={viewOffsetY + viewHeight - 1}
           x={viewOffsetX + viewWidth - 1}
@@ -125,24 +132,16 @@ class TableComponent extends ContentsBaseComponent {
           endDragCallback={endDragCallback}
           onClick={toggleElementSize}
         >
-          <CellSelectionComponent
-            selected={wholeTableSelected}
+          <CellNameComponent
+            name={table.name}
             x={viewOffsetX}
             y={viewOffsetY}
-            width={viewWidth}
-            height={viewHeight}
-          >
-            <CellNameComponent
-              name={table.name}
-              x={viewOffsetX}
-              y={viewOffsetY}
-              width={1}
-              height={0.5}
-              setSelection={this.setViewSelection}
-              onDragStart={this.onNameDragStart}
-              onDragEnd={endDragCallback}
-            />
-          </CellSelectionComponent>
+            width={1}
+            height={0.5}
+            setSelection={this.setViewSelection}
+            onDragStart={this.onNameDragStart}
+            onDragEnd={endDragCallback}
+          />
           <TableContentsComponent
             {...commonChildProps}
             ref={valuesSelected && this.setChildSelectionTableRef}

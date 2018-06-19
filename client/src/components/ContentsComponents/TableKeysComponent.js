@@ -93,16 +93,17 @@ class TableKeysComponent extends ContentsBaseComponent {
           width={1}
           selected={nameSelected}
           key={`name-${col}`}
-        >
-          <CellNameComponent
-            x={worldCol}
-            width={1}
-            y={viewOffsetY}
-            height={0.5}
-            name={tableData.keys[col]}
-            setSelection={this.setViewSelection}
-          />
-        </CellSelectionComponent>
+        />
+      ));
+      children.push((
+        <CellNameComponent
+          x={worldCol}
+          width={1}
+          y={viewOffsetY}
+          height={0.5}
+          name={tableData.keys[col]}
+          setSelection={this.setViewSelection}
+        />
       ));
     }
 
