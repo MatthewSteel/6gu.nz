@@ -22,7 +22,15 @@ export const moveThing = (refId, sheetId, y, x, height, width) => ({
   payload: { refId, sheetId, y, x, height, width },
 });
 
-export const dragReducer = (state, action) => {
+export const setSelectedView = viewId => ({
+  type: 'SET_VIEW_SELECTION', payload: viewId,
+});
+
+export const updateView = newView => ({
+  type: 'UPDATE_VIEW', payload: { newView },
+});
+
+export const uistateReducer = (state, action) => {
   if (action.type === 'START_DRAG') {
     return digMut(state, path('dragState'), action.payload);
   }
@@ -44,5 +52,19 @@ export const dragReducer = (state, action) => {
   if (action.type === 'CLEAR_DRAG') {
     return digMut(state, path('dragState'), {});
   }
+
+  if (action.type === 'SET_VIEW_SELECTION') {
+    return digMut(state, ['uistate', 'selectedViewId'], action.payload);
+  }
+
+  if (action.type === 'UPDATE_VIEW') {
+    const { newView } = action.payload;
+    return digMut(state, ['uistate'], oldUiState => ({
+      selectedViewId: newView.id,
+      views: oldUiState.views.map(view => (
+        view.id === newView.id ? newView : view)),
+    }));
+  }
+
   return state;
 };

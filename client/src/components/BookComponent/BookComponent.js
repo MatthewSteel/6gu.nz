@@ -1,21 +1,25 @@
 import React, { PureComponent } from 'react';
 import { connect } from 'react-redux';
-import { getSheets, getSheetsById, getRefsById } from '../../selectors/formulas/selectors';
+import { getSheets } from '../../selectors/formulas/selectors';
+import { getDisplayViews, getUiState } from '../../selectors/uistate/uistate';
 import { getCellValuesById } from '../../selectors/formulas/codegen';
 import store from '../../redux/store';
 import { createSheet, deleteThing } from '../../redux/documentEditing';
+import { setSelectedView, updateView } from '../../redux/uistate';
 import SheetComponent from '../SheetComponent/SheetComponent';
 
 const mapStateToProps = state => ({
   cellValuesById: getCellValuesById(state),
-  refsById: getRefsById(state),
-  sheetsById: getSheetsById(state),
+  uistate: getUiState(state),
+  displayViews: getDisplayViews(state),
   sheets: getSheets(state),
 });
 
 const mapDispatchToProps = dispatch => ({
   createSheetProp: () => dispatch(createSheet()),
   deleteSheet: sheetId => dispatch(deleteThing(sheetId)),
+  setSelectedViewProp: view => dispatch(setSelectedView(view)),
+  updateViewProp: view => dispatch(updateView(view)),
 });
 
 class BookComponent extends PureComponent {
@@ -26,172 +30,119 @@ class BookComponent extends PureComponent {
     this.setViewSelection = this.setViewSelection.bind(this);
     this.changeSheetViewSheet = this.changeSheetViewSheet.bind(this);
     this.deleteSelectedSheet = this.deleteSelectedSheet.bind(this);
-    this.state = {
-      selectedViewId: '0',
-      views: [{
-        id: '0',
-        stack: [],
-        sheetId: props.sheets[0].id,
-      }],
-    };
   }
 
   setViewSelection(viewId) {
-    this.setState({ selectedViewId: viewId });
+    const { setSelectedViewProp } = this.props;
+    setSelectedViewProp(viewId);
   }
 
   getView(viewId) {
-    const view = this.state.views.find(({ id }) => id === viewId);
-    return this.normaliseView(view);
-  }
-
-  updateView(newView) {
-    this.setState({
-      selectedViewId: newView.id,
-      views: this.state.views.map(view => (
-        view.id === newView.id ? newView : view)),
-    });
-  }
-
-  normaliseView(view) {
-    // A view stack may have invalid entries after some redux state update.
-    // The view is robust at the moment (maybe it shouldn't need to be...)
-    // but pushing/popping on a broken stack is no good. Fix it up before
-    // working on it.
-    const { stack, sheetId } = view;
-    let sheetData = this.props.cellValuesById[sheetId].value;
-    const newStack = [];
-    stack.forEach((stackRef) => {
-      if (sheetData && sheetData.byId[stackRef]) {
-        sheetData = sheetData.byId[stackRef].value;
-        newStack.push(stackRef);
-      } else {
-        sheetData = null;
-      }
-    });
-    return {
-      ...view,
-      stack: newStack,
-    };
+    const { views } = this.props.uistate;
+    return views.find(({ id }) => id === viewId);
   }
 
   changeSheetViewSheet(ev) {
     const targetSheetId = ev.target.value;
     const viewId = ev.target.name;
+
+    const { createSheetProp, updateViewProp } = this.props;
+
     if (targetSheetId !== 'new') {
-      this.updateView({ id: viewId, sheetId: targetSheetId, stack: [] });
+      updateViewProp({ id: viewId, sheetId: targetSheetId, stack: [] });
       return;
     }
     // new sheet
-    const { createSheetProp } = this.props;
     createSheetProp();
 
     // Is this bad practice? The sheet will not be in our props...
     const allSheets = getSheets(store.getState());
     const createdSheet = allSheets[allSheets.length - 1];
-    this.updateView({ id: viewId, sheetId: createdSheet.id, stack: [] });
+    updateViewProp({ id: viewId, sheetId: createdSheet.id, stack: [] });
   }
 
   pushStack(viewId, cellId) {
     const view = this.getView(viewId);
-    const newStack = [...view.stack, cellId];
-    this.updateView({ ...view, stack: newStack });
+    const newStack = [...view.stack, { id: cellId }];
+    this.props.updateViewProp({ ...view, stack: newStack });
   }
 
   popStack(viewId, n = 1) {
     const view = this.getView(viewId);
     const newStack = view.stack.slice(0, view.stack.length - n);
-    this.updateView({ ...view, stack: newStack });
+    this.props.updateViewProp({ ...view, stack: newStack });
   }
 
   deleteSelectedSheet(viewId) {
     const view = this.getView(viewId);
-    const { createSheetProp, deleteSheet, sheets } = this.props;
-    if (sheets.length === 1) createSheetProp();
-
-    // Possible new sheet may not be in `sheets`.
-    const allSheets = getSheets(store.getState());
-
-    const sheetIndex = allSheets.findIndex(({ id }) => id === view.sheetId);
-    const newViewSheetIndex = sheetIndex + (sheetIndex === allSheets.length - 1 ? -1 : 1);
-    const newViewSheetId = allSheets[newViewSheetIndex].id;
-    this.updateView({ id: viewId, stack: [], sheetId: newViewSheetId });
-    deleteSheet(allSheets[sheetIndex].id);
+    const { deleteSheet, sheets, updateViewProp } = this.props;
+    if (sheets.length !== 0) {
+      // Select a sheet "near" the one currently selected.
+      const sheetIndex = sheets.find(({ id }) => id === view.sheetId);
+      if (sheetIndex === 0) {
+        updateViewProp({ ...view, sheetId: sheets[1].id });
+      } else {
+        updateViewProp({ ...view, sheetId: sheets[sheetIndex - 1].id });
+      }
+    }
+    deleteSheet(view.sheetId);
   }
 
   render() {
-    const {
-      refsById,
-      cellValuesById,
-      sheets,
-      sheetsById,
-    } = this.props;
-    const { selectedViewId, views } = this.state;
+    const { displayViews, sheets, uistate } = this.props;
+    const { selectedViewId, views } = uistate;
 
-    const sheetComponents = views.map(({ id, stack, sheetId }) => {
-      const selectedSheet = sheetsById[sheetId] || sheets[0];
-      const sheetName = selectedSheet.name;
-      const viewData = [{
-        ...cellValuesById[selectedSheet.id].value,
-        path: sheetName,
-      }];
-      let pathStillValid = true;
-      stack.forEach((stackRef) => {
-        const lastViewData = viewData[viewData.length - 1];
-        const newData = lastViewData.byId[stackRef];
-        pathStillValid = pathStillValid && newData;
-        if (pathStillValid) {
-          const { name } = refsById[stackRef];
-          viewData.push({
-            ...newData.value,
-            path: `${lastViewData.path}.${name}`,
-          });
-        }
-      });
-
-      const sheetViews = viewData.map(({ template, byId, path }, i) => (
-        <SheetComponent
-          key={path}
-          path={path}
-          viewId={id}
-          sheetId={template}
-          cellValuesById={byId}
-          readOnly={i !== 0}
-          selected={selectedViewId === id && i === viewData.length - 1}
-          setViewSelection={this.setViewSelection}
-          isChild={i !== 0}
-          deleteSheet={this.deleteSelectedSheet}
-          popViewStack={this.popStack}
-          pushViewStack={this.pushStack}
-          height={13}
-          width={10}
-          depth={i}
-        >
-          <select
-            className="ViewSelect"
-            name={id}
-            value={selectedSheet.id}
-            onChange={this.changeSheetViewSheet}
+    const sheetComponents = displayViews.map((displayView, viewIndex) => {
+      const viewId = views[viewIndex].id;
+      const selectedSheet = views[viewIndex].sheetId;
+      let path = '';
+      const sheetViews = displayView.map(({ value, pathElem }, i) => {
+        path += pathElem;
+        const { template, byId } = value;
+        return (
+          <SheetComponent
+            key={path}
+            path={path}
+            viewId={viewId}
+            sheetId={template}
+            cellValuesById={byId}
+            readOnly={i !== 0}
+            selected={selectedViewId === viewId && i === displayView.length - 1}
+            setViewSelection={this.setViewSelection}
+            isChild={i !== 0}
+            deleteSheet={this.deleteSelectedSheet}
+            popViewStack={this.popStack}
+            pushViewStack={this.pushStack}
+            height={13}
+            width={10}
+            depth={i}
           >
-            {sheets.map(sheet => (
-              <option
-                key={sheet.id}
-                value={sheet.id}
-              >
-                {sheet.name}
-              </option>
-            ))}
-            <option
-              key="new"
-              value="new"
+            <select
+              className="ViewSelect"
+              name={viewId}
+              value={selectedSheet}
+              onChange={this.changeSheetViewSheet}
             >
-              {'{New sheet}'}
-            </option>
-          </select>
-        </SheetComponent>
-      ));
+              {sheets.map(sheet => (
+                <option
+                  key={sheet.id}
+                  value={sheet.id}
+                >
+                  {sheet.name}
+                </option>
+              ))}
+              <option
+                key="new"
+                value="new"
+              >
+                {'{New sheet}'}
+              </option>
+            </select>
+          </SheetComponent>
+        );
+      });
       return (
-        <div key={id} style={{ display: 'grid' }}>
+        <div key={viewId} style={{ display: 'grid' }}>
           {sheetViews}
         </div>
       );

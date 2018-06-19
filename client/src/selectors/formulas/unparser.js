@@ -9,7 +9,7 @@ import {
 
 // Turning a stored raw formula back into a string.
 
-const unparseName = (name) => {
+export const unparseName = (name) => {
   const toJoin = [];
   for (let i = 0; i < name.length; ++i) {
     const character = name[i];

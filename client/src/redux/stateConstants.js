@@ -20,12 +20,22 @@ export const LOGIN_STATES = {
 
 export const BLANK_DRAG_STATE = {};
 
+const DEFAULT_VIEWS = {
+  selectedViewId: '0',
+  views: [{
+    id: '0',
+    sheetId: undefined,
+    stack: [],
+  }],
+};
+
 export const initialState = {
   userState: {
     loginState: LOGIN_STATES.UNKNOWN,
     documents: loggedOutDocs,
   },
   dragState: BLANK_DRAG_STATE,
+  uistate: DEFAULT_VIEWS,
 };
 
 export const path = terminalName => ({
