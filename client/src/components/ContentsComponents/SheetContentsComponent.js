@@ -21,7 +21,7 @@ import getDragGeom, {
 } from '../../selectors/geom/dragGeom';
 import { getType } from '../../selectors/formulas/tables';
 import { deleteLoc, deleteThing, moveThing, toggleMaximiseSheetElem } from '../../redux/documentEditing';
-import { clearDrag, startDrag, updateDrag } from '../../redux/drag';
+import { clearDrag, startDrag, updateDrag } from '../../redux/uistate';
 
 
 class SheetContentsComponent extends ContentsBaseComponent {

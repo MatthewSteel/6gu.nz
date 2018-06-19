@@ -1,5 +1,5 @@
 import { createStore } from 'redux';
-import { dragReducer } from './drag';
+import { dragReducer } from './uistate';
 import { userStateReducer } from './backend';
 import { documentReducer } from './documentEditing';
 import { initialState } from './stateConstants';
