@@ -1,18 +1,36 @@
 .SheetContainer {
   display: flex;
   flex-direction: column;
-  grid-area: 1 / 1 / 2 / 2;
   width: 100%;
   overflow: hidden;
+  position: absolute;
+  left: 0px;
+  top: 0px;
 }
 
 .SheetTitle {
-  font-weight: 700;
-  color: #55C;
+  text-align: left;
+  color: #000;
   background-color: #F4F4FF;
   font: helvetica;
   min-height: 20px;
   position: relative;
+}
+
+.TitleElem {
+  font-size: 0.8em;
+  min-width: 60px;
+  display: inline-block;
+  text-align: center;
+  margin: 1px 0px 1px 1px;
+  padding: 2px;
+  background-color: #444;
+  color: #F8F8F8;
+}
+
+.TitleLink {
+  cursor: pointer;
+  color: #CCC;
 }
 
 .Sheet {

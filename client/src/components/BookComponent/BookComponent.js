@@ -7,6 +7,7 @@ import store from '../../redux/store';
 import { createSheet, deleteThing } from '../../redux/documentEditing';
 import { setSelectedView, updateView } from '../../redux/uistate';
 import SheetComponent from '../SheetComponent/SheetComponent';
+import TitleBar from './TitleBar';
 
 const mapStateToProps = state => ({
   cellValuesById: getCellValuesById(state),
@@ -28,6 +29,7 @@ class BookComponent extends PureComponent {
     super(props);
     this.pushStack = this.pushStack.bind(this);
     this.popStack = this.popStack.bind(this);
+    this.setStackDepth = this.setStackDepth.bind(this);
     this.setViewSelection = this.setViewSelection.bind(this);
     this.changeSheetViewSheet = this.changeSheetViewSheet.bind(this);
     this.deleteSelectedSheet = this.deleteSelectedSheet.bind(this);
@@ -68,9 +70,14 @@ class BookComponent extends PureComponent {
     this.props.updateViewProp({ ...view, stack: newStack });
   }
 
-  popStack(viewId, n = 1) {
+  popStack(viewId) {
     const view = this.getView(viewId);
-    const newStack = view.stack.slice(0, view.stack.length - n);
+    this.setStackDepth(viewId, view.stack.length - 1);
+  }
+
+  setStackDepth(viewId, n) {
+    const view = this.getView(viewId);
+    const newStack = view.stack.slice(0, n);
     this.props.updateViewProp({ ...view, stack: newStack });
   }
 
@@ -79,7 +86,7 @@ class BookComponent extends PureComponent {
     const { deleteSheet, sheets, updateViewProp } = this.props;
     if (sheets.length !== 0) {
       // Select a sheet "near" the one currently selected.
-      const sheetIndex = sheets.find(({ id }) => id === view.sheetId);
+      const sheetIndex = sheets.findIndex(({ id }) => id === view.sheetId);
       if (sheetIndex === 0) {
         updateViewProp({ ...view, sheetId: sheets[1].id });
       } else {
@@ -102,14 +109,12 @@ class BookComponent extends PureComponent {
         return (
           <SheetComponent
             key={path}
-            path={path}
             viewId={viewId}
             sheetId={template}
             cellValuesById={byId}
             readOnly={i !== 0}
             selected={selectedViewId === viewId && i === displayView.length - 1}
             setViewSelection={this.setViewSelection}
-            isChild={i !== 0}
             deleteSheet={this.deleteSelectedSheet}
             popViewStack={this.popStack}
             pushViewStack={this.pushStack}
@@ -141,9 +146,19 @@ class BookComponent extends PureComponent {
           </SheetComponent>
         );
       });
+      // Todo: memoize this?
+      const pathElems = displayView.map(({ pathElem }) => pathElem);
       return (
-        <div key={viewId} style={{ display: 'grid' }}>
-          {sheetViews}
+        <div className="ViewClass" key={viewId}>
+          <TitleBar
+            viewId={viewId}
+            deleteSheet={this.deleteSelectedSheet}
+            pathElems={pathElems}
+            setStackDepth={this.setStackDepth}
+          />
+          <div key={viewId} style={{ position: 'relative' }}>
+            {sheetViews}
+          </div>
         </div>
       );
     });

@@ -80,8 +80,6 @@ class SheetComponent extends Component {
     const {
       cellValuesById,
       children: sheetSelect,
-      path,
-      isChild,
       readOnly,
       selected,
       width,
@@ -104,25 +102,6 @@ class SheetComponent extends Component {
 
     return (
       <div className="SheetContainer">
-        <div className="SheetTitle">
-          {path}
-          {isChild && (
-            <button
-              onClick={this.popStack}
-              className="StackButton"
-            >
-              &minus;
-            </button>
-          )}
-          {!isChild && (
-            <button
-              onClick={this.deleteSheet}
-              className="DeleteSheetButton"
-            >
-              &times;
-            </button>
-          )}
-        </div>
         <div
           className="Sheet"
           style={style}
