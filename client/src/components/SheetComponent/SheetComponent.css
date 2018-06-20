@@ -26,11 +26,17 @@
   padding: 2px;
   background-color: #444;
   color: #F8F8F8;
+  cursor: default;
 }
 
 .TitleLink {
   cursor: pointer;
   color: #CCC;
+}
+
+.TitleLink:hover {
+  color: #EEE;
+  background-color: #555;
 }
 
 .Sheet {
