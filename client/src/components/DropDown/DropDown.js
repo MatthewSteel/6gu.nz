@@ -1,7 +1,7 @@
 import React, { Component } from 'react';
 import classNames from 'classnames';
 import FireWhenClickedOutside from '../util/FireWhenClickedOutside';
-import KeyboardListenerComponent from '../KeyboardListenerComponent/KeyboardListenerComponent';
+import KeyboardListener from '../util/KeyboardListener';
 import './DropDown.css';
 
 class DropDownRow extends Component {
@@ -214,7 +214,7 @@ export default class DropDownMenu extends Component {
     // So let's consider the open/close button "inside" the menu :-).
     return (
       <FireWhenClickedOutside callback={this.closeMenu} >
-        <KeyboardListenerComponent callback={this.keys} />
+        <KeyboardListener callback={this.keys} />
         {ret}
       </FireWhenClickedOutside>
     );

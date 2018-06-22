@@ -1,7 +1,7 @@
 import React, { Fragment } from 'react';
 import { connect } from 'react-redux';
 
-import KeyboardListenerComponent from '../KeyboardListenerComponent/KeyboardListenerComponent';
+import KeyboardListener from '../util/KeyboardListener';
 import SheetCellComponent from '../CellComponent/SheetCellComponent';
 import EmptyCellComponent from '../CellComponent/EmptyCellComponent';
 import CellSelectionComponent from '../CellComponent/CellSelectionComponent';
@@ -301,12 +301,12 @@ class SheetContentsComponent extends ContentsBaseComponent {
         {filledCells}
         {dragOverCells}
         {viewSelected && !formulaHasFocus &&
-          <KeyboardListenerComponent
+          <KeyboardListener
             callback={this.cellKeys}
           />
         }
         {viewSelected && formulaHasFocus &&
-          <KeyboardListenerComponent
+          <KeyboardListener
             callback={this.formulaKeys}
           />
         }

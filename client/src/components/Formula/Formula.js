@@ -4,10 +4,10 @@ import equal from 'fast-deep-equal';
 
 import { stringFormula } from '../../selectors/formulas/unparser';
 import { deleteThing, setFormula } from '../../redux/documentEditing';
-import './FormulaComponent.css';
+import './Formula.css';
 
 
-class FormulaComponent extends Component {
+class Formula extends Component {
   constructor(props) {
     super(props);
     this.inputRef = null;
@@ -59,14 +59,14 @@ class FormulaComponent extends Component {
   }
 
   focus() {
-    // Called by SheetComponent only
+    // Called by Sheet component only
     this.inputRef.focus();
     const { length } = this.state.value;
     this.inputRef.setSelectionRange(length, length);
   }
 
   sendKey(key) {
-    // Called by SheetComponent only
+    // Called by Sheet component only
     this.setState({ value: key });
     this.inputRef.setSelectionRange(1, 1);
     this.inputRef.focus();
@@ -129,4 +129,4 @@ export default connect(
   mapDispatchToProps,
   null, // mergeProps
   { withRef: true }, // so we can access member functions
-)(FormulaComponent);
+)(Formula);

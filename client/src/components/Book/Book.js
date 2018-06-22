@@ -6,7 +6,7 @@ import { getCellValuesById } from '../../selectors/formulas/codegen';
 import store from '../../redux/store';
 import { createSheet, deleteThing } from '../../redux/documentEditing';
 import { setSelectedView, updateView } from '../../redux/uistate';
-import SheetComponent from '../SheetComponent/SheetComponent';
+import Sheet from '../Sheet/Sheet';
 import TitleBar, { PathElem } from './TitleBar';
 import DocumentMenu from '../DropDown/DocumentMenu';
 import SheetMenu from '../DropDown/SheetMenu';
@@ -26,7 +26,7 @@ const mapDispatchToProps = dispatch => ({
   updateViewProp: view => dispatch(updateView(view)),
 });
 
-class BookComponent extends PureComponent {
+class Book extends PureComponent {
   constructor(props) {
     super(props);
     this.pushStack = this.pushStack.bind(this);
@@ -106,7 +106,7 @@ class BookComponent extends PureComponent {
         path += pathElem;
         const { template, byId } = value;
         return (
-          <SheetComponent
+          <Sheet
             key={path}
             viewId={viewId}
             sheetId={template}
@@ -166,4 +166,4 @@ class BookComponent extends PureComponent {
   }
 }
 
-export default connect(mapStateToProps, mapDispatchToProps)(BookComponent);
+export default connect(mapStateToProps, mapDispatchToProps)(Book);

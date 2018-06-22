@@ -1,12 +1,12 @@
 import sizeMe from 'react-sizeme';
 import React, { Component } from 'react';
 import equal from 'fast-deep-equal';
-import FormulaComponent from '../FormulaComponent/FormulaComponent';
+import Formula from '../Formula/Formula';
 
 import SheetContentsComponent from '../ContentsComponents/SheetContentsComponent';
-import './SheetComponent.css';
+import './Sheet.css';
 
-class SheetComponent extends Component {
+class Sheet extends Component {
   constructor(props) {
     super(props);
     this.getFocus = this.getFocus.bind(this);
@@ -58,7 +58,7 @@ class SheetComponent extends Component {
   }
 
   // These two methods passed down to children so they can operate on the
-  // parent BookComponent
+  // parent Book. Push for the [+] symbol, pop for ESC on the keyboard.
 
   pushStack(cellId) {
     const { pushViewStack, viewId } = this.props;
@@ -119,7 +119,7 @@ class SheetComponent extends Component {
         </div>
         <div className="SheetViewInputRow">
           <div ref={this.setFormulaPlaceRef} />
-          <FormulaComponent
+          <Formula
             readOnly={readOnly}
             ref={this.setFormulaRef}
             selection={formulaSelection}
@@ -137,4 +137,4 @@ const sizeMeHoc = sizeMe({
   monitorHeight: true,
 });
 
-export default sizeMeHoc(SheetComponent);
+export default sizeMeHoc(Sheet);

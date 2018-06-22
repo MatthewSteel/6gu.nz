@@ -344,6 +344,7 @@ export const userStateReducer = (state, action) => {
 
   if (action.type === 'LOAD_DOCUMENT') {
     // set document title and url?
+    // Reset the views?
     return digMut(state, ['openDocument'], action.payload);
   }
 
