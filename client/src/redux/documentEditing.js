@@ -62,6 +62,10 @@ export const moveThing = (refId, sheetId, y, x, height, width) => ({
   payload: { refId, sheetId, y, x, height, width },
 });
 
+export const renameSheet = (id, name) => ({
+  type: 'RENAME_SHEET', payload: { id, name },
+});
+
 export const toggleMaximiseSheetElem = (dispatch, refId) => {
   const refsById = getRefsById(store.getState());
   const ref = refsById[refId];
@@ -501,6 +505,23 @@ export const documentReducer = (state, action) => {
       ...cells.filter(({ id }) => id !== refId),
       { ...existingRef, ...newGeometry },
     ]));
+  }
+
+  if (action.type === 'RENAME_SHEET') {
+    const { id, name } = action.payload;
+    const refsById = getRefsById(store.getState());
+    const ref = refsById[id];
+    if (!ref || ref.type !== SHEET || ref.name === name) return undefined;
+
+    const updated = { ...ref, name };
+    const newState = digMut(
+      state,
+      path('sheets'),
+      sheets => sheets.map(sheet => (sheet.id === id ? updated : sheet)),
+    );
+    return scheduleSave((
+      rewireBadRefs(newState, [updated])
+    ));
   }
 
   return state;

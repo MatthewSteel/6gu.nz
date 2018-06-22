@@ -2,7 +2,7 @@ import React, { Component } from 'react';
 import classNames from 'classnames';
 import equal from 'fast-deep-equal';
 
-class PathElem extends Component {
+export class PathElem extends Component {
   constructor(props) {
     super(props);
     this.handleClick = this.handleClick.bind(this);
@@ -30,7 +30,6 @@ class PathElem extends Component {
 export default class TitleBar extends Component {
   constructor(props) {
     super(props);
-    this.popStack = this.popStack.bind(this);
     this.deleteSheet = this.deleteSheet.bind(this);
   }
 
@@ -43,19 +42,13 @@ export default class TitleBar extends Component {
     deleteSheet(viewId);
   }
 
-  popStack() {
-    const { pathElems, setStackDepth, viewId } = this.props;
-    setStackDepth(viewId, pathElems.length - 2); // -1, - sheet
-  }
-
   render() {
-    const { pathElems, setStackDepth, viewId } = this.props;
+    const { children, pathElems, setStackDepth, viewId } = this.props;
 
-    const isChild = pathElems.length > 1;
-    const children = pathElems.map((pathElem, i) => (
+    const pathChildren = pathElems.map((pathElem, i) => (
       <PathElem
         key={i}
-        depth={i}
+        depth={i + 1}
         last={i === pathElems.length - 1}
         setStackDepth={setStackDepth}
         pathElem={pathElem}
@@ -65,14 +58,7 @@ export default class TitleBar extends Component {
     return (
       <div className="SheetTitle">
         {children}
-        {!isChild && (
-          <button
-            onClick={this.deleteSheet}
-            className="DeleteSheetButton"
-          >
-            &times;
-          </button>
-        )}
+        {pathChildren}
       </div>
     );
   }

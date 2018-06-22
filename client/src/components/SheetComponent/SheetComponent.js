@@ -13,7 +13,6 @@ class SheetComponent extends Component {
     this.setFormulaFocus = this.setFormulaFocus.bind(this);
     this.setFormulaRef = this.setFormulaRef.bind(this);
     this.popStack = this.popStack.bind(this);
-    this.deleteSheet = this.deleteSheet.bind(this);
     this.pushStack = this.pushStack.bind(this);
     this.setFormulaSelection = this.setFormulaSelection.bind(this);
     this.setWindowSelection = this.setWindowSelection.bind(this);
@@ -71,15 +70,9 @@ class SheetComponent extends Component {
     popViewStack(viewId);
   }
 
-  deleteSheet() {
-    const { deleteSheet, viewId } = this.props;
-    deleteSheet(viewId);
-  }
-
   render() {
     const {
       cellValuesById,
-      children: sheetSelect,
       readOnly,
       selected,
       width,
@@ -133,7 +126,6 @@ class SheetComponent extends Component {
             setFormulaHasFocus={this.setFormulaFocus}
             sheetId={sheetId}
           />
-          {sheetSelect}
         </div>
       </div>
     );

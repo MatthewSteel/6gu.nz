@@ -139,7 +139,7 @@ app.get('/userInfo', async (req, res) => {
     return;
   }
   const documentResults = await query(
-    `SELECT id, metadata, "createdAt", "modifiedAt"
+    `SELECT id, metadata, "createdAt", "modifiedAt", "prettyId", "updateId"
      FROM documents WHERE "userId"=$1;`,
     [req.user.id],
   );
@@ -152,7 +152,7 @@ app.get('/userInfo', async (req, res) => {
   // so we can show different documents in different sessions/logins.
   // NOTE: the user may have no documents.
   const recentDocumentResults = await query(
-    `SELECT *
+    `SELECT d.*
      FROM documents d
      JOIN users u ON d.id=u."lastViewedDocumentId"
      WHERE u.id=$1;`
@@ -193,8 +193,9 @@ app.delete('/documents/:documentId', async (req, res) => {
     'DELETE FROM documents WHERE id=$1 AND "userId"=$2;',
     [req.params.documentId, req.user.id],
   );
-  if (results.rows[0]) {
+  if (results.rowCount) {
     res.end();
+    return;
   }
   res.status(404);
   res.end();
@@ -216,12 +217,14 @@ app.put('/documents/:documentId', async (req, res) => {
   // Small race conditions here, I don't care.
   if (!doc) {
     const prettyId = shortid.generate();
-    await query(
-      `INSERT INTO documents (id, data, "prettyId", "updateId", "userId", metadata)
-       VALUES ($1, $2, $3, $4, $5, $6);`,
+    const results = await query(
+      `INSERT INTO documents as d
+        (id, data, "prettyId", "updateId", "userId", metadata)
+       VALUES ($1, $2, $3, $4, $5, $6)
+       RETURNING d.id, d."prettyId", d.metadata, d."userId";`,
       [req.params.documentId, data, prettyId, updateId, req.user.id, metadata],
     );
-    res.json(prettyId);
+    res.json(results.rows[0]);
     query(
       'UPDATE users SET "lastViewedDocumentId"=$1 where id=$2',
       [req.params.documentId, req.user.id],
@@ -230,18 +233,23 @@ app.put('/documents/:documentId', async (req, res) => {
     // TODO: compare previous update id so we don't stomp on concurrent
     // edits
     try {
+      const maybeDataQuery = data ? 'data=$5, ' : '';
+      const maybeDataParam = data ? [data] : [];
       const result = await query(
-        `UPDATE documents SET
-           data=$2,
-           "updateId"=$3,
-           "userId"=$4,
-           metadata=$5,
+        `UPDATE documents d SET
+           ${maybeDataQuery}
+           "updateId"=$2,
+           "userId"=$3,
+           metadata=$4,
            "modifiedAt"=NOW()
-         WHERE id=$1 RETURNING "prettyId";`,
-        [req.params.documentId, data, updateId, req.user.id, metadata],
+         WHERE id=$1
+         RETURNING d.id, d."prettyId", d.metadata, d."userId";`,
+        [
+          req.params.documentId, updateId, req.user.id, metadata,
+          ...maybeDataParam,
+        ],
       );
-      const { prettyId } = result.rows[0]
-      res.json(prettyId);
+      res.json(result.rows[0]);
       query(
         'UPDATE users SET "lastViewedDocumentId"=$1 where id=$2',
         [req.params.documentId, req.user.id],

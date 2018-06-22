@@ -85,3 +85,26 @@ export const getDisplayViews = createSelector(
     return stack;
   }),
 );
+
+const openDocumentMetadata = state => state.openDocument.metadata;
+const openDocumentId = state => state.openDocument.id;
+const openDocumentPrettyId = state => state.openDocument.prettyId;
+
+const openDocumentSummary = createSelector(
+  openDocumentMetadata,
+  openDocumentId,
+  openDocumentPrettyId,
+  (metadata, id, prettyId) => ({ metadata, id, prettyId }),
+);
+
+const myDocuments = state => state.userState.documents;
+
+// Open document may not be ours.
+export const dropDownDocuments = createSelector(
+  openDocumentSummary,
+  myDocuments,
+  (openDoc, documents) => [
+    openDoc,
+    ...documents.filter(({ id }) => id !== openDoc.id),
+  ],
+);

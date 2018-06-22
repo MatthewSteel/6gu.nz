@@ -1,8 +1,9 @@
 import uuidv4 from 'uuid-v4';
 import cookie from 'cookie';
-import { digMut } from '../selectors/algorithms/algorithms';
+import { digMut, nameCopy } from '../selectors/algorithms/algorithms';
 import { path, SHEET, loggedOutDocs, LOGIN_STATES } from './stateConstants';
 import { loggedIn } from '../selectors/formulas/selectors';
+import { dropDownDocuments } from '../selectors/uistate/uistate';
 
 import store from './store';
 
@@ -19,16 +20,27 @@ export const blankDocument = () => ({
     }],
     cells: [],
   },
-  metadata: { name: 'New document' },
+  metadata: { name: 'Document' },
   id: uuidv4(),
 });
 
 const UNSAVED_DOCUMENT = 'unsavedDocument';
 const LAST_SAVE = 'lastSave';
 
+export const renameDocument = (documentId, name) => ({
+  type: 'RENAME_DOCUMENT', payload: { documentId, name },
+});
+
+export const deleteDocument = documentId => ({
+  type: 'DELETE_DOCUMENT', payload: documentId,
+});
+
+export const loadDocument = documentId => ({
+  type: 'LOAD_DOCUMENT', payload: documentId,
+});
+
 const recentUnsavedWork = (stringDoc, unsavedWork, documents) => {
   if (!stringDoc || !unsavedWork) return false;
-
 
   const doc = JSON.parse(stringDoc);
   // New document of ours that we didn't manage to persist. Pretty ids
@@ -52,7 +64,10 @@ export const fetchUserInfo = async (dispatch) => {
   // Should logged-out users get sent to unmodified last-viewed docs?
   //  nah...
   const result = await fetch('/userInfo', { credentials: 'same-origin' });
-  const body = await result.json() || { documents: loggedOutDocs };
+  const body = await result.json() || {
+    documents: loggedOutDocs,
+    user: {},
+  };
 
   const loginState = {
     true: LOGIN_STATES.LOGGED_IN,
@@ -95,6 +110,7 @@ export const fetchUserInfo = async (dispatch) => {
       userState: {
         loginState,
         documents: body.documents,
+        userId: body.user.id,
       },
       openDocument: newOpenDocument,
     },
@@ -109,9 +125,9 @@ export const doLogout = async (dispatch) => {
   await fetchUserInfo(dispatch);
 };
 
-const setPrettyDocId = (id, prettyId) => ({
-  type: 'SET_PRETTY_DOC_ID',
-  payload: { id, prettyId },
+const savedDoc = details => ({
+  type: 'SAVED_DOC',
+  payload: details,
 });
 
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
@@ -131,7 +147,25 @@ const persistDocToServer = async (doc, stringDoc) => {
     delete localStorage[UNSAVED_DOCUMENT];
     localStorage[LAST_SAVE] = `${doc.id},${doc.updateId}`;
     const body = await response.json();
-    store.dispatch(setPrettyDocId(doc.id, body));
+    store.dispatch(savedDoc(body));
+  }
+};
+
+const updateDocumentDetails = async (doc) => {
+  const copy = { ...doc };
+  delete copy.data;
+  const response = await fetch(
+    `/documents/${doc.id}`,
+    {
+      method: 'PUT',
+      headers: { 'content-type': 'application/json' },
+      body: JSON.stringify(doc),
+      credentials: 'same-origin',
+    },
+  );
+  if (response.status === 200) {
+    const body = await response.json();
+    store.dispatch(savedDoc(body));
   }
 };
 
@@ -195,39 +229,127 @@ export const scheduleSave = (state) => {
   return ret;
 };
 
-const mutDocProperty = (state, id, updates) => {
-  // Set updates in two places:
-  //  - User's documents,
-  //  - Document itself.
-  // Slightly annoying that it's denormalised, but kinda necessary because
-  // we might be looking at a document we don't own and want to keep some
-  // of this data id in the state in that case.
-  const mutatedDocsState = digMut(
-    state,
-    ['userState', 'documents'],
-    documents => documents.map((doc) => {
-      if (doc.id !== id) return doc;
-      return { ...doc, ...updates };
-    }),
-  );
-  if (state.openDocument.id !== id) {
-    return mutatedDocsState;
-  }
-  return digMut(mutatedDocsState, ['openDocument'], doc => ({
-    ...doc,
-    ...updates,
+const updateDocState = (state, doc, insert) => {
+  const docWithoutData = { ...doc };
+  delete docWithoutData.data;
+
+  const existingDocs = state.userState.documents;
+
+  // Only insert into the list when we have a confirmed save, otherwise
+  // just do a replacement.
+  const newDocs = insert ?
+    [docWithoutData, ...existingDocs.filter(({ id }) => id !== doc.id)] :
+    existingDocs.map(d => (d.id === doc.id ? docWithoutData : d));
+
+  const mutatedDocs = digMut(state, ['userState', 'documents'], newDocs);
+  if (state.openDocument.id !== doc.id) return mutatedDocs;
+  return digMut(mutatedDocs, ['openDocument'], openDoc => ({
+    ...openDoc, ...doc,
   }));
 };
+const savedDocState = (state, doc) => (
+  updateDocState(state, doc, true));
+const saveDocState = (state, doc) => (
+  updateDocState(state, doc, false));
+
+const fetchDocument = async (documentId) => {
+  const result = await fetch(
+    `/documents/${documentId}`,
+    { credentials: 'same-origin' },
+  );
+  return result.json();
+};
+const scheduleDelete = (documentId) => {
+  fetch(
+    `/documents/${documentId}`,
+    {
+      method: 'DELETE',
+      headers: { 'content-type': 'application/json' },
+      credentials: 'same-origin',
+    },
+  );
+};
+
+export const fetchAndLoadDocument = async (dispatch, documentId) => {
+  // Dispatch "loading document" action here?
+  try {
+    const body = await fetchDocument(documentId);
+    dispatch({ type: 'LOAD_DOCUMENT', payload: body });
+  } catch (e) {
+    // probably cancel the load here?
+  }
+};
+
+export const copyDocument = async (dispatch, docs, documentId) => {
+  // Get the data we need,
+  const { openDocument } = store.getState();
+  const newDoc = (openDocument.id === documentId) ?
+    { ...openDocument } : (await fetchDocument(documentId));
+
+  // Update properties on the document,
+  const existingNames = docs.map(doc => doc.metadata.name);
+  newDoc.metadata.name = nameCopy(existingNames, newDoc.metadata.name);
+  newDoc.id = uuidv4();
+  delete newDoc.prettyId;
+  delete newDoc.userId;
+
+  dispatch({ type: 'SAVE_COPY', payload: newDoc });
+};
+
+export const newDocument = () => ({ type: 'NEW_DOCUMENT' });
+
 
 export const userStateReducer = (state, action) => {
   if (action.type === 'USER_STATE') {
-    return {
-      ...state,
-      ...action.payload,
-    };
+    // login with open doc, document list, login state etc.
+    return { ...state, ...action.payload };
   }
-  if (action.type === 'SET_PRETTY_DOC_ID') {
-    return mutDocProperty(state, action.payload.id, action.payload);
+
+  if (action.type === 'SAVED_DOC') {
+    // Document metadata came back after a successful save
+    return savedDocState(state, action.payload);
   }
+
+  if (action.type === 'SAVE_COPY') {
+    // Set open document and save it.
+    return scheduleSave(digMut(state, ['openDocument'], action.payload));
+  }
+
+  if (action.type === 'RENAME_DOCUMENT') {
+    const { documentId, name } = action.payload;
+
+    const doc = dropDownDocuments(state)
+      .find(({ id }) => id === documentId);
+    const newDoc = digMut(doc, ['metadata', 'name'], name);
+    const newState = saveDocState(state, newDoc);
+    if (state.openDocument.id === documentId) {
+      return scheduleSave(newState);
+    }
+    updateDocumentDetails(newDoc);
+    return newState;
+  }
+
+  if (action.type === 'DELETE_DOCUMENT') {
+    // TODO: schedule actual server deletion
+    const docId = action.payload;
+    scheduleDelete(docId);
+
+    const newOpenDoc = (state.openDocument.id === docId) ?
+      digMut(state, ['openDocument'], blankDocument()) : state;
+
+    const newDocs = state.userState.documents
+      .filter(({ id }) => id !== docId);
+    return digMut(newOpenDoc, ['userState', 'documents'], newDocs);
+  }
+
+  if (action.type === 'LOAD_DOCUMENT') {
+    // set document title and url?
+    return digMut(state, ['openDocument'], action.payload);
+  }
+
+  if (action.type === 'NEW_DOCUMENT') {
+    return digMut(state, ['openDocument'], blankDocument());
+  }
+
   return state;
 };

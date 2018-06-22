@@ -12,31 +12,30 @@
   text-align: left;
   color: #000;
   background-color: #F4F4FF;
-  font: helvetica;
   min-height: 20px;
   position: relative;
 }
 
 .TitleElem {
-  font-size: 0.8em;
+  font-size: 0.9em;
   min-width: 60px;
   display: inline-block;
   text-align: center;
   margin: 1px 0px 1px 1px;
-  padding: 2px;
+  padding: 4px;
   background-color: #444;
   color: #F8F8F8;
   cursor: default;
+  position: relative;
 }
 
 .TitleLink {
   cursor: pointer;
-  color: #CCC;
+  background-color: #66A;
 }
 
 .TitleLink:hover {
-  color: #EEE;
-  background-color: #555;
+  background-color: #77B;
 }
 
 .Sheet {

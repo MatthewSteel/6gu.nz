@@ -7,7 +7,9 @@ import store from '../../redux/store';
 import { createSheet, deleteThing } from '../../redux/documentEditing';
 import { setSelectedView, updateView } from '../../redux/uistate';
 import SheetComponent from '../SheetComponent/SheetComponent';
-import TitleBar from './TitleBar';
+import TitleBar, { PathElem } from './TitleBar';
+import DocumentMenu from '../DropDown/DocumentMenu';
+import SheetMenu from '../DropDown/SheetMenu';
 
 const mapStateToProps = state => ({
   cellValuesById: getCellValuesById(state),
@@ -32,7 +34,7 @@ class BookComponent extends PureComponent {
     this.setStackDepth = this.setStackDepth.bind(this);
     this.setViewSelection = this.setViewSelection.bind(this);
     this.changeSheetViewSheet = this.changeSheetViewSheet.bind(this);
-    this.deleteSelectedSheet = this.deleteSelectedSheet.bind(this);
+    this.deleteSheet = this.deleteSheet.bind(this);
   }
 
   setViewSelection(viewId) {
@@ -45,10 +47,7 @@ class BookComponent extends PureComponent {
     return views.find(({ id }) => id === viewId);
   }
 
-  changeSheetViewSheet(ev) {
-    const targetSheetId = ev.target.value;
-    const viewId = ev.target.name;
-
+  changeSheetViewSheet(viewId, targetSheetId) {
     const { createSheetProp, updateViewProp } = this.props;
 
     if (targetSheetId !== 'new') {
@@ -81,27 +80,27 @@ class BookComponent extends PureComponent {
     this.props.updateViewProp({ ...view, stack: newStack });
   }
 
-  deleteSelectedSheet(viewId) {
-    const view = this.getView(viewId);
-    const { deleteSheet, sheets, updateViewProp } = this.props;
-    if (sheets.length !== 0) {
+  deleteSheet(sheetId) {
+    const { deleteSheet, sheets, updateViewProp, views } = this.props;
+    if (sheets.length !== 1) {
       // Select a sheet "near" the one currently selected.
-      const sheetIndex = sheets.findIndex(({ id }) => id === view.sheetId);
-      if (sheetIndex === 0) {
-        updateViewProp({ ...view, sheetId: sheets[1].id });
-      } else {
-        updateViewProp({ ...view, sheetId: sheets[sheetIndex - 1].id });
-      }
+      const sheetIndex = sheets.findIndex(({ id }) => id === sheetId);
+      const newSelectedIndex = (sheetIndex === 0) ? 1 : sheetIndex - 1;
+      const newSelectedSheetId = sheets[newSelectedIndex].id;
+      views.forEach((view) => {
+        if (view.sheetId === sheetId) {
+          updateViewProp({ ...view, sheetId: newSelectedSheetId });
+        }
+      });
     }
-    deleteSheet(view.sheetId);
+    deleteSheet(sheetId);
   }
 
   render() {
-    const { displayViews, sheets, selectedViewId, views } = this.props;
+    const { displayViews, selectedViewId, views } = this.props;
 
     const sheetComponents = displayViews.map((displayView, viewIndex) => {
       const viewId = views[viewIndex].id;
-      const selectedSheet = views[viewIndex].sheetId;
       let path = '';
       const sheetViews = displayView.map(({ value, pathElem }, i) => {
         path += pathElem;
@@ -121,41 +120,37 @@ class BookComponent extends PureComponent {
             height={13}
             width={10}
             depth={i}
-          >
-            <select
-              className="ViewSelect"
-              name={viewId}
-              value={selectedSheet}
-              onChange={this.changeSheetViewSheet}
-            >
-              {sheets.map(sheet => (
-                <option
-                  key={sheet.id}
-                  value={sheet.id}
-                >
-                  {sheet.name}
-                </option>
-              ))}
-              <option
-                key="new"
-                value="new"
-              >
-                {'{New sheet}'}
-              </option>
-            </select>
-          </SheetComponent>
+          />
         );
       });
-      // Todo: memoize this?
-      const pathElems = displayView.map(({ pathElem }) => pathElem);
+      const [
+        sheetPathElem,
+        ...stackPathElems
+      ] = displayView.map(({ pathElem }) => pathElem);
       return (
         <div className="ViewClass" key={viewId}>
           <TitleBar
             viewId={viewId}
-            deleteSheet={this.deleteSelectedSheet}
-            pathElems={pathElems}
+            pathElems={stackPathElems}
             setStackDepth={this.setStackDepth}
-          />
+          >
+            <DocumentMenu />
+            {stackPathElems.length === 0 ? (
+              <SheetMenu
+                viewId={viewId}
+                deleteSheet={this.deleteSheet}
+                selectSheet={this.changeSheetViewSheet}
+              />
+            ) : (
+              <PathElem
+                pathElem={sheetPathElem}
+                depth={0}
+                viewId={viewId}
+                last={false}
+                setStackDepth={this.setStackDepth}
+              />
+            )}
+          </TitleBar>
           <div key={viewId} style={{ position: 'relative' }}>
             {sheetViews}
           </div>
