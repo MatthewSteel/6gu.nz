@@ -22,6 +22,7 @@ import getDragGeom, {
 import { getType } from '../../selectors/formulas/tables';
 import { deleteLoc, deleteThing, moveThing, toggleMaximiseSheetElem } from '../../redux/documentEditing';
 import { clearDrag, startDrag, updateDrag } from '../../redux/uistate';
+import { TABLE } from '../../redux/stateConstants';
 
 
 class SheetContentsComponent extends ContentsBaseComponent {
@@ -175,29 +176,31 @@ class SheetContentsComponent extends ContentsBaseComponent {
         setViewSelection,
       };
 
-      if (truncXLen > 1 && contentsType === 'array') {
-        return (
-          <ArrayComponent
-            {...commonChildProps}
-            {...commonComplexChildProps}
-          />
-        );
-      }
-      if (truncXLen > 1 && contentsType === 'table') {
-        return (
-          <TableComponent
-            {...commonChildProps}
-            {...commonComplexChildProps}
-          />
-        );
-      }
-      if (truncXLen > 1 && contentsType === 'object') {
-        return (
-          <ObjectComponent
-            {...commonChildProps}
-            {...commonComplexChildProps}
-          />
-        );
+      if (!cellContents.error && truncXLen > 1) {
+        if (['array', 'table'].includes(contentsType)) {
+          if (cell.type === TABLE && !cellContents.override) {
+            return (
+              <TableComponent
+                {...commonChildProps}
+                {...commonComplexChildProps}
+              />
+            );
+          }
+          return (
+            <ArrayComponent
+              {...commonChildProps}
+              {...commonComplexChildProps}
+            />
+          );
+        }
+        if (contentsType === 'object') {
+          return (
+            <ObjectComponent
+              {...commonChildProps}
+              {...commonComplexChildProps}
+            />
+          );
+        }
       }
       return (
         <SheetCellComponent
