@@ -141,7 +141,7 @@ app.get('/userInfo/:docId?', async (req, res) => {
     [userId],
   );
   const userResults = await query(
-    'SELECT "signupAt", metadata FROM users WHERE id=$1;',
+    'SELECT id, "signupAt", metadata FROM users WHERE id=$1;',
     [userId],
   );
 
