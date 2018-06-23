@@ -241,7 +241,7 @@ const tableValue = (tableId, globals) => {
   ret.memoizedCols = {};
   tableCols.forEach(({ name, index, id }) => {
     ret.keys[index] = name;
-    ret.memoizedCols[name] = globals[id];
+    ret.memoizedCols[name] = globals[id].value;
   });
   return ret;
 };
