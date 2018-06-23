@@ -212,7 +212,11 @@ const refHeight = (ref) => {
   return 2;
 };
 
-export const rewriteRefTermToParentLookup = (refsById, innermostLookup) => {
+export const rewriteRefTermToParentLookup = (
+  refsById,
+  innermostLookup,
+  directionHint = TABLE_ROW,
+) => {
   if (!innermostLookup.ref) throw new Error('Must pass lookup on `refId`');
   const ref = refsById[innermostLookup.ref];
 
@@ -229,8 +233,15 @@ export const rewriteRefTermToParentLookup = (refsById, innermostLookup) => {
     return { lookup: ref.name, on: { ref: ref.tableId } };
   }
   if (ref.type === TABLE_CELL) {
-    const arrayParent = refsById[ref.arrayId];
-    return { lookup: arrayParent.name, on: { ref: ref.objectId } };
+    if (directionHint === TABLE_ROW) {
+      const arrayParent = refsById[ref.arrayId];
+      return { lookup: arrayParent.name, on: { ref: ref.objectId } };
+    }
+    const objectParent = refsById[ref.objectId];
+    return {
+      lookupIndex: { value: objectParent.index },
+      on: { ref: ref.arrayId },
+    };
   }
   if (![CELL, ARRAY, OBJECT, TABLE].includes(ref.type)) {
     throw new Error(`unknown parent type for ${ref.type}`);

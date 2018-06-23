@@ -464,6 +464,8 @@ class RefPusher {
   }
 
   expandOverrideDeepElement(id, contextId) {
+    const refsById = getRefsById(store.getState());
+    const context = refsById[contextId];
     if (this.overriddenVariables.has(id)) return;
     this.overriddenVariables.add(id);
     const localVar = this.variableName();
@@ -472,8 +474,9 @@ class RefPusher {
     let innermostLookup = outermostLookup;
     while (innermostLookup.on.ref !== contextId) {
       innermostLookup.on = rewriteRefTermToParentLookup(
-        getRefsById(store.getState()),
+        refsById,
         innermostLookup.on,
+        context.type,
       );
       innermostLookup = innermostLookup.on;
     }
