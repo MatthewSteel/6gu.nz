@@ -84,8 +84,9 @@ export const getDisplayView = createSelector(
 );
 
 const openDocumentMetadata = state => state.openDocument.metadata;
-const openDocumentId = state => state.openDocument.id;
-const openDocumentPrettyId = state => state.openDocument.prettyId;
+export const openDocumentId = state => state.openDocument.id;
+export const openDocumentName = state => state.openDocument.metadata.name;
+export const openDocumentPrettyId = state => state.openDocument.prettyId;
 
 const openDocumentSummary = createSelector(
   openDocumentMetadata,

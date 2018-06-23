@@ -10,6 +10,7 @@ import Sheet from '../Sheet/Sheet';
 import TitleBar, { PathElem } from './TitleBar';
 import DocumentMenu from '../DropDown/DocumentMenu';
 import SheetMenu from '../DropDown/SheetMenu';
+import Navigation from '../Navigation/Navigation';
 
 const mapStateToProps = state => ({
   cellValuesById: getCellValuesById(state),
@@ -101,12 +102,11 @@ class Book extends PureComponent {
         />
       );
     });
-    const [
-      sheetPathElem,
-      ...stackPathElems
-    ] = displayView.map(({ pathElem }) => pathElem);
+    const stringPathElems = displayView.map(({ pathElem }) => pathElem);
+    const [sheetPathElem, ...stackPathElems] = stringPathElems;
     return (
       <div className="ViewClass">
+        <Navigation path={stringPathElems.join('')} />
         <TitleBar
           pathElems={stackPathElems}
           setStackDepth={this.setStackDepth}
