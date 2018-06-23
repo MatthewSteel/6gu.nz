@@ -32,6 +32,7 @@ import {
   COMPUTED_TABLE_COLUMN,
   TABLE_COLUMN,
   TABLE_ROW,
+  TABLE_COLUMN_TYPES,
 } from './stateConstants';
 
 import store from './store';
@@ -486,7 +487,9 @@ export const documentReducer = (state, action) => {
       sheets: data.sheets.filter(({ id }) => !idsToDelete.has(id)),
       cells: data.cells.filter(({ id }) => !idsToDelete.has(id))
         .map((cell) => {
-          if (typeToDelete !== cell.type) return cell;
+          const typesToDelete = (TABLE_COLUMN_TYPES.includes(cell.type)) ?
+            TABLE_COLUMN_TYPES : [cell.type];
+          if (!typesToDelete.includes(cell.type)) return cell;
           if (refParentId(cell) !== contextId) return cell;
           if (cell.index < indexToDelete) return cell;
           return { ...cell, index: cell.index - 1 };

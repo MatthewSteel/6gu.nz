@@ -9,6 +9,7 @@ export const TABLE_ROW = 'table_row';
 export const TABLE_COLUMN = 'table_column';
 export const COMPUTED_TABLE_COLUMN = 'computed_table_column';
 export const TABLE_CELL = 'table_cell';
+export const TABLE_COLUMN_TYPES = [TABLE_COLUMN, COMPUTED_TABLE_COLUMN];
 
 export const loggedOutDocs = [];
 
