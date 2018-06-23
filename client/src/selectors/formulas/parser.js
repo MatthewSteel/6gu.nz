@@ -359,14 +359,28 @@ const subNamesForRefsInName = (term, contextId, state) => {
 
 const subNamesForRefsInLookup = (term, state) => {
   // This turns "tableRef.cellName" into "cellRef" etc.
+
   if (!term.on.ref) return term;
+  const refsById = getRefsById(state);
   const { ref: refId } = term.on;
-  const ref = getRefsById(state)[refId];
+  const ref = refsById[refId];
 
   if (ref.type === SHEET || ref.type === OBJECT || ref.type === TABLE || ref.type === TABLE_ROW) {
     const maybeCell = getRefsByNameForContextId(state, refId)[term.lookup];
     if (maybeCell) return { ref: maybeCell.id };
   }
+  // We have some trouble with table[0].computedCol, it doesn't resolve.
+  // Turn it into table.computedCol[0] :-)
+  if (ref.type === TABLE_ROW) {
+    const maybeCol = getRefsByNameForContextId(state, ref.tableId)[term.lookup];
+    if (maybeCol && maybeCol.type === COMPUTED_TABLE_COLUMN) {
+      return {
+        lookupIndex: { value: ref.index },
+        on: { ref: maybeCol.id },
+      };
+    }
+  }
+
   return term;
 };
 
