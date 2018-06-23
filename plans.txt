@@ -1,40 +1,28 @@
+Today:
+
 Short-term TODO list:
+ - [index] on objects,
  - Cell-size stuff :-/.
   - Cells are reasonably consistently sized, go all the way to the edges.
   - Probably have to do some pixel-density stuff?
     - css "resolution" or JS devicePixelRatio?
-
- - Rename, delete sheets and documents,
-   - Click on "path elements" to pop,
-   - Click on "last path element" to rename (if sheet/doc),
- - Load documents,
-   - Drop-down for opening other files and deletion. Maybe copy?
- - Load from URL,
- - Url reflects location,
- - [index] on objects,
  - deploy it to some real server,
  - Google + Facebook login.
- - Favicon,
- - Page title text,
- - Don't try to save things that aren't ours (or if we're logged in)
- - Clear localStorage before putting the thing in it, just in case.
- - Check unsaved docs that aren't in "the list" have never been saved.
- - Handle "unexpected logouts"?
+ - Handle "unexpected logouts", bad internet connectivity, server errors.
  - intro video/website/docs
- - browse into more things -- arrays etc, complex table elements.
- - cut down the number of renders.
- - Overridden deep values look special? Hrm... "parent overridden" prop?
- - Arr "looks like a table" if _every_ element is an obj or error?
-   - work out `keys` at display time still?
- - Always display "special arrays" as arrays. Ditto special objects.
-   - They should not look like tables for now.
  - max, deep equals?
+ - See what it looks like in different browsers, different screen res.
+ - Sizeme on the book, not the sheet? Navigating shouldn't flicker.
 
-That's a lot...
+
+ - Let second/third arguments to `if` be objects.
+ - Change `byName` into a Map.
 
 
 
 The longer-term list:
+ - V2 Overridden deep values look special? Hrm... "parent overridden" prop?
+ - V2 browse into more things -- arrays etc, complex table elements.
  - V2 cut, copy, paste,
  - V2 Multi-select,
  - V2 "native" map/for etc?
@@ -54,7 +42,6 @@ The longer-term list:
  - ?? a website, some vids.
  - ?? putting it online
  - Totally offline: docs, scripts, _everything_ in storage/indexeddb.
-
 
 
 Out of scope for MVP:
@@ -90,6 +77,19 @@ Next up:
      - It's a bit of a pain that "path validity" depends on cell values.
      - We can make the "effective view" a selector, I guess?
        - Righto. But later.
+
+
+Cutting down rendering time:
+- CSS grid lines could have "changing names"? Then we might not need to re-render children if we scroll... Dunno about performance, though...
+  - Still need to re-render for internal scrolling, I guess...
+  - Maybe CSS grid isn't for us...
+  - We could absolutely position a container, I guess? Move that thing?
+  - Something something "rows/cols"?
+
+  How to make moving the selection better? Could we connect everything and have just the cells re-render (if the selection changes?)
+    Wouldn't mind that...
+  We could make "blocks" of components?
+
 
 
 What do we think about multiple indexes to dig?
