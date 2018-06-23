@@ -9,8 +9,8 @@ export class PathElem extends Component {
   }
 
   handleClick() {
-    const { depth, setStackDepth, viewId } = this.props;
-    setStackDepth(viewId, depth);
+    const { depth, setStackDepth } = this.props;
+    setStackDepth(depth);
   }
 
   render() {
@@ -28,22 +28,12 @@ export class PathElem extends Component {
 }
 
 export default class TitleBar extends Component {
-  constructor(props) {
-    super(props);
-    this.deleteSheet = this.deleteSheet.bind(this);
-  }
-
   shouldComponentUpdate(nextProps) {
     return !equal(nextProps, this.props);
   }
 
-  deleteSheet() {
-    const { viewId, deleteSheet } = this.props;
-    deleteSheet(viewId);
-  }
-
   render() {
-    const { children, pathElems, setStackDepth, viewId } = this.props;
+    const { children, pathElems, setStackDepth } = this.props;
 
     const pathChildren = pathElems.map((pathElem, i) => (
       <PathElem
@@ -52,7 +42,6 @@ export default class TitleBar extends Component {
         last={i === pathElems.length - 1}
         setStackDepth={setStackDepth}
         pathElem={pathElem}
-        viewId={viewId}
       />
     ));
     return (

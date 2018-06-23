@@ -39,24 +39,21 @@ const normaliseView = (view, sheets, sheetsById, cellValuesById) => {
   return ret;
 };
 
-const rawViews = state => state.uistate.views;
+const rawView = state => state.uistate;
 
-export const getSelectedViewId = state => state.uistate.selectedViewId;
-
-export const getViews = createSelector(
-  rawViews,
+export const getView = createSelector(
+  rawView,
   getSheets,
   getSheetsById,
   getCellValuesById,
-  (views, sheets, sheetsById, cellValuesById) => views.map(view => (
-    normaliseView(view, sheets, sheetsById, cellValuesById))),
+  normaliseView,
 );
 
-export const getDisplayViews = createSelector(
+export const getDisplayView = createSelector(
   getCellValuesById,
   getRefsById,
-  getViews,
-  (cellValuesById, refsById, views) => views.map((view) => {
+  getView,
+  (cellValuesById, refsById, view) => {
     const pathElem = refsById[view.sheetId].name;
     const stack = [{
       value: cellValuesById[view.sheetId].value,
@@ -83,7 +80,7 @@ export const getDisplayViews = createSelector(
       }
     });
     return stack;
-  }),
+  },
 );
 
 const openDocumentMetadata = state => state.openDocument.metadata;

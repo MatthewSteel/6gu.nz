@@ -9,7 +9,6 @@ import './Sheet.css';
 class Sheet extends Component {
   constructor(props) {
     super(props);
-    this.getFocus = this.getFocus.bind(this);
     this.setFormulaFocus = this.setFormulaFocus.bind(this);
     this.setFormulaRef = this.setFormulaRef.bind(this);
     this.popStack = this.popStack.bind(this);
@@ -26,11 +25,6 @@ class Sheet extends Component {
     };
   }
 
-  getFocus() {
-    const { setViewSelection, viewId } = this.props;
-    setViewSelection(viewId);
-  }
-
   setFormulaRef(ref) {
     this.formulaRef = ref;
   }
@@ -38,9 +32,6 @@ class Sheet extends Component {
   setFormulaFocus(formulaHasFocus) {
     // callback used by formula component
     this.setState({ formulaHasFocus });
-    if (formulaHasFocus) {
-      this.getFocus();
-    }
   }
 
   setFormulaSelection(newSelection) {
@@ -52,7 +43,6 @@ class Sheet extends Component {
 
   setWindowSelection(y, x) {
     const { selX, selY } = this.state;
-    this.getFocus();
     if (y === selY && x === selX) return;
     this.setState({ selY: y, selX: x });
   }
@@ -61,13 +51,13 @@ class Sheet extends Component {
   // parent Book. Push for the [+] symbol, pop for ESC on the keyboard.
 
   pushStack(cellId) {
-    const { pushViewStack, viewId } = this.props;
-    pushViewStack(viewId, cellId);
+    const { pushViewStack } = this.props;
+    pushViewStack(cellId);
   }
 
   popStack() {
-    const { popViewStack, viewId } = this.props;
-    popViewStack(viewId);
+    const { popViewStack } = this.props;
+    popViewStack();
   }
 
   render() {
@@ -79,7 +69,6 @@ class Sheet extends Component {
       height,
       depth,
       sheetId,
-      viewId,
     } = this.props;
     const {
       formulaHasFocus,
@@ -113,7 +102,6 @@ class Sheet extends Component {
             viewSelected={selected}
             viewSelX={selX}
             viewSelY={selY}
-            viewId={viewId}
             setViewSelection={this.setWindowSelection}
           />
         </div>

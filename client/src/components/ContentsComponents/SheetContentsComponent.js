@@ -51,8 +51,7 @@ class SheetContentsComponent extends ContentsBaseComponent {
   }
 
   startDragForRef(refId, type) {
-    const { startDragProp, viewId } = this.props;
-    startDragProp(viewId, refId, type);
+    this.props.startDragProp(refId, type);
   }
 
   dragOver(ev, dragY, dragX) {
@@ -62,10 +61,9 @@ class SheetContentsComponent extends ContentsBaseComponent {
       dragGeom,
       placedCellLocs,
       updateDragProp,
-      viewId,
     } = this.props;
     const { scrollY, scrollX } = this.state;
-    updateDragProp(viewId, contextId, dragY + scrollY, dragX + scrollX);
+    updateDragProp(contextId, dragY + scrollY, dragX + scrollX);
     if (canPlaceWithoutConflict(dragRefId, dragGeom, placedCellLocs)) {
       ev.preventDefault();
     }
@@ -329,16 +327,15 @@ const mapStateToProps = (state, ownProps) => ({
 });
 
 // Chrome doesn't like us updating the DOM in the drag start handler...
-const asyncStartDrag = (dispatch, viewId, refId, type) => {
-  setTimeout(() => dispatch(startDrag(viewId, refId, type)), 0);
+const asyncStartDrag = (dispatch, refId, type) => {
+  setTimeout(() => dispatch(startDrag(refId, type)), 0);
 };
 
 const mapDispatchToProps = dispatch => ({
   clearDragProp: () => dispatch(clearDrag()),
-  startDragProp: (viewId, refId, type) => (
-    asyncStartDrag(dispatch, viewId, refId, type)),
-  updateDragProp: (viewId, sheetId, dragY, dragX) => (
-    dispatch(updateDrag(viewId, sheetId, dragY, dragX))),
+  startDragProp: (refId, type) => asyncStartDrag(dispatch, refId, type),
+  updateDragProp: (sheetId, dragY, dragX) => (
+    dispatch(updateDrag(sheetId, dragY, dragX))),
   deleteCell: cellId => dispatch(deleteThing(cellId)),
   deleteLocation: (context, y, x) => dispatch(deleteLoc(context, y, x)),
   moveCell: (cellId, sheetId, y, x, width, height) => (
