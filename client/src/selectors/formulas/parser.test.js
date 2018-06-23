@@ -1,17 +1,9 @@
 import { lexFormula } from './lexer';
-import { getCells, getSheets } from './selectors';
-import { getCellValuesById } from './codegen';
+import { getSheets } from './selectors';
 import store from '../../redux/store';
-import { setFormula } from '../../redux/documentEditing';
 import { parseFormula, parseTokens } from './parser';
 import { LOGIN_STATES } from '../../redux/stateConstants';
 import { blankDocument } from '../../redux/backend';
-
-const getCellValue = (cellName) => {
-  const cell = getCells(store.getState())
-    .find(({ name }) => name === cellName);
-  return getCellValuesById(store.getState())[cell.id].value;
-};
 
 const parse = (formula, contextId) => (
   parseFormula(formula, contextId, store.getState()));
@@ -137,24 +129,44 @@ describe('parser', () => {
   it('gets operator precedence right', () => {
     const s1 = getSheets(store.getState())[0];
 
-    // precedence
-    store.dispatch(setFormula({ context: s1.id, y: 0, x: 0 }, 'x:1+2*3'));
-    expect(getCellValue('x')).toEqual(7); // not 9
+    const precedenceOutput = {
+      binary: '+',
+      left: { value: 1 },
+      right: { binary: '*', left: { value: 2 }, right: { value: 3 } },
+    };
+    expect(parse('1+2*3', s1.id).formula).toEqual(precedenceOutput);
 
-    // left associativity
-    store.dispatch(setFormula({ context: s1.id, y: 1, x: 0 }, 'y:2/2*2'));
-    expect(getCellValue('y')).toEqual(2); // not 0.5
+    const leftAssocOutput = {
+      binary: '*',
+      left: { binary: '/', left: { value: 2 }, right: { value: 2 } },
+      right: { value: 2 },
+    };
+    expect(parse('2/2*2', s1.id).formula).toEqual(leftAssocOutput);
 
-    // right associativity
-    store.dispatch(setFormula({ context: s1.id, y: 1, x: 0 }, 'z:2**3**2'));
-    expect(getCellValue('z')).toEqual(512); // not 64
+    const rightAssocOutput = {
+      binary: '**',
+      left: { value: 2 },
+      right: { binary: '**', left: { value: 3 }, right: { value: 2 } },
+    };
+    expect(parse('2**3**2', s1.id).formula).toEqual(rightAssocOutput);
 
-    // recursion
-    store.dispatch(setFormula(
-      { context: s1.id, y: 1, x: 0 },
-      'w:12 ** 1 * 2*3',
-    ));
-    expect(getCellValue('w')).toEqual(72); // not 12 ^ 6.
+    //       *
+    //      / \
+    //     *   3
+    //    / \
+    //   **  2
+    //  /  \
+    // 12   1
+    const recursionOutput = {
+      binary: '*',
+      left: {
+        binary: '*',
+        left: { binary: '**', left: { value: 12 }, right: { value: 1 } },
+        right: { value: 2 },
+      },
+      right: { value: 3 },
+    };
+    expect(parse('12 ** 1 * 2*3', s1.id).formula).toEqual(recursionOutput);
   });
 
   it('parses an empty array', () => {
