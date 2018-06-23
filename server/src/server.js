@@ -133,19 +133,16 @@ app.get('/logout', (req, res) => {
   res.end();
 });
 
-app.get('/userInfo', async (req, res) => {
-  if (!req.user) {
-    res.json(null);
-    return;
-  }
+app.get('/userInfo/:docId?', async (req, res) => {
+  const userId = req.user ? req.user.id : null;
   const documentResults = await query(
     `SELECT id, metadata, "createdAt", "modifiedAt", "prettyId", "updateId"
      FROM documents WHERE "userId"=$1;`,
-    [req.user.id],
+    [userId],
   );
   const userResults = await query(
     'SELECT "signupAt", metadata FROM users WHERE id=$1;',
-    [req.user.id],
+    [userId],
   );
 
   // TODO: Let the user ask for a specific document (id from localStorage)
@@ -154,10 +151,16 @@ app.get('/userInfo', async (req, res) => {
   const recentDocumentResults = await query(
     `SELECT d.*
      FROM documents d
-     JOIN users u ON d.id=u."lastViewedDocumentId"
-     WHERE u.id=$1;`
+     WHERE
+      d.id=(
+       SELECT u."lastViewedDocumentId"
+       FROM users u WHERE u.id=$1
+      )
+      OR d."prettyId"=$2
+     ORDER BY d."prettyId"=$2 DESC
+     LIMIT 1;`
     ,
-    [req.user.id],
+    [userId, req.params.docId],
   );
   const maybeRecentDocument = recentDocumentResults.rows[0];
 

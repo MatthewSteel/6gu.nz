@@ -58,15 +58,27 @@ const recentUnsavedWork = (stringDoc, unsavedWork, documents) => {
   return maybeDoc.updateId === lastUpdateId && doc;
 };
 
+const documentWeWant = () => {
+  // Nasty function:
+  //  - If we're a node "client", we want to use an environment variable.
+  //  - If we're a real web client, we want to decode the browser's URL.
+  if (process.env.SERVING_DOCUMENT_PRETTY_ID) {
+    return process.env.SERVING_DOCUMENT_PRETTY_ID;
+  }
+  // "/d/{documentShortId}/..."
+  return window.location.pathname.split('/')[2];
+};
+
 export const fetchUserInfo = async (dispatch) => {
-  // TODO: Send a document id if there's one in the URL, for page loads.
-  // (Just for page loads?)
   // Should logged-out users get sent to unmodified last-viewed docs?
   //  nah...
-  const result = await fetch('/userInfo', { credentials: 'same-origin' });
-  const body = await result.json() || {
-    documents: loggedOutDocs,
-    user: {},
+  const result = await fetch(
+    `/userInfo/${documentWeWant() || ''}`,
+    { credentials: 'same-origin' },
+  );
+  const body = {
+    ...{ documents: loggedOutDocs, user: {} },
+    ...(await result.json()),
   };
 
   const loginState = {
@@ -169,6 +181,12 @@ const updateDocumentDetails = async (doc) => {
   }
 };
 
+const isMine = (doc) => {
+  if (!doc.userId) return true;
+  const myUserId = store.getState.userState.userId;
+  return myUserId === doc.userId;
+};
+
 class FetchQueue {
   constructor() {
     this.syncing = false;
@@ -203,7 +221,7 @@ class FetchQueue {
           // unsaved copy in there.
           delete localStorage[UNSAVED_DOCUMENT];
         }
-        if (loggedIn(store.getState())) {
+        if (loggedIn(store.getState()) && isMine(doc)) {
           await persistDocToServer(doc, stringDoc);
         }
       } finally {
