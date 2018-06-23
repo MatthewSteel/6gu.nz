@@ -393,7 +393,8 @@ export const subNamesForRefsInTerm = (term, contextId, state) => {
   if (term.lookupIndex) return subNamesForRefsInLookupIndex(term, state);
   if (term.call) {
     const argRefs = term.kwargs.map(({ ref }) => ref);
-    if ([term.call, ...argRefs].some(({ lookup }) => lookup)) {
+    if ([term.call, ...argRefs].some(({ lookup, lookupIndex }) => (
+      lookup || lookupIndex))) {
       throw new Error('Got a field ref when we just want a cell ref.');
     }
   }
