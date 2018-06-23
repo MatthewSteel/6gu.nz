@@ -2,7 +2,7 @@ import { connect } from 'react-redux';
 import DropDown from './DropDown';
 import { getSheets } from '../../selectors/formulas/selectors';
 import { getView } from '../../selectors/uistate/uistate';
-import { renameSheet } from '../../redux/documentEditing';
+import { copySheet, renameSheet } from '../../redux/documentEditing';
 
 
 const mapStateToProps = state => ({
@@ -12,6 +12,7 @@ const mapStateToProps = state => ({
 
 const mapDispatchToProps = dispatch => ({
   renameSheetProp: (id, name) => dispatch(renameSheet(id, name)),
+  copySheetProp: id => dispatch(copySheet(id)),
 });
 
 class SheetMenu extends DropDown {
@@ -19,13 +20,9 @@ class SheetMenu extends DropDown {
     return 'New sheet';
   }
 
-  /*
   copy(sheetId) {
-    const { copySheet } = this.props;
-    copySheet(sheetId);
-    selectSheet(sheetId); ?
+    this.props.copySheetProp(sheetId);
   }
-  */
 
   delete(sheetId) {
     this.props.deleteSheet(sheetId);

@@ -183,7 +183,7 @@ const updateDocumentDetails = async (doc) => {
 
 const isMine = (doc) => {
   if (!doc.userId) return true;
-  const myUserId = store.getState.userState.userId;
+  const myUserId = store.getState().userState.userId;
   return myUserId === doc.userId;
 };
 

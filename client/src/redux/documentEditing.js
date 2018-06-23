@@ -10,7 +10,7 @@ import {
   transitiveChildren,
   translateExpr,
 } from '../selectors/formulas/selectors';
-import { digMut } from '../selectors/algorithms/algorithms';
+import { copySheetContents, digMut } from '../selectors/algorithms/algorithms';
 import {
   parseFormula,
   translateLookups,
@@ -64,6 +64,10 @@ export const moveThing = (refId, sheetId, y, x, height, width) => ({
 
 export const renameSheet = (id, name) => ({
   type: 'RENAME_SHEET', payload: { id, name },
+});
+
+export const copySheet = id => ({
+  type: 'COPY_SHEET', payload: { id },
 });
 
 export const toggleMaximiseSheetElem = (dispatch, refId) => {
@@ -511,7 +515,7 @@ export const documentReducer = (state, action) => {
     const { id, name } = action.payload;
     const refsById = getRefsById(store.getState());
     const ref = refsById[id];
-    if (!ref || ref.type !== SHEET || ref.name === name) return undefined;
+    if (!ref || ref.type !== SHEET || ref.name === name) return state;
 
     const updated = { ...ref, name };
     const newState = digMut(
@@ -521,6 +525,25 @@ export const documentReducer = (state, action) => {
     );
     return scheduleSave((
       rewireBadRefs(newState, [updated])
+    ));
+  }
+
+  if (action.type === 'COPY_SHEET') {
+    const { id } = action.payload;
+    const refsById = getRefsById(store.getState());
+    const ref = refsById[id];
+    if (!ref || ref.type !== SHEET) return state;
+    const newThings = copySheetContents(id, state);
+    const newState = digMut(state, path('data'), data => ({
+      ...data,
+      cells: [...data.cells, ...newThings.slice(1)],
+      sheets: [...data.sheets, newThings[0]],
+    }));
+    const sheetId = newThings[0].id;
+    const viewState = digMut(newState, ['uistate', 'sheetId'], sheetId);
+
+    return scheduleSave((
+      rewireBadRefs(viewState, newThings)
     ));
   }
 

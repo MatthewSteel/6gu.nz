@@ -1,3 +1,6 @@
+import uuidv4 from 'uuid-v4';
+import { getRefsById, getSheets, transitiveChildren, translateExpr } from '../formulas/selectors';
+
 export const topologicalOrdering = (graph, badNodes) => {
   const graphWithOmissions = {};
   Object.entries(graph).forEach(([iNode, jNodes]) => {
@@ -125,4 +128,39 @@ export const nameCopy = (existingNames, copiedName) => {
   let i;
   for (i = 1; conflicts.has(i); ++i);
   return `${baseName}_${i}`;
+};
+
+export const copySheetContents = (sheetId, state) => {
+  const refsById = getRefsById(state);
+
+  const children = transitiveChildren(state, sheetId);
+  children.delete(sheetId);
+  // So we can have the sheet in position 0.
+  const orderedRefs = [sheetId, ...children];
+
+  const mapping = {};
+  orderedRefs.forEach((id) => { mapping[id] = uuidv4(); });
+
+  const translateRefId = id => mapping[id] || id;
+  const translateFormula = (term) => {
+    if (!term.ref) return term;
+    return { ref: translateRefId(term.ref) };
+  };
+  const copyElem = (refId) => {
+    const elem = refsById[refId];
+    const ret = { ...elem };
+    ['id', 'arrayId', 'sheetId', 'objectId', 'tableId'].forEach((k) => {
+      if (k in elem) ret[k] = translateRefId(ret[k]);
+    });
+    if (elem.formula) {
+      ret.formula = translateExpr(elem.formula, translateFormula);
+    }
+    return ret;
+  };
+  const ret = orderedRefs.map(copyElem);
+
+  const sheets = getSheets(state);
+  const sheetNames = sheets.map(({ name }) => name);
+  ret[0].name = nameCopy(sheetNames, ret[0].name);
+  return ret;
 };
