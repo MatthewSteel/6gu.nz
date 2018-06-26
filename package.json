@@ -11,7 +11,8 @@
     "build": "cd client && react-scripts build",
     "test": "cd client && react-scripts test --env=jsdom",
     "setup": "(cd client && yarn install); (cd server && yarn setup)",
-    "clean": "cd server && yarn clean"
+    "clean": "cd server && yarn clean",
+    "ci": "cd client && CI=true yarn run react-scripts test --env=jsdom"
   },
   "devDependencies": {
     "concurrently": "^3.5.1",
