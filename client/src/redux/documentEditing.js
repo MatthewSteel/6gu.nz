@@ -487,8 +487,8 @@ export const documentReducer = (state, action) => {
       sheets: data.sheets.filter(({ id }) => !idsToDelete.has(id)),
       cells: data.cells.filter(({ id }) => !idsToDelete.has(id))
         .map((cell) => {
-          const typesToDelete = (TABLE_COLUMN_TYPES.includes(cell.type)) ?
-            TABLE_COLUMN_TYPES : [cell.type];
+          const typesToDelete = (TABLE_COLUMN_TYPES.includes(refToDelete.type)) ?
+            TABLE_COLUMN_TYPES : [refToDelete.type];
           if (!typesToDelete.includes(cell.type)) return cell;
           if (refParentId(cell) !== contextId) return cell;
           if (cell.index < indexToDelete) return cell;
