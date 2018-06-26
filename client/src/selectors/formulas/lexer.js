@@ -1,5 +1,5 @@
 export const canStartName = c => c.match(/^[\\a-zA-Z_]$/u);
-export const isNameChar = c => c.match(/^[0-9a-zA-Z_]$/u);
+export const isNameChar = c => c.match(/^[0-9a-zA-Z_?]$/u);
 const literalValues = new Set(['true', 'false']);
 
 const lexName = (input, i) => {
