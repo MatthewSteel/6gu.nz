@@ -12,6 +12,7 @@ Contains the things necessary to store documents in the database.
 
  - Get Node and run `yarn run devsetup` in the repo root.
  - Get Docker and Docker Compose.
+ - `cp .env.sample .env`.
 
 ## Running the dev server
 - `sudo scripts/run`
