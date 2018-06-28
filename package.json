@@ -3,19 +3,8 @@
   "version": "0.1.0",
   "private": true,
   "dependencies": {},
-  "scripts": {
-    "client": "cd client && yarn start",
-    "server": "cd server && yarn dev",
-    "fakeOauth": "cd server && yarn nodemon src/fakeOauthServer/fakeOauthServer.js",
-    "dev": "concurrently -k -r -n client,server,oauth \"yarn client\" \"yarn server\" \"yarn fakeOauth\"",
-    "build": "cd client && react-scripts build",
-    "test": "cd client && react-scripts test --env=jsdom",
-    "setup": "(cd client && yarn install); (cd server && yarn setup)",
-    "clean": "cd server && yarn clean",
-    "ci": "cd client && CI=true yarn run react-scripts test --env=jsdom"
-  },
+  "scripts": {},
   "devDependencies": {
-    "concurrently": "^3.5.1",
     "eslint": "^4.19.1"
   },
   "license": "UNLICENSED"

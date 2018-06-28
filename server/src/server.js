@@ -50,15 +50,13 @@ const providers = process.env === 'prod' ?
   ['fake'];
 
 
-// Host is really "this server" but in dev we have to redirect to the
-// right port because the dev server proxy only intercepts XHRs etc, not
-// navigation.
-const oauthHost = process.env.OAUTH2_CLIENT_HOST;
+const thisServer = process.env.SERVER_HOST;
+const fakeOauthServer = process.env.FAKE_OAUTH_SERVER_HOST_INTERNAL;
 
 const strategies = {
   google: GoogleStrategy,
   facebook: FacebookStrategy,
-  fake: FakeOauth2Strategy(oauthHost),
+  fake: FakeOauth2Strategy(fakeOauthServer),
 };
 
 providers.forEach((provider) => {
@@ -68,7 +66,7 @@ providers.forEach((provider) => {
     {
       clientID: process.env[`OAUTH2_${PROVIDER}_CLIENT_ID`],
       clientSecret: process.env[`OAUTH2_${PROVIDER}_CLIENT_SECRET`],
-      callbackURL: `${oauthHost}/auth/${provider}/callback`,
+      callbackURL: `${thisServer}/auth/${provider}/callback`,
     },
     (accessToken, refreshToken, profile, cb) =>
       getOrPutUser(provider, profile.id, cb),

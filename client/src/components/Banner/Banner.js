@@ -32,7 +32,7 @@ const commaListElems = (items) => {
 const providerLoginButtons = [(
   <a
     className="LoginButton"
-    href="http://localhost:2999/oauth/authorize"
+    href={`${process.env.REACT_APP_FAKE_OAUTH_SERVER_HOST}/oauth/authorize`}
     target="_blank"
     key="fakeProviderLink"
   >
@@ -66,8 +66,6 @@ class Banner extends PureComponent {
   }
 
   maybeLogin(event) {
-    // TODO: Check the host here. It should be localhost:2999 in dev and
-    // 6gu.nz in production.
     const { fetchUserInfoProp, loginState } = this.props;
     if (loginState !== LOGIN_STATES.LOGGED_OUT) return;
     if (event.origin !== process.env.REACT_APP_OAUTH_CLIENT_HOST) {
