@@ -45,7 +45,7 @@ passport.deserializeUser(getUser);
 
 
 // Oauth2
-const providers = process.env === 'prod' ?
+const providers = process.env.ENVIRONMENT === 'prod' ?
   ['google', 'facebook'] :
   ['fake'];
 
