@@ -2,5 +2,5 @@ pipeline:
   client:
     image: node:10-alpine
     commands:
-      - (cd client && yarn install)
-      - yarn run ci
+      - yarn --cwd client install
+      - CI=true yarn --cwd client run react-scripts test --env=jsdom

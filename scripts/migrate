@@ -1,0 +1,11 @@
+#!/bin/bash
+set -o errexit
+set -o nounset
+set -o pipefail
+set -o xtrace
+
+if [ "$#" -lt 1 ]; then
+  set -- "up"
+fi
+
+docker-compose run --rm server yarn migrate --store=./src/migrationStore "$@"

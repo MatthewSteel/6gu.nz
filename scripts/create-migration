@@ -1,0 +1,12 @@
+#!/bin/bash
+set -o errexit
+set -o nounset
+set -o pipefail
+set -o xtrace
+
+if [ "$#" -ne 1 ]; then
+  echo "Please specify one parameter -- migration name"
+  exit
+fi
+
+yarn --cwd server migrate --template-file server/src/migration-template.js "$1"

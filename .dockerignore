@@ -1,0 +1,11 @@
+.git
+.gitignore
+
+.env
+.env.sample
+
+**/node_modules
+**/*.test.js
+**/.eslintrc.js
+
+**/*.log

@@ -13,5 +13,5 @@ module.exports.up = async () => {
 };
 
 module.exports.down = async () => {
-  await query('ALTER TABLE public.documents DROP COLUNN "prettyId";');
+  await query('ALTER TABLE public.documents DROP COLUMN "prettyId";');
 };

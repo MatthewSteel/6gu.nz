@@ -17,7 +17,7 @@ module.exports.down = async () => {
     SELECT
       'DROP TABLE IF EXISTS "' || tablename || '" CASCADE;' AS q
     FROM pg_tables
-    WHERE schemaname = 'public';
+    WHERE schemaname = 'public' AND tablename != 'migrations';
   `);
   const bigQuery = dropQueries.rows.map(({ q }) => q).join('\n');
   await query(bigQuery);
