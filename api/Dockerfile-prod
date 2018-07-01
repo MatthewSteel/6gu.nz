@@ -6,4 +6,5 @@ COPY package.json yarn.lock ./
 RUN yarn
 
 COPY src ./src
+COPY migrations ./migrations
 CMD ["yarn", "nodemon", "src/server.js"]
