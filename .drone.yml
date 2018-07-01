@@ -14,6 +14,7 @@ pipeline:
     tags: latest
     context: client
     dockerfile: client/Dockerfile-prod
+    group: build
     secrets: [ docker_username, docker_password ]
 
   build_prod_api:
@@ -25,4 +26,5 @@ pipeline:
     tags: latest
     context: api
     dockerfile: api/Dockerfile-prod
+    group: build
     secrets: [ docker_username, docker_password ]
