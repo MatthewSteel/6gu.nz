@@ -8,4 +8,4 @@ if [ "$#" -lt 1 ]; then
   set -- "up"
 fi
 
-docker-compose run --rm server yarn migrate --store=./src/migrationStore "$@"
+docker-compose run --rm api yarn migrate --store=./src/migrationStore "$@"

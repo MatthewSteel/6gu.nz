@@ -9,4 +9,4 @@ if [ "$#" -ne 1 ]; then
   exit
 fi
 
-yarn --cwd server migrate --template-file server/src/migration-template.js "$1"
+yarn --cwd api migrate --template-file api/src/migration-template.js "$1"

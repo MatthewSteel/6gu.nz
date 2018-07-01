@@ -22,6 +22,8 @@ const commaListElems = (items) => {
   return ret;
 };
 
+// If it's running at all...
+const fakeOAuthServerHost = `${window.location.hostname}:2999`;
 /* eslint-disable react/jsx-no-target-blank */
 /* It's a slight security issue, but we should be able to trust the login
  * providers... We want the login window to be able to communicate with
@@ -32,7 +34,7 @@ const commaListElems = (items) => {
 const providerLoginButtons = [(
   <a
     className="LoginButton"
-    href={`${process.env.REACT_APP_FAKE_OAUTH_SERVER_HOST}/oauth/authorize`}
+    href={`${fakeOAuthServerHost}/oauth/authorize`}
     target="_blank"
     key="fakeProviderLink"
   >
@@ -50,6 +52,13 @@ const logoutButton = logout => (
   </button>
 );
 
+// Alas, "dev-server" weirdness. Can't serve OAuth pages and the app on the
+// same port. (Don't want to use an environment variable for the host because
+// I want the same client build for staging and production. Could maybe have
+// a var for the port, though?)
+const expectedClientHost = process.env.ENVIRONMENT === 'production' ?
+  window.location.hostname :
+  `${window.location.hostname}:3001`;
 
 class Banner extends PureComponent {
   constructor(props) {
@@ -68,7 +77,7 @@ class Banner extends PureComponent {
   maybeLogin(event) {
     const { fetchUserInfoProp, loginState } = this.props;
     if (loginState !== LOGIN_STATES.LOGGED_OUT) return;
-    if (event.origin !== process.env.REACT_APP_OAUTH_CLIENT_HOST) {
+    if (event.origin !== expectedClientHost) {
       return;
     }
     if (event.data === 'loginSuccess') fetchUserInfoProp();

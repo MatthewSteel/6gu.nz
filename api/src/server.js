@@ -15,9 +15,9 @@ const FakeOauth2Strategy = require('./fakeOauthServer/fakeStrategy');
 
 const { pool, query } = require('../src/db');
 
-const environments = ['dev', 'prod', 'stage', 'test'];
+const environments = ['dev', 'production', 'test'];
 if (!(environments.includes(process.env.ENVIRONMENT))) {
-  throw new Error('ENVIRONMENT must be dev, prod, stage or test.');
+  throw new Error('ENVIRONMENT must be dev, production or test.');
 }
 
 const getOrPutUser = (how, authId, next) =>
@@ -45,13 +45,15 @@ passport.deserializeUser(getUser);
 
 
 // Oauth2
-const providers = process.env.ENVIRONMENT === 'prod' ?
+const providers = process.env.ENVIRONMENT === 'production' ?
   ['google', 'facebook'] :
   ['fake'];
 
 
-const thisServer = process.env.SERVER_HOST;
-const fakeOauthServer = process.env.FAKE_OAUTH_SERVER_HOST_INTERNAL;
+const serverHost = process.env.ENVIRONMENT === 'production' ?
+  process.env.HOST : `${process.env.HOST}:3001`;
+
+const fakeOauthServer = 'http://fake_oauth_server:2999';
 
 const strategies = {
   google: GoogleStrategy,
@@ -66,7 +68,7 @@ providers.forEach((provider) => {
     {
       clientID: process.env[`OAUTH2_${PROVIDER}_CLIENT_ID`],
       clientSecret: process.env[`OAUTH2_${PROVIDER}_CLIENT_SECRET`],
-      callbackURL: `${thisServer}/auth/${provider}/callback`,
+      callbackURL: `${serverHost}/auth/${provider}/callback`,
     },
     (accessToken, refreshToken, profile, cb) =>
       getOrPutUser(provider, profile.id, cb),
@@ -97,26 +99,29 @@ app.use((req, res, next) => {
 providers.forEach((provider) => {
   // They send users here after login on their site
   app.get(
-    `/auth/${provider}/callback`,
+    `/api/auth/${provider}/callback`,
     passport.authenticate(
       provider,
       {
-        successRedirect: '/loginSuccess',
-        failureRedirect: '/loginFailure',
+        successRedirect: '/api/loginSuccess',
+        failureRedirect: '/api/loginFailure',
       },
     ),
   );
 });
 
-const appHost = process.env.APP_HOST;
+const clientHost = process.env.ENVIRONMENT === 'production' ?
+  `${process.env.HOST}:3000` :
+  process.env.HOST;
+
 ['loginSuccess', 'loginFailure'].forEach((route) => {
   app.get(
-    `/${route}`,
+    `/api/${route}`,
     (req, res) => res.send(`
       <html><head><script>
       if (window.opener) {
         window.opener.focus();
-        window.opener.postMessage('${route}', '${appHost}');
+        window.opener.postMessage('${route}', '${clientHost}');
       }
       window.close();
       </script></head></html>
@@ -125,13 +130,13 @@ const appHost = process.env.APP_HOST;
 });
 
 // TODO: test this...
-app.get('/logout', (req, res) => {
+app.get('/api/logout', (req, res) => {
   req.logout(); // I think this just drops the session from the db.
   // res.cookie('loggedIn', false);
   res.end();
 });
 
-app.get('/userInfo/:docId?', async (req, res) => {
+app.get('/api/userInfo/:docId?', async (req, res) => {
   const userId = req.user ? req.user.id : null;
   const documentResults = await query(
     `SELECT id, metadata, "createdAt", "modifiedAt", "prettyId", "updateId"
@@ -169,7 +174,7 @@ app.get('/userInfo/:docId?', async (req, res) => {
   });
 });
 
-app.get('/documents/:documentId', async (req, res) => {
+app.get('/api/documents/:documentId', async (req, res) => {
   const id = req.params.documentId;
 
   const results = await query('SELECT * FROM documents WHERE id=$1', [id]);
@@ -183,7 +188,7 @@ app.get('/documents/:documentId', async (req, res) => {
   }
 });
 
-app.delete('/documents/:documentId', async (req, res) => {
+app.delete('/api/documents/:documentId', async (req, res) => {
   if (!req.user) {
     res.status(401);
     res.end();
@@ -202,7 +207,7 @@ app.delete('/documents/:documentId', async (req, res) => {
   res.end();
 });
 
-app.put('/documents/:documentId', async (req, res) => {
+app.put('/api/documents/:documentId', async (req, res) => {
   if (!req.user) {
     res.status(401);
     res.end();

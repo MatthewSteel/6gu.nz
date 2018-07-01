@@ -1,0 +1,17 @@
+# Two stages:
+#  - Build index.js in a node environment,
+#  - Build an nginx image that includes it.
+# (Dev) Just install packages, we get the source code from the volume mount.
+FROM node:10 as react-app-build
+
+WORKDIR /app
+COPY package.json yarn.lock ./
+RUN yarn
+
+COPY public ./public
+COPY src ./src
+RUN yarn build
+
+# Image we run
+FROM nginx:alpine
+COPY --from=react-app-build /app/build /usr/share/nginx/html

@@ -9,8 +9,10 @@ const app = express();
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 
-const serverHost = process.env.SERVER_HOST;
+const serverHost = process.env.ENVIRONMENT === 'production' ?
+  process.env.HOST : `${process.env.HOST}:3001`;
 
+const callbackUrl = `${serverHost}/api/auth/fake/callback`;
 const model = {
   getClient() {
     return {
@@ -18,7 +20,7 @@ const model = {
       clientId: 'asdf',
       clientSecret: 'qwer',
       grants: ['authorization_code', 'password'],
-      redirectUris: [`${serverHost}/auth/fake/callback`],
+      redirectUris: [callbackUrl],
     };
   },
 
@@ -84,7 +86,7 @@ app.get('/oauth/authorize', (req, res) => (
     <form action="/oauth/authorize" method="post">
       <input type="hidden" id="foo" name="client_id" value="asdf" />
       <input type="hidden" id="bar" name="client_secret" value="qwer" />
-      <input type="hidden" id="baz" name="redirect_uri" value="${serverHost}/auth/fake/callback" />
+      <input type="hidden" id="baz" name="redirect_uri" value="${callbackUrl}" />
       <input type="hidden" id="quux" name="response_type" value="code" />
       <input type="hidden" id="fred" name="state" value="1234" />
       <button type="submit" name="username" value="name">Login</button>

@@ -22,7 +22,7 @@
     "test": "react-scripts test --env=jsdom",
     "eject": "react-scripts eject"
   },
-  "proxy": "http://server:3001/",
+  "proxy": "http://api:3001/",
   "devDependencies": {},
   "license": "UNLICENSED"
 }

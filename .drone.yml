@@ -1,6 +1,28 @@
 pipeline:
-  client:
+  test_client:
     image: node:10-alpine
     commands:
       - yarn --cwd client install
       - CI=true yarn --cwd client run react-scripts test --env=jsdom
+
+  build_prod_client:
+    image: plugins/docker
+    when:
+      branch: master
+    registry: registry.6gu.nz
+    repo: registry.6gu.nz/client
+    tags: latest
+    context: client
+    dockerfile: client/Dockerfile-prod
+    secrets: [ docker_username, docker_password ]
+
+  build_prod_api:
+    image: plugins/docker
+    when:
+      branch: master
+    registry: registry.6gu.nz
+    repo: registry.6gu.nz/api
+    tags: latest
+    context: api
+    dockerfile: api/Dockerfile-prod
+    secrets: [ docker_username, docker_password ]

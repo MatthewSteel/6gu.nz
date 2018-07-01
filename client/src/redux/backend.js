@@ -73,7 +73,7 @@ export const fetchUserInfo = async (dispatch) => {
   // Should logged-out users get sent to unmodified last-viewed docs?
   //  nah...
   const result = await fetch(
-    `/userInfo/${documentWeWant() || ''}`,
+    `/api/userInfo/${documentWeWant() || ''}`,
     { credentials: 'same-origin' },
   );
   const body = {
@@ -133,7 +133,7 @@ export const doLogout = async (dispatch) => {
   // Just
   //  - Make a logout request to the server,
   //  - call fetchUserInfo.
-  await fetch('/logout', { credentials: 'same-origin' });
+  await fetch('/api/logout', { credentials: 'same-origin' });
   await fetchUserInfo(dispatch);
 };
 
@@ -146,7 +146,7 @@ const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 const persistDocToServer = async (doc, stringDoc) => {
   const response = await fetch(
-    `/documents/${doc.id}`,
+    `/api/documents/${doc.id}`,
     {
       method: 'PUT',
       headers: { 'content-type': 'application/json' },
@@ -167,7 +167,7 @@ const updateDocumentDetails = async (doc) => {
   const copy = { ...doc };
   delete copy.data;
   const response = await fetch(
-    `/documents/${doc.id}`,
+    `/api/documents/${doc.id}`,
     {
       method: 'PUT',
       headers: { 'content-type': 'application/json' },
@@ -272,14 +272,14 @@ const saveDocState = (state, doc) => (
 
 const fetchDocument = async (documentId) => {
   const result = await fetch(
-    `/documents/${documentId}`,
+    `/api/documents/${documentId}`,
     { credentials: 'same-origin' },
   );
   return result.json();
 };
 const scheduleDelete = (documentId) => {
   fetch(
-    `/documents/${documentId}`,
+    `/api/documents/${documentId}`,
     {
       method: 'DELETE',
       headers: { 'content-type': 'application/json' },
