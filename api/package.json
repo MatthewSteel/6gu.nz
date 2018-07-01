@@ -14,7 +14,9 @@
     "pg": "^7.4.3",
     "shortid": "^2.2.8"
   },
-  "scripts": {},
+  "scripts": {
+    "migrations": "yarn run migrate $MIGRATE_DIRECTION $MIGRATE_FILENAME"
+  },
   "devDependencies": {
     "nodemon": "^1.17.5"
   },

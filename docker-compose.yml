@@ -7,13 +7,27 @@ services:
     volumes:
       - './client:/app'
       - '/app/node_modules'
-    environment:
-      - REACT_APP_FAKE_OAUTH_SERVER_HOST=${FAKE_OAUTH_SERVER_HOST}
-      - REACT_APP_OAUTH_CLIENT_HOST=${SERVER_HOST}
+
+  api:
+    build: ./api
+    restart: on-failure
+    ports:
+      - '3001:3001'
+    volumes:
+      - './api:/app'
+      - '/app/node_modules'
+    env_file:
+      - .env
+
+  fake_oauth_server:
+    build: ./fakeOauthServer
+    restart: on-failure
+    ports:
+      - '2999:2999'
 
   database:
     image: postgres:10
-    restart: always
+    restart: on-failure
     ports:
       - '5432'
     environment:
@@ -25,23 +39,3 @@ services:
       # Consider linking this volume into the postgres directory so it doesn't
       # get destroyed when we `docker-compose down`.
       - '/var/lib/postgresql/data'
-
-  server:
-    build: ./server
-    restart: always
-    ports:
-      - '3001:3001'
-    volumes:
-      - './server:/app'
-      - '/app/node_modules'
-    env_file:
-      - .env
-
-  fake_oauth_server:
-    build: ./fakeOauthServer
-    restart: always
-    ports:
-      - '2999:2999'
-    environment:
-      SERVER_HOST: ${SERVER_HOST}
-      FAKE_OAUTH_SERVER_HOST: ${FAKE_OAUTH_SERVER_HOST}
