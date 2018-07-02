@@ -39,12 +39,15 @@ export const loadDocument = documentId => ({
   type: 'LOAD_DOCUMENT', payload: documentId,
 });
 
-const recentUnsavedWork = (stringDoc, unsavedWork, documents) => {
-  if (!stringDoc || !unsavedWork) return false;
-
+const recentUnsavedWork = (stringDoc, unsavedWork, documents, loginState) => {
+  if (!stringDoc) return false;
+  if (loginState === LOGIN_STATES.LOGGED_IN && !unsavedWork) return false;
   const doc = JSON.parse(stringDoc);
-  // New document of ours that we didn't manage to persist. Pretty ids
-  // come from the server.
+
+  if (loginState === LOGIN_STATES.LOGGED_OUT) return doc;
+
+  // Logged in. New document of ours that we didn't manage to persist.
+  // Pretty ids come from the server.
   if (!doc.prettyId) return doc;
 
   const [docId, lastUpdateId] = unsavedWork.split(',');
@@ -66,14 +69,17 @@ const documentWeWant = () => {
     return process.env.SERVING_DOCUMENT_PRETTY_ID;
   }
   // "/d/{documentShortId}/..."
-  return window.location.pathname.split('/')[2];
+  const maybeId = window.location.pathname.split('/')[2];
+  if (maybeId === 'unsaved') return undefined;
+  return maybeId;
 };
 
 export const fetchUserInfo = async (dispatch) => {
   // Should logged-out users get sent to unmodified last-viewed docs?
   //  nah...
+  const maybeUrlDocId = documentWeWant();
   const result = await fetch(
-    `/api/userInfo/${documentWeWant() || ''}`,
+    `/api/userInfo/${maybeUrlDocId || ''}`,
     { credentials: 'same-origin' },
   );
   const body = {
@@ -88,10 +94,11 @@ export const fetchUserInfo = async (dispatch) => {
 
   const { openDocument } = store.getState();
 
-  const unsavedWork = recentUnsavedWork(
+  const unsavedWork = (!maybeUrlDocId) && recentUnsavedWork(
     localStorage[UNSAVED_DOCUMENT],
     localStorage[LAST_SAVE],
     body.documents,
+    loginState,
   );
 
   let newOpenDocument;

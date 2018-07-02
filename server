@@ -29,7 +29,7 @@ else
 fi
 
 # SSH keys
-if [ -e "$key" ]; then
+if [ -e "${key-""}" ]; then
   key_args=(-i $key)
 else
   declare -a key_args
@@ -43,14 +43,20 @@ if [ $# -ge 0 ]; then
   args=( "$@" )
 else
   read -p "Command: " cmd
-  if [ ! cmd = "setup" ]; then
+  if [ ! "$cmd" = "setup" ]; then
     read -a "Arguments (may be empty): " args
   fi
 fi
 
 
-# Regular commands
-if [ ! $cmd = "setup" ]; then
+# Bash
+if [ "$cmd" = "bash" ]; then
+  ssh ${key_args[*]} root@${host}
+  exit 0
+fi
+
+# "Regular" commands
+if [ ! "$cmd" = "setup" ]; then
   set -o xtrace
   ssh ${key_args[*]} root@${host} \
     "bash 6gu/machines/run.sh" "$cmd" ${args[*]}
