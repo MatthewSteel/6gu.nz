@@ -3,28 +3,30 @@ services:
   traefik:
     image: traefik
     command:
-      --entrypoints='Name:http Address::80' \
-      --defaultentrypoints=http \
+      --defaultentrypoints=http,https \
+      --entrypoints='Name:http Address::80 Redirect.EntryPoint:https' \
+      --entrypoints='Name:https Address::443 TLS' \
       --docker \
+      --docker.exposedbydefault=false \
       --docker.swarmMode \
       --docker.watch \
-      --docker.domain=127.0.0.1
-      # --defaultentrypoints=http,https \
-      # --docker.domain=${HOST} \
-      # --entrypoints='Name:http Address::80 Redirect.EntryPoint:https' \
-      # --entrypoints='Name:https Address::443 TLS' \
-      # --defaultentrypoints=http,https \
-      # --acme \
-      # --acme.storage=/etc/traefik/acme/acme.json \
-      # --acme.entryPoint=https \
-      # --acme.httpChallenge.entryPoint=http \
-      # --acme.email=${EMAIL_ADDRESS} \
+      --docker.domain=${HOST} \
+      --debug=true \
+      --logLevel=DEBUG \
+      --acme \
+      --acme.storage=/etc/traefik/acme/acme.json \
+      --acme.entryPoint=https \
+      --acme.httpChallenge.entryPoint=http \
+      --acme.email=${EMAIL_ADDRESS} \
+      --acme.domains=${HOST} \
+      --acme.onhostrule=true \
+      --acme.caServer=https://acme-staging.api.letsencrypt.org/directory
     ports:
       - '80:80'
-      # - '443:443'
+      - '443:443'
     volumes:
       - /var/run/docker.sock:/var/run/docker.sock:ro
-      # - ./traefik/acme:/etc/traefik/acme
+      - ./acme_storage:/etc/traefik/acme
 
   client:
     image: registry.6gu.nz/client:latest
@@ -34,9 +36,10 @@ services:
         delay: 10s
       labels:
         traefik.enable: 'true'
-        traefik.domain: 127.0.0.1
+        traefik.domain: ${HOST}
         traefik.backend: 'client'
-        traefik.frontend.rule: 'PathPrefix:/'
+        traefik.frontend.rule: 'PathStripRegex:/{path:.*}'
+        traefik.frontend.priority: 1
         traefik.port: 80
 
   api:
@@ -47,9 +50,10 @@ services:
       replicas: 3
       labels:
         traefik.enable: 'true'
-        traefik.domain: 127.0.0.1
+        traefik.domain: ${HOST}
         traefik.backend: 'api'
         traefik.frontend.rule: 'PathPrefix:/api/'
+        traefik.frontend.priority: 10
         traefik.port: 3001
     environment:
       HOST: ${HOST}
