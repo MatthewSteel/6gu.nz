@@ -68,19 +68,3 @@ services:
     volumes:
       - '../postgres/init:/docker-entrypoint-initdb.d'
       - '/var/lib/postgresql/data'
-
-  migrate:
-    image: registry.6gu.nz/api:latest
-    command: yarn run migrations
-    depends_on:
-      - database
-    deploy:
-      replicas: 1
-      restart_policy:
-        condition: none
-    environment:
-      HOST: ${HOST}
-      MIGRATE_DIRECTION: 'up'
-      MIGRATE_FILENAME: ''
-    env_file:
-      - .env.api

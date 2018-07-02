@@ -15,9 +15,8 @@ Contains the things necessary to store documents in the database.
 
 ## Running the dev server
 - `sudo dev/run`
-- `sudo dev/migrate` (in another window)
-
-Migrations must be run while postgres is going (i.e., `dev/run`.)
+- Browse to `localhost:3001/api/migrations`, copy the last migration title into the last box and hit "up".
+- Browse to `localhost:3000`.
 
 ## Testing locally
 
@@ -27,37 +26,9 @@ Migrations must be run while postgres is going (i.e., `dev/run`.)
 - `sudo dev/force-rebuild` or
 - `sudo dev/clean`
 
-## Migrations in development
+## Migrations
 
-Make a migration by running `dev/create-migration <name>`
-
-Run migrations up/down like
-- `sudo dev/migrate up`
-- `sudo dev/migrate down`
-
-Specify a migration to stop at like so:
-- `sudo dev/migrate up 1529298053617-docs-prettyId-col.js`
-
-If you provide no arguments, a single argument of `up` is assumed as a shortcut.
-
-## Migrations in production
-
-By default the server is in one of two migration states:
- - Pinned to some migration filename, or
- - Auto-upgrade.
-Not sure which is best, but for now let's have a cultural assumption we're in "auto-upgrade" mode unless you know otherwise. To run a migration, do
-
- - `server staging migrate up`, or
- - `server staging everything`.
-
-To pin, write
-
- - `server staging migrate up 1529298053617-docs-prettyId-col.js`, or
- - `server staging migrate down 1529298053617-docs-prettyId-col.js`.
-
-Not sure why the direction is important, to be honest. If we're already on the version you want to pin to it probably doesn't matter, otherwise it's probably best to get it right.
-
-Unlike local migrations, "all the way down" is not supported in production :-).
+`$host/api/migrations`. They are never run automatically.
 
 ## Deploying to staging/prod
 
@@ -65,13 +36,11 @@ Deploy everything like
 
  - `server staging everything`.
 
-This will also run all pending migrations.
-
 Alternatively, instead of `everything` you can write
 
  - `server staging [deploy|rollback] [client|api]
 
-to deploy or roll-back either the client or the api server. This won't run migrations.
+to deploy or roll-back either the client or the api server.
 
 ## Setting up servers
 

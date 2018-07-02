@@ -13,9 +13,6 @@ case "$command" in
   "revert")
     ./revert.sh "$@"
     ;;
-  "migrate")
-    ./migrate.sh "$@"
-    ;;
   "everything")
     ./everything.sh "$@"
     ;;
@@ -26,8 +23,7 @@ case "$command" in
     echo "Command argument must be one of:"
     echo " - bash,"
     echo " - deploy,"
-    echo " - revert,"
-    echo " - migrate, or"
+    echo " - revert, or"
     echo " - everything."
     exit 1;
 esac
