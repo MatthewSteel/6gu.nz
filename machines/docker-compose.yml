@@ -1,0 +1,86 @@
+version: "3.4"
+services:
+  traefik:
+    image: traefik
+    command:
+      --entrypoints='Name:http Address::80' \
+      --defaultentrypoints=http \
+      --docker \
+      --docker.swarmMode \
+      --docker.watch \
+      --docker.domain=127.0.0.1
+      # --defaultentrypoints=http,https \
+      # --docker.domain=${HOST} \
+      # --entrypoints='Name:http Address::80 Redirect.EntryPoint:https' \
+      # --entrypoints='Name:https Address::443 TLS' \
+      # --defaultentrypoints=http,https \
+      # --acme \
+      # --acme.storage=/etc/traefik/acme/acme.json \
+      # --acme.entryPoint=https \
+      # --acme.httpChallenge.entryPoint=http \
+      # --acme.email=${EMAIL_ADDRESS} \
+    ports:
+      - '80:80'
+      # - '443:443'
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      # - ./traefik/acme:/etc/traefik/acme
+
+  client:
+    image: registry.6gu.nz/client:latest
+    deploy:
+      update_config:
+        order: start-first
+        delay: 10s
+      labels:
+        traefik.enable: 'true'
+        traefik.domain: 127.0.0.1
+        traefik.backend: 'client'
+        traefik.frontend.rule: 'PathPrefix:/'
+        traefik.port: 80
+
+  api:
+    image: registry.6gu.nz/api:latest
+    depends_on:
+      - database
+    deploy:
+      replicas: 3
+      labels:
+        traefik.enable: 'true'
+        traefik.domain: 127.0.0.1
+        traefik.backend: 'api'
+        traefik.frontend.rule: 'PathPrefix:/api/'
+        traefik.port: 3001
+    environment:
+      HOST: ${HOST}
+    env_file:
+      - .env.api
+
+  database:
+    image: postgres:10
+    deploy:
+      restart_policy:
+        condition: on-failure
+    ports:
+      - '5432'
+    env_file:
+      - .env.db
+    volumes:
+      - '../postgres/init:/docker-entrypoint-initdb.d'
+      - '/var/lib/postgresql/data'
+
+  migrate:
+    image: registry.6gu.nz/api:latest
+    command: yarn run migrations
+    depends_on:
+      - database
+    deploy:
+      replicas: 1
+      restart_policy:
+        condition: none
+    environment:
+      HOST: ${HOST}
+      MIGRATE_DIRECTION: 'up'
+      MIGRATE_FILENAME: ''
+    env_file:
+      - .env.api
