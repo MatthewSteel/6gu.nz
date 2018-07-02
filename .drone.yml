@@ -9,6 +9,7 @@ pipeline:
     image: plugins/docker
     when:
       branch: master
+      event: push
     registry: registry.6gu.nz
     repo: registry.6gu.nz/client
     tags: latest
@@ -21,6 +22,7 @@ pipeline:
     image: plugins/docker
     when:
       branch: master
+      event: push
     registry: registry.6gu.nz
     repo: registry.6gu.nz/api
     tags: latest
