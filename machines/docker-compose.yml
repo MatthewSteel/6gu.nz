@@ -1,0 +1,73 @@
+version: "3.4"
+services:
+  traefik:
+    image: traefik
+    command:
+      --defaultentrypoints=http,https \
+      --entrypoints='Name:http Address::80 Redirect.EntryPoint:https' \
+      --entrypoints='Name:https Address::443 TLS' \
+      --docker \
+      --docker.exposedbydefault=false \
+      --docker.swarmMode \
+      --docker.watch \
+      --docker.domain=${HOST} \
+      --debug=true \
+      --logLevel=DEBUG \
+      --acme \
+      --acme.storage=/etc/traefik/acme/acme.json \
+      --acme.entryPoint=https \
+      --acme.httpChallenge.entryPoint=http \
+      --acme.email=${EMAIL_ADDRESS} \
+      --acme.domains=${HOST} \
+      --acme.onhostrule=true
+    ports:
+      - '80:80'
+      - '443:443'
+    volumes:
+      - /var/run/docker.sock:/var/run/docker.sock:ro
+      - ./acme_storage:/etc/traefik/acme
+
+  client:
+    image: registry.6gu.nz/client:latest
+    deploy:
+      update_config:
+        order: start-first
+        delay: 10s
+      labels:
+        traefik.enable: 'true'
+        traefik.domain: ${HOST}
+        traefik.backend: 'client'
+        traefik.frontend.rule: 'PathStripRegex:/{path:.*}'
+        traefik.frontend.priority: 1
+        traefik.port: 80
+
+  api:
+    image: registry.6gu.nz/api:latest
+    depends_on:
+      - database
+    deploy:
+      replicas: 3
+      labels:
+        traefik.enable: 'true'
+        traefik.domain: ${HOST}
+        traefik.backend: 'api'
+        traefik.frontend.rule: 'PathPrefix:/api/'
+        traefik.frontend.priority: 10
+        traefik.port: 3001
+    environment:
+      HOST: ${HOST}
+    env_file:
+      - .env.api
+
+  database:
+    image: postgres:10
+    deploy:
+      restart_policy:
+        condition: on-failure
+    ports:
+      - '5432'
+    env_file:
+      - .env.db
+    volumes:
+      - '../postgres/init:/docker-entrypoint-initdb.d'
+      - '/var/lib/postgresql/data'

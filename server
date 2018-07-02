@@ -1,0 +1,76 @@
+#!/bin/bash
+# run like
+#  [key=/path/to/ssh-key] server [staging|production] [args...]
+# where args can be...
+#  - setup path/to/ssh-key
+#  - deploy [service]
+#  - revert service
+#  - everything
+
+set -o errexit
+set -o nounset
+set -o pipefail
+
+# Environment
+if [ $# -ge 0 ]; then
+  environment="$1"
+  shift
+else
+  read -p "Environment (production|staging): " environment
+fi
+
+if [ $environment = "production" ]; then
+  host="my.6gu.nz"
+elif [ $environment = "staging" ]; then
+  host="staging.6gu.nz"
+else
+  read -p "Assuming $environment is an ip address."
+  host="$environment"
+fi
+
+# SSH keys
+if [ -e "$key" ]; then
+  key_args=(-i $key)
+else
+  declare -a key_args
+fi
+
+
+# Command
+if [ $# -ge 0 ]; then
+  cmd="$1"
+  shift
+  args=( "$@" )
+else
+  read -p "Command: " cmd
+  if [ ! cmd = "setup" ]; then
+    read -a "Arguments (may be empty): " args
+  fi
+fi
+
+
+# Regular commands
+if [ ! $cmd = "setup" ]; then
+  set -o xtrace
+  ssh ${key_args[*]} root@${host} \
+    "bash 6gu/machines/run.sh" "$cmd" ${args[*]}
+  exit 0
+fi
+
+# Server setup
+read -p "Path to gitea creds: " path_to_creds
+path_to_creds=${path_to_creds/#\~/$HOME}
+if [ ! -f "$path_to_creds" ]; then
+  echo "Gitea creds not found."
+  exit 1
+fi
+
+read -p "Enter docker registry username: " docker_username
+read -p "Enter docker registry password: " docker_password
+
+set -o xtrace
+scp ${key_args[*]} "$path_to_creds" root@${host}:/root/.ssh/git-key
+
+ssh ${key_args[*]} root@${host} \
+  "bash -s '$docker_username' '$docker_password'" \
+  < machines/setup.sh

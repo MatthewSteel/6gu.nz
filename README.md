@@ -10,41 +10,44 @@ Contains the things necessary to store documents in the database.
 
 ## Dev setup
 
- - Get Node and run `yarn run devsetup` in the repo root.
  - Get Docker and Docker Compose.
  - `cp .env.sample .env`.
 
 ## Running the dev server
-- `sudo scripts/run`
-- `sudo scripts/migrate` (in another window)
-
-Migrations must be run while postgres is going (i.e., `scripts/run`.)
+- `sudo dev/run`
+- Browse to `localhost:3001/api/migrations`, copy the last migration title into the last box and hit "up".
+- Browse to `localhost:3000`.
 
 ## Testing locally
 
- - `sudo scripts/test`
+ - `sudo dev/test`
 
 ## Resetting the dev database
-- `sudo scripts/force-rebuild` or
-- `sudo scripts/clean`
+- `sudo dev/force-rebuild` or
+- `sudo dev/clean`
 
-## Migrations in development
+## Migrations
 
-Make a migration by running `scripts/create-migration <name>`
-
-Run migrations up/down like
-- `sudo scripts/migrate up`
-- `sudo scripts/migrate down`
-
-Specify a migration to stop at like so:
-- `sudo scripts/migrate up 1529298053617-docs-prettyId-col`
-
-If you provide no arguments, a single argument of `up` is assumed as a shortcut.
+`$host/api/migrations`. They are never run automatically.
 
 ## Deploying to staging/prod
 
-Dunno lol.
+Deploy everything like
 
-## Migrations in production
+ - `server staging everything`.
 
-Dunno lol.
+Alternatively, instead of `everything` you can write
+
+ - `server staging [deploy|rollback] [client|api]
+
+to deploy or roll-back either the client or the api server.
+
+## Setting up servers
+
+At the moment the process is,
+
+1. Buy a server,
+2. Configure DNS if you like,
+3. Run `server $ip-address setup` and follow the instructions. This should install docker and git on the host, authenticate with the docker registry and clone our git repo.
+5. Init a docker swarm or join one. (??)
+6. Update environment files in the `machines` directory if setting up a new swarm.

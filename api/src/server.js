@@ -12,6 +12,8 @@ const passport = require('passport');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const FacebookStrategy = require('passport-facebook').Strategy;
 const FakeOauth2Strategy = require('./fakeOauthServer/fakeStrategy');
+const migrate = require('migrate');
+const migrationStore = require('./migrationStore');
 
 const { pool, query } = require('../src/db');
 
@@ -78,6 +80,7 @@ providers.forEach((provider) => {
 
 const app = express();
 app.use(express.json());
+app.use(express.urlencoded({ extended: false }));
 app.use(session({
   saveUninitialized: true,
   store: new PgSession({ pool }),
@@ -266,6 +269,100 @@ app.put('/api/documents/:documentId', async (req, res) => {
   } else {
     res.status(401);
   }
+});
+
+
+app.get('/api/migrations', async (req, res) => {
+  const anyUsers = (await query(`SELECT 1 FROM USERS LIMIT 1;`)).rowCount;
+  const permitted = (req.user && req.user.isAdmin) || !anyUsers;
+  if (!permitted) {
+    res.status(403);
+    res.end();
+    return;
+  }
+  const loadArgs = {
+    stateStore: new migrationStore(),
+    migrationsDirectory: 'migrations',
+  };
+  migrate.load(loadArgs, (err, data) => {
+    if (err) {
+      res.status(500);
+      return;
+    }
+    const numRun = data.migrations
+      .filter(({ timestamp }) => timestamp).length;
+
+    const rows = data.migrations.map(({ title, timestamp }, i) => {
+      const action = (timestamp === null) ? 'up' : 'down';
+      const link = (i + 1 === numRun) ?  '' : (`
+        <form action="/api/migrate" method="post">
+          <input type="text" name="title" />
+          <button type="submit">${action}</button>
+        </form>
+      `);
+      return (`
+        <tr>
+          <td>${title}</td>
+          <td>${timestamp ? timestamp : ''}</td>
+          <td>${link}</td>
+        </tr>
+      `);
+    });
+    res.send((`
+      <html><head>
+        <style>
+          table { border-spacing: 10px; }
+          th, td { border-bottom: 1px solid #AAA; padding: 5px; }
+        </style>
+        <title>Migrations</title>
+        </head><body>
+        <table>
+        <tr><th>Title</th><th>Ran at</th><th>Title again</th></tr>
+        ${rows.join('\n')}
+        </table>
+      </body></html>
+    `));
+  });
+});
+
+app.post('/api/migrate', async (req, res) => {
+  const anyUsers = (await query(`SELECT 1 FROM USERS LIMIT 1;`)).rowCount;
+  const permitted = (req.user && req.user.isAdmin) || !anyUsers;
+  if (!permitted) {
+    res.status(403).end();
+    return;
+  }
+  const loadArgs = {
+    stateStore: new migrationStore(),
+    migrationsDirectory: 'migrations',
+  };
+  migrate.load(loadArgs, (err, data) => {
+    if (err) {
+      res.status(500).end();
+      return;
+    }
+    const { migrations } = data;
+    const migration = migrations.find(({ title, timestamp }) => (
+      title === req.body.title));
+    if (!migration) {
+      res.status(404).end();
+      return;
+    }
+    const cb = (err) => {
+      if (err) {
+        res.status(500).end();
+      } else {
+        res.send('<html><head /><body><a href="/api/migrations">back</a></body></html>');
+      }
+    };
+
+    req.connection.setTimeout( 1000 * 60 * 10 ); // ten minutes
+    if (migration.timestamp) {
+      data.down(migration.title, cb);
+    } else {
+      data.up(migration.title, cb);
+    }
+  });
 });
 
 app.listen(3001);
