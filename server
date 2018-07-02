@@ -54,7 +54,7 @@ fi
 if [ ! $cmd = "setup" ]; then
   set -o xtrace
   ssh ${key_args[*]} root@${host} \
-    "bash 6gu/machines/run.sh -s" "$cmd" ${args[*]}
+    "bash 6gu/machines/run.sh" "$cmd" ${args[*]}
   exit 0
 fi
 
