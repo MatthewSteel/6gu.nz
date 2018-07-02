@@ -5,7 +5,6 @@
 #  - setup path/to/ssh-key
 #  - deploy [service]
 #  - revert service
-#  - migrate [up|down [migration_filename]]
 #  - everything
 
 set -o errexit

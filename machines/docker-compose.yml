@@ -19,8 +19,7 @@ services:
       --acme.httpChallenge.entryPoint=http \
       --acme.email=${EMAIL_ADDRESS} \
       --acme.domains=${HOST} \
-      --acme.onhostrule=true \
-      --acme.caServer=https://acme-staging.api.letsencrypt.org/directory
+      --acme.onhostrule=true
     ports:
       - '80:80'
       - '443:443'
