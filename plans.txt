@@ -1,21 +1,42 @@
-Today:
+Next:
+ - Oauth,
+ - Screen size,
+ - Youtube vid.
+ - Prod
+ - Site on the git box.
+
+Other:
+ - drone.6gu.nz -> ci.6gu.nz
+
+ Actually:
+   - 6gu.nz
+   - registry.internal.6gu.nz
+   - ci.internal.6gu.nz
+   - git.internal.6gu.nz
+ All on the same host... Interesting.
+
+   - staging.6gu.nz
+   - my.6gu.nz
+   - haversine.service.6gu.nz
+
 
 Short-term TODO list:
  - [index] on objects,
+ - intro video/website/docs
+ - deploy it to some real server,
+
  - Cell-size stuff :-/.
   - Cells are reasonably consistently sized, go all the way to the edges.
   - Probably have to do some pixel-density stuff?
     - css "resolution" or JS devicePixelRatio?
- - deploy it to some real server,
  - Google + Facebook login.
  - Handle "unexpected logouts", bad internet connectivity, server errors.
- - intro video/website/docs
  - max, deep equals?
  - See what it looks like in different browsers, different screen res.
  - Sizeme on the book, not the sheet? Navigating shouldn't flicker.
 
 
- - Let second/third arguments to `if` be objects.
+ - Let all arguments to `if` and && (etc?) be objects.
  - Change `byName` into a Map.
 
 
