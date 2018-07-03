@@ -22,14 +22,16 @@ if (!(environments.includes(process.env.ENVIRONMENT))) {
   throw new Error('ENVIRONMENT must be dev, production or test.');
 }
 
-const getOrPutUser = (how, authId, next) =>
+const getOrPutUser = (provider, id, next) =>
+  // An upsert where the update is a no-op so we can fetch the thing if it
+  // exists already. Used for logins and registrations.
   query(`
   INSERT INTO users ("providerName", "providerUserId")
   VALUES ($1, $2)
   ON CONFLICT ("providerName", "providerUserId")
     DO UPDATE SET "providerName"=EXCLUDED."providerName"
   RETURNING *;
-  `, [how, authId])
+  `, [provider, id])
     .then(res => next(null, res.rows[0]))
     .catch(next);
 
@@ -52,15 +54,18 @@ const providers = process.env.ENVIRONMENT === 'production' ?
   ['fake'];
 
 
+const hostWithProtocol = process.env.ENVIRONMENT === 'production' ?
+  `https://${process.env.HOST}` : `http://${process.env.HOST}`;
 const serverHost = process.env.ENVIRONMENT === 'production' ?
-  process.env.HOST : `${process.env.HOST}:3001`;
+  hostWithProtocol : `${hostWithProtocol}:3001`;
 
-const fakeOauthServer = 'http://fake_oauth_server:2999';
+const fakeOauthFromServer = 'http://fake_oauth_server:2999';
+const fakeOauthFromClient = `${hostWithProtocol}:2999`;
 
 const strategies = {
   google: GoogleStrategy,
   facebook: FacebookStrategy,
-  fake: FakeOauth2Strategy(fakeOauthServer),
+  fake: FakeOauth2Strategy(fakeOauthFromServer, fakeOauthFromClient),
 };
 
 providers.forEach((provider) => {
@@ -99,6 +104,11 @@ app.use((req, res, next) => {
 // ROUTES
 
 // login routes
+const authParams = {
+  google: { scope: ['openid'] },
+  facebook: {},
+  fake: {},
+}
 providers.forEach((provider) => {
   // They send users here after login on their site
   app.get(
@@ -111,11 +121,17 @@ providers.forEach((provider) => {
       },
     ),
   );
+  // Our users go here (on our site) in a new tab and we redirect them to a
+  // login page.
+  app.get(
+    `/api/auth/${provider}`,
+    passport.authenticate(provider, authParams[provider]),
+  );
 });
 
+
 const clientHost = process.env.ENVIRONMENT === 'production' ?
-  `${process.env.HOST}:3000` :
-  process.env.HOST;
+  hostWithProtocol : `${hostWithProtocol}:3000`;
 
 ['loginSuccess', 'loginFailure'].forEach((route) => {
   app.get(

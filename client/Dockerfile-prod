@@ -6,7 +6,7 @@ FROM node:10 as react-app-build
 
 WORKDIR /app
 COPY package.json yarn.lock ./
-RUN yarn
+RUN NODE_ENV=production yarn
 
 COPY public ./public
 COPY src ./src

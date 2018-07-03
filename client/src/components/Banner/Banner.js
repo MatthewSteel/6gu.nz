@@ -22,8 +22,14 @@ const commaListElems = (items) => {
   return ret;
 };
 
-// If it's running at all...
-const fakeOAuthServerHost = `${window.location.hostname}:2999`;
+// Alas, "dev-server" weirdness. Can't serve OAuth pages and the app on the
+// same port. (Don't want to use an environment variable for the host because
+// I want the same client build for staging and production. Could maybe have
+// a var for the port, though?)
+const serverUrl = process.env.ENVIRONMENT === 'production' ?
+  `https://${window.location.hostname}` :
+  `http://${window.location.hostname}:3001`;
+
 /* eslint-disable react/jsx-no-target-blank */
 /* It's a slight security issue, but we should be able to trust the login
  * providers... We want the login window to be able to communicate with
@@ -31,16 +37,20 @@ const fakeOAuthServerHost = `${window.location.hostname}:2999`;
  * An alternative could be to poll an "are we logged in?" endpoint but
  * that seems a bit awful -- how long do we poll for? How frequently?
  */
-const providerLoginButtons = [(
+const providers = process.env.ENVIRONMENT === 'production' ?
+  [{ name: 'google', text: 'Google' }, {name: 'facebook', text: 'Facebook' }] :
+  [{ name: 'fake', text: 'Fake Provider' }];
+
+const providerLoginButtons = providers.map(({ name, text }) => (
   <a
     className="LoginButton"
-    href={`${fakeOAuthServerHost}/oauth/authorize`}
+    href={`${serverUrl}/api/auth/${name}`}
     target="_blank"
-    key="fakeProviderLink"
+    key={`${name}LoginLink`}
   >
-    Fake Provider
+    {text}
   </a>
-)];
+));
 /* eslint-enable react/jsx-no-target-blank */
 
 const logoutButton = logout => (
@@ -51,14 +61,6 @@ const logoutButton = logout => (
     Logout
   </button>
 );
-
-// Alas, "dev-server" weirdness. Can't serve OAuth pages and the app on the
-// same port. (Don't want to use an environment variable for the host because
-// I want the same client build for staging and production. Could maybe have
-// a var for the port, though?)
-const expectedClientHost = process.env.ENVIRONMENT === 'production' ?
-  window.location.hostname :
-  `${window.location.hostname}:3001`;
 
 class Banner extends PureComponent {
   constructor(props) {
@@ -77,9 +79,8 @@ class Banner extends PureComponent {
   maybeLogin(event) {
     const { fetchUserInfoProp, loginState } = this.props;
     if (loginState !== LOGIN_STATES.LOGGED_OUT) return;
-    if (event.origin !== expectedClientHost) {
-      return;
-    }
+    if (event.origin !== serverUrl) return;
+
     if (event.data === 'loginSuccess') fetchUserInfoProp();
   }
 

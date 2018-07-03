@@ -10,7 +10,7 @@ app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 
 const serverHost = process.env.ENVIRONMENT === 'production' ?
-  process.env.HOST : `${process.env.HOST}:3001`;
+  `https://${process.env.HOST}` : `http://${process.env.HOST}:3001`;
 
 const callbackUrl = `${serverHost}/api/auth/fake/callback`;
 const model = {

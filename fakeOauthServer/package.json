@@ -8,6 +8,8 @@
     "express-oauth-server": "^2.0.0"
   },
   "scripts": {},
-  "devDependencies": {},
+  "devDependencies": {
+    "nodemon": "^1.17.5"
+  },
   "license": "UNLICENSED"
 }

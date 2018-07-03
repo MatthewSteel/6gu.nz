@@ -2,15 +2,15 @@
 
 const { OAuth2Strategy } = require('passport-oauth');
 
-module.exports = host => class DerivedStrategy extends OAuth2Strategy {
+module.exports = (hostFromServer, hostFromClient) => class DerivedStrategy extends OAuth2Strategy {
   constructor(params, userFn) {
     // Expose the same params as the existing provider-specific
     // strategies.
     super(
       {
         ...params,
-        authorizationURL: `${host}/oauth2/authorize`,
-        tokenURL: `${host}/oauth/token`,
+        authorizationURL: `${hostFromClient}/oauth/authorize`,
+        tokenURL: `${hostFromServer}/oauth/token`,
       },
       userFn,
     );
