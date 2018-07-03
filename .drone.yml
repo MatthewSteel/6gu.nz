@@ -30,3 +30,16 @@ pipeline:
     dockerfile: api/Dockerfile-prod
     group: build
     secrets: [ docker_username, docker_password ]
+
+  deploy_staging:
+    when:
+      branch: master
+      event: push
+    image: appleboy/drone-ssh
+    host: staging.6gu.nz
+    username: root
+    key_path: /root/ssh/drone_rsa
+    volumes:
+      - /root/.ssh/staging_server_key:/root/ssh/drone_rsa
+    script:
+      - /root/6gu/machines/everything.sh
