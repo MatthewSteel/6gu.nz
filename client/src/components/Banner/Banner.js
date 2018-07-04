@@ -26,7 +26,7 @@ const commaListElems = (items) => {
 // same port. (Don't want to use an environment variable for the host because
 // I want the same client build for staging and production. Could maybe have
 // a var for the port, though?)
-const serverUrl = process.env.ENVIRONMENT === 'production' ?
+const serverUrl = process.env.NODE_ENV === 'production' ?
   `https://${window.location.hostname}` :
   `http://${window.location.hostname}:3001`;
 
@@ -37,7 +37,7 @@ const serverUrl = process.env.ENVIRONMENT === 'production' ?
  * An alternative could be to poll an "are we logged in?" endpoint but
  * that seems a bit awful -- how long do we poll for? How frequently?
  */
-const providers = process.env.ENVIRONMENT === 'production' ?
+const providers = process.env.NODE_ENV === 'production' ?
   [{ name: 'google', text: 'Google' }, {name: 'facebook', text: 'Facebook' }] :
   [{ name: 'fake', text: 'Fake Provider' }];
 
