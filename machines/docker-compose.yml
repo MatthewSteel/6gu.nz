@@ -3,9 +3,9 @@ services:
   traefik:
     image: traefik
     command:
-      --defaultentrypoints=http,https \
       --entrypoints='Name:http Address::80 Redirect.EntryPoint:https' \
       --entrypoints='Name:https Address::443 TLS' \
+      --defaultentrypoints=http,https \
       --docker \
       --docker.exposedbydefault=false \
       --docker.swarmMode \
@@ -37,7 +37,7 @@ services:
         traefik.enable: 'true'
         traefik.domain: ${HOST}
         traefik.backend: 'client'
-        traefik.frontend.rule: 'PathStripRegex:/{path:.*}'
+        traefik.frontend.rule: 'PathPrefix:/;ReplacePathRegex: ^/d/(.*) /'
         traefik.frontend.priority: 1
         traefik.port: 80
 
