@@ -9,7 +9,7 @@ const app = express();
 app.use(bodyParser.json());
 app.use(bodyParser.urlencoded({ extended: false }));
 
-const serverHost = process.env.ENVIRONMENT === 'production' ?
+const serverHost = process.env.NODE_ENV === 'production' ?
   `https://${process.env.HOST}` : `http://${process.env.HOST}:3001`;
 
 const callbackUrl = `${serverHost}/api/auth/fake/callback`;

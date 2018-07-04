@@ -17,11 +17,6 @@ const migrationStore = require('./migrationStore');
 
 const { pool, query } = require('../src/db');
 
-const environments = ['dev', 'production', 'test'];
-if (!(environments.includes(process.env.ENVIRONMENT))) {
-  throw new Error('ENVIRONMENT must be dev, production or test.');
-}
-
 const getOrPutUser = (provider, id, next) =>
   // An upsert where the update is a no-op so we can fetch the thing if it
   // exists already. Used for logins and registrations.
@@ -49,14 +44,14 @@ passport.deserializeUser(getUser);
 
 
 // Oauth2
-const providers = process.env.ENVIRONMENT === 'production' ?
+const providers = process.env.NODE_ENV === 'production' ?
   ['google', 'facebook'] :
   ['fake'];
 
 
-const hostWithProtocol = process.env.ENVIRONMENT === 'production' ?
+const hostWithProtocol = process.env.NODE_ENV === 'production' ?
   `https://${process.env.HOST}` : `http://${process.env.HOST}`;
-const serverHost = process.env.ENVIRONMENT === 'production' ?
+const serverHost = process.env.NODE_ENV === 'production' ?
   hostWithProtocol : `${hostWithProtocol}:3001`;
 
 const fakeOauthFromServer = 'http://fake_oauth_server:2999';
@@ -130,7 +125,7 @@ providers.forEach((provider) => {
 });
 
 
-const clientHost = process.env.ENVIRONMENT === 'production' ?
+const clientHost = process.env.NODE_ENV === 'production' ?
   hostWithProtocol : `${hostWithProtocol}:3000`;
 
 ['loginSuccess', 'loginFailure'].forEach((route) => {

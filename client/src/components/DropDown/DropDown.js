@@ -3,6 +3,7 @@ import classNames from 'classnames';
 import FireWhenClickedOutside from '../util/FireWhenClickedOutside';
 import KeyboardListener from '../util/KeyboardListener';
 import './DropDown.css';
+import copyIcon from './copyIcon.svg';
 
 class DropDownRow extends Component {
   constructor(props) {
@@ -118,7 +119,7 @@ class DropDownRow extends Component {
             title="Copy"
             onClick={this.copy}
           >
-            &#x29c9;
+            <img src={copyIcon} alt="Copy" width="12px" />
           </button>
         )}
         {this.props.deleteItem && (

@@ -1,8 +1,10 @@
 import React, { PureComponent } from 'react';
 import { connect } from 'react-redux';
+import classNames from 'classnames';
 import { LOGIN_STATES } from '../../redux/stateConstants';
 import { fetchUserInfo, doLogout } from '../../redux/backend.js';
 import './Banner.css';
+import googleButton from './google-button.png';
 
 const mapDispatchToProps = dispatch => ({
   logout: () => doLogout(dispatch),
@@ -37,25 +39,32 @@ const serverUrl = process.env.NODE_ENV === 'production' ?
  * An alternative could be to poll an "are we logged in?" endpoint but
  * that seems a bit awful -- how long do we poll for? How frequently?
  */
-const providers = process.env.NODE_ENV === 'production' ?
-  [{ name: 'google', text: 'Google' }, {name: 'facebook', text: 'Facebook' }] :
-  [{ name: 'fake', text: 'Fake Provider' }];
-
-const providerLoginButtons = providers.map(({ name, text }) => (
+const prod = process.env.NODE_ENV === 'production';
+const providerLoginButtons = [(
   <a
-    className="LoginButton"
-    href={`${serverUrl}/api/auth/${name}`}
+    className="GoogleButton"
+    href={`${serverUrl}/api/auth/${prod ? 'google' : 'fake'}`}
     target="_blank"
-    key={`${name}LoginLink`}
+    key="GoogleLoginLink"
   >
-    {text}
+    <img src={googleButton} height="40px" alt="Sign in with Google" />
   </a>
-));
+), (
+  <a
+    className={classNames('BannerButton', 'FacebookButton')}
+    href={`${serverUrl}/api/auth/${prod ? 'facebook' : 'fake'}`}
+    target="_blank"
+    key="FacebookLoginLink"
+  >
+    Continue with Facebook
+  </a>
+)];
+
 /* eslint-enable react/jsx-no-target-blank */
 
 const logoutButton = logout => (
   <button
-    className="LoginButton"
+    className="BannerButton"
     onClick={logout}
   >
     Logout
@@ -93,7 +102,7 @@ class Banner extends PureComponent {
         }
         {loginState === LOGIN_STATES.LOGGED_IN && logoutButton(logout)}
         {loginState === LOGIN_STATES.LOGGED_OUT && [
-          'Login with ',
+          'Save your work:',
           ...commaListElems(providerLoginButtons),
         ]}
       </div>
