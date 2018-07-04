@@ -1,39 +1,46 @@
-Next:
- - Oauth,
+Oauth:
+ - Refresh staging code and db:
+   - NODE_ENV changes,
+   - Database migration (isAdmin).
+      - Remove stack svc,
+      - push code.
+
+   - Test google login/registration?
+ - Buy and deploy a prod server,
+ - Activate google/facebook logins?
+   - Facebook has a checkbox. (Staging is live :-)
+
+Then:
  - Screen size,
- - Youtube vid.
- - Prod
- - Site on the git box.
-
-Other:
- - drone.6gu.nz -> ci.6gu.nz
-
- Actually:
-   - 6gu.nz
-   - registry.internal.6gu.nz
-   - ci.internal.6gu.nz
-   - git.internal.6gu.nz
- All on the same host... Interesting.
-
-   - staging.6gu.nz
-   - my.6gu.nz
-   - haversine.service.6gu.nz
+  - Cell sizes in px,
+    - Width, height, title height.
+  - Text line-height in px,
+  - Sizeme on the book, not the sheet? Navigating shouldn't flicker.
+  - Table all the way to the edges (pass dims to sheet, it can divide?),
+  - Make the formula bar stick to the bottom of the screen,
+  - Viewport doesn't shrink below some size?
+    - min-width, min-height on book, I think.
 
 
-Short-term TODO list:
+ - The haversine sheet/service/youtube vid,
+
+
+ - Make sure we don't try to save other people's documents (client)
+ - Turn off wifi and see what happens:
+   - Saving,
+   - Loading a document,
+   - User-info
+   - Login, logout.
+   - delete, copy, rename documents.
+
+  - "Unexpected logouts" too?
+   - Multiple windows is probably all?
+
+
+Rest of the TODO list:
  - [index] on objects,
- - intro video/website/docs
- - deploy it to some real server,
-
- - Cell-size stuff :-/.
-  - Cells are reasonably consistently sized, go all the way to the edges.
-  - Probably have to do some pixel-density stuff?
-    - css "resolution" or JS devicePixelRatio?
- - Google + Facebook login.
- - Handle "unexpected logouts", bad internet connectivity, server errors.
  - max, deep equals?
  - See what it looks like in different browsers, different screen res.
- - Sizeme on the book, not the sheet? Navigating shouldn't flicker.
 
 
  - Let all arguments to `if` and && (etc?) be objects.
