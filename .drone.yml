@@ -43,5 +43,4 @@ pipeline:
       - /root/.ssh/staging_server_key:/root/ssh/drone_rsa
     script:
       - cd /root/6gu/machines
-      - bash everything.sh
-      # Heh, "bash everything"
+      - bash run.sh everything
