@@ -75,7 +75,7 @@ providers.forEach((provider) => {
     {
       clientID: process.env[`OAUTH2_${PROVIDER}_CLIENT_ID`],
       clientSecret: process.env[`OAUTH2_${PROVIDER}_CLIENT_SECRET`],
-      callbackURL: `${serverHost}/auth/${provider}/callback`,
+      callbackURL: `${serverHost}/api/auth/${provider}/callback`,
     },
     (accessToken, refreshToken, profile, cb) =>
       getOrPutUser(provider, profile.id, cb),
