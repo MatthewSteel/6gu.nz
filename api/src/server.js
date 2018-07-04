@@ -20,10 +20,15 @@ const { pool, query } = require('../src/db');
 const getOrPutUser = (provider, id, next) =>
   // An upsert where the update is a no-op so we can fetch the thing if it
   // exists already. Used for logins and registrations.
+  // The first user is automatically an admin, and should (in the future) be
+  // able to make other users admins.
   query(`
-  INSERT INTO users ("providerName", "providerUserId")
-  VALUES ($1, $2)
-  ON CONFLICT ("providerName", "providerUserId")
+  INSERT INTO users ("providerName", "providerUserId", "isAdmin")
+  VALUES (
+    $1,
+    $2,
+    COALESCE((SELECT FALSE FROM users LIMIT 1), TRUE)
+  ) ON CONFLICT ("providerName", "providerUserId")
     DO UPDATE SET "providerName"=EXCLUDED."providerName"
   RETURNING *;
   `, [provider, id])
@@ -143,10 +148,8 @@ const clientHost = process.env.NODE_ENV === 'production' ?
   );
 });
 
-// TODO: test this...
 app.get('/api/logout', (req, res) => {
   req.logout(); // I think this just drops the session from the db.
-  // res.cookie('loggedIn', false);
   res.end();
 });
 
@@ -204,8 +207,7 @@ app.get('/api/documents/:documentId', async (req, res) => {
 
 app.delete('/api/documents/:documentId', async (req, res) => {
   if (!req.user) {
-    res.status(401);
-    res.end();
+    res.status(401).end();
     return;
   }
   const results = await query(
@@ -217,14 +219,12 @@ app.delete('/api/documents/:documentId', async (req, res) => {
     res.end();
     return;
   }
-  res.status(404);
-  res.end();
+  res.status(404).end();
 });
 
 app.put('/api/documents/:documentId', async (req, res) => {
   if (!req.user) {
-    res.status(401);
-    res.end();
+    res.status(401).end();
     return;
   }
   const existingDocuments = await query(
@@ -275,10 +275,10 @@ app.put('/api/documents/:documentId', async (req, res) => {
         [req.params.documentId, req.user.id],
       );
     } catch (e) {
-      res.status(500);
+      res.status(500).end();
     }
   } else {
-    res.status(401);
+    res.status(401).end();
   }
 });
 
@@ -287,8 +287,7 @@ app.get('/api/migrations', async (req, res) => {
   const anyUsers = (await query(`SELECT 1 FROM USERS LIMIT 1;`)).rowCount;
   const permitted = (req.user && req.user.isAdmin) || !anyUsers;
   if (!permitted) {
-    res.status(403);
-    res.end();
+    res.status(403).end();
     return;
   }
   const loadArgs = {
@@ -297,7 +296,7 @@ app.get('/api/migrations', async (req, res) => {
   };
   migrate.load(loadArgs, (err, data) => {
     if (err) {
-      res.status(500);
+      res.status(500).end();
       return;
     }
     const numRun = data.migrations
