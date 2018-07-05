@@ -65,8 +65,7 @@ class Sheet extends Component {
       cellValuesById,
       readOnly,
       selected,
-      width,
-      height,
+      size,
       depth,
       sheetId,
     } = this.props;
@@ -76,14 +75,16 @@ class Sheet extends Component {
       selY,
       selX,
     } = this.state;
+    const width = Math.ceil(size.width / 100);
+    const height = Math.ceil((size.height - 20) / 40);
     const style = {
-      gridTemplateColumns: `repeat(${width}, 1fr)`,
-      gridTemplateRows: `repeat(${height * 2}, 2.2ex)`,
+      gridTemplateColumns: `repeat(${width}, 100px)`,
+      gridTemplateRows: `repeat(${height * 2}, 20px)`,
       zIndex: depth + 1,
     };
 
     return (
-      <div className="SheetContainer">
+      <div style={{ position: 'absolute', width: '100%', height: '100%' }}>
         <div
           className="Sheet"
           style={style}

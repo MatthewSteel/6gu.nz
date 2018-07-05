@@ -11,6 +11,7 @@ import TitleBar, { PathElem } from './TitleBar';
 import DocumentMenu from '../DropDown/DocumentMenu';
 import SheetMenu from '../DropDown/SheetMenu';
 import Navigation from '../Navigation/Navigation';
+import './Book.css';
 
 const mapStateToProps = state => ({
   cellValuesById: getCellValuesById(state),
@@ -96,8 +97,6 @@ class Book extends PureComponent {
           deleteSheet={this.deleteSelectedSheet}
           popViewStack={this.popStack}
           pushViewStack={this.pushStack}
-          height={13}
-          width={10}
           depth={i}
         />
       );
@@ -105,7 +104,7 @@ class Book extends PureComponent {
     const stringPathElems = displayView.map(({ pathElem }) => pathElem);
     const [sheetPathElem, ...stackPathElems] = stringPathElems;
     return (
-      <div className="ViewClass">
+      <div className="BookClass">
         <Navigation path={stringPathElems.join('')} />
         <TitleBar
           pathElems={stackPathElems}
@@ -126,7 +125,7 @@ class Book extends PureComponent {
             />
           )}
         </TitleBar>
-        <div style={{ position: 'relative' }}>
+        <div className="SheetContainer">
           {sheetViews}
         </div>
       </div>

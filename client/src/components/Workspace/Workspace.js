@@ -5,6 +5,7 @@ import { LOGIN_STATES } from '../../redux/stateConstants';
 import Book from '../Book/Book';
 import NoBook from '../Book/NoBook';
 import Banner from '../Banner/Banner';
+import './Workspace.css';
 
 const mapStateToProps = state => ({ loginState: getLoginState(state) });
 

@@ -3,9 +3,10 @@
   flex-direction: column;
   width: 100%;
   overflow: hidden;
-  position: absolute;
+  position: relative;
   left: 0px;
   top: 0px;
+  flex-grow: 1;
 }
 
 .SheetTitle {
@@ -44,12 +45,16 @@
   background-color: #F4F4F4;
   padding-right: 1px;
   padding-bottom: 1px;
-  position: relative;
+  position: absolute;
 }
 
 .SheetViewInputRow {
   display: flex;
   flex-direction: row;
+  position: fixed;
+  bottom: 0px;
+  width: 100%;
+  z-index: 1;
 }
 
 .StackButton {
