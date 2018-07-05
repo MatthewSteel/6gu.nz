@@ -4,17 +4,6 @@ Oauth:
 
  - The haversine sheet/service/youtube vid,
 
- - Make sure we don't try to save other people's documents (client)
- - Turn off wifi and see what happens:
-   - Saving,
-   - Loading a document,
-   - User-info
-   - Login, logout.
-   - delete, copy, rename documents.
-
-  - "Unexpected logouts" too?
-   - Multiple windows is probably all?
-
 
 Rest of the TODO list:
  - [index] on objects,
