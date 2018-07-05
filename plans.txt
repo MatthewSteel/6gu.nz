@@ -1,29 +1,8 @@
 Oauth:
- - Refresh staging code and db:
-   - NODE_ENV changes,
-   - Database migration (isAdmin).
-      - Remove stack svc,
-      - push code.
-
-   - Test google login/registration?
  - Buy and deploy a prod server,
- - Activate google/facebook logins?
-   - Facebook has a checkbox. (Staging is live :-)
-
-Then:
- - Screen size,
-  - Cell sizes in px,
-    - Width, height, title height.
-  - Text line-height in px,
-  - Sizeme on the book, not the sheet? Navigating shouldn't flicker.
-  - Table all the way to the edges (pass dims to sheet, it can divide?),
-  - Make the formula bar stick to the bottom of the screen,
-  - Viewport doesn't shrink below some size?
-    - min-width, min-height on book, I think.
-
+ - Activate facebook login for prod.
 
  - The haversine sheet/service/youtube vid,
-
 
  - Make sure we don't try to save other people's documents (client)
  - Turn off wifi and see what happens:
