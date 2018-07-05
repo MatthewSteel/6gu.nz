@@ -1,6 +1,5 @@
 import React, { Component } from 'react';
 import classNames from 'classnames';
-import equal from 'fast-deep-equal';
 
 export class PathElem extends Component {
   constructor(props) {
@@ -28,10 +27,6 @@ export class PathElem extends Component {
 }
 
 export default class TitleBar extends Component {
-  shouldComponentUpdate(nextProps) {
-    return !equal(nextProps, this.props);
-  }
-
   render() {
     const { children, pathElems, setStackDepth } = this.props;
 
