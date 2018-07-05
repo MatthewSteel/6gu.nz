@@ -78,19 +78,24 @@ export const fetchUserInfo = async (dispatch) => {
   // Should logged-out users get sent to unmodified last-viewed docs?
   //  nah...
   const maybeUrlDocId = documentWeWant();
-  const result = await fetch(
-    `/api/userInfo/${maybeUrlDocId || ''}`,
-    { credentials: 'same-origin' },
-  );
-  const body = {
-    ...{ documents: loggedOutDocs, user: {} },
-    ...(await result.json()),
-  };
+  let serverData = {};
+  let fetchFailed = false;
+  try {
+    const result = await fetch(
+      `/api/userInfo/${maybeUrlDocId || ''}`,
+      { credentials: 'same-origin' },
+    );
+    serverData = await result.json();
+  } catch (e) {
+    // Pretend we're logged out :-/
+    fetchFailed = true;
+  }
+  const body = { documents: loggedOutDocs, user: {}, ...serverData };
 
   const loginState = {
     true: LOGIN_STATES.LOGGED_IN,
     false: LOGIN_STATES.LOGGED_OUT,
-  }[cookie.parse(document.cookie).loggedIn];
+  }[!fetchFailed && cookie.parse(document.cookie).loggedIn];
 
   const { openDocument } = store.getState();
 
@@ -140,7 +145,13 @@ export const doLogout = async (dispatch) => {
   // Just
   //  - Make a logout request to the server,
   //  - call fetchUserInfo.
-  await fetch('/api/logout', { credentials: 'same-origin' });
+  try {
+    await fetch('/api/logout', { credentials: 'same-origin' });
+  } catch (e) {
+    // In the event of network failure here, we won't be able to clear the
+    // session cookie :-(. We can only pretend to log out. `fetchUserInfo`
+    // will be responsible for that.
+  }
   await fetchUserInfo(dispatch);
 };
 
@@ -152,39 +163,47 @@ const savedDoc = details => ({
 const sleep = ms => new Promise(resolve => setTimeout(resolve, ms));
 
 const persistDocToServer = async (doc, stringDoc) => {
-  const response = await fetch(
-    `/api/documents/${doc.id}`,
-    {
-      method: 'PUT',
-      headers: { 'content-type': 'application/json' },
-      body: stringDoc,
-      credentials: 'same-origin',
-    },
-  );
-  if (response.status === 200) {
-    // TODO: "saved" status in new redux state
-    delete localStorage[UNSAVED_DOCUMENT];
-    localStorage[LAST_SAVE] = `${doc.id},${doc.updateId}`;
-    const body = await response.json();
-    store.dispatch(savedDoc(body));
+  try {
+    const response = await fetch(
+      `/api/documents/${doc.id}`,
+      {
+        method: 'PUT',
+        headers: { 'content-type': 'application/json' },
+        body: stringDoc,
+        credentials: 'same-origin',
+      },
+    );
+    if (response.status === 200) {
+      // TODO: "saved" status in new redux state
+      delete localStorage[UNSAVED_DOCUMENT];
+      localStorage[LAST_SAVE] = `${doc.id},${doc.updateId}`;
+      const body = await response.json();
+      store.dispatch(savedDoc(body));
+    }
+  } catch (e) {
+    // Network failure, probably. Keep unsaved document around.
   }
 };
 
 const updateDocumentDetails = async (doc) => {
   const copy = { ...doc };
   delete copy.data;
-  const response = await fetch(
-    `/api/documents/${doc.id}`,
-    {
-      method: 'PUT',
-      headers: { 'content-type': 'application/json' },
-      body: JSON.stringify(doc),
-      credentials: 'same-origin',
-    },
-  );
-  if (response.status === 200) {
-    const body = await response.json();
-    store.dispatch(savedDoc(body));
+  try {
+    const response = await fetch(
+      `/api/documents/${doc.id}`,
+      {
+        method: 'PUT',
+        headers: { 'content-type': 'application/json' },
+        body: JSON.stringify(doc),
+        credentials: 'same-origin',
+      },
+    );
+    if (response.status === 200) {
+      const body = await response.json();
+      store.dispatch(savedDoc(body));
+    }
+  } catch (e) {
+    // If the request fails, just ignore the rename I guess?
   }
 };
 
