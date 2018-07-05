@@ -68,6 +68,12 @@ const strategies = {
   fake: FakeOauth2Strategy(fakeOauthFromServer, fakeOauthFromClient),
 };
 
+const extraArgs = {
+  google: { userProfileURL: 'https://www.googleapis.com/oauth2/v3/userinfo' },
+  facebook: {},
+  fake: {},
+};
+
 providers.forEach((provider) => {
   const Strategy = strategies[provider];
   const PROVIDER = provider.toUpperCase();
@@ -76,6 +82,7 @@ providers.forEach((provider) => {
       clientID: process.env[`OAUTH2_${PROVIDER}_CLIENT_ID`],
       clientSecret: process.env[`OAUTH2_${PROVIDER}_CLIENT_SECRET`],
       callbackURL: `${serverHost}/api/auth/${provider}/callback`,
+      ...extraArgs[provider],
     },
     (accessToken, refreshToken, profile, cb) =>
       getOrPutUser(provider, profile.id, cb),
