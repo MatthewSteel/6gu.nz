@@ -63,7 +63,7 @@ ALTER TABLE "public"."session" OWNER TO "sheets_user_dev";
 
 CREATE TABLE "public"."users" (
     "id" "uuid" DEFAULT "public"."gen_random_uuid"() NOT NULL,
-    "isAdmin" "boolean" DEFAULT FALSE NOT NULL,
+    "isAdmin" boolean DEFAULT FALSE NOT NULL,
     "signupAt" timestamp without time zone DEFAULT "timezone"('utc'::"text", "now"()),
     "metadata" "jsonb" DEFAULT '{}'::"jsonb" NOT NULL,
     "lastSeenAt" timestamp without time zone DEFAULT "timezone"('utc'::"text", "now"()),
