@@ -275,5 +275,27 @@ describe('actions/the store', () => {
     store.dispatch(deleteThing(table.id));
     expect(getCells(store.getState())).toEqual([]);
   });
+
+  it('bad refs do not kill the app when we break calls', () => {
+    const [sheet] = getSheets(store.getState());
+    store.dispatch(setFormula({ context: sheet.id, y: 0, x: 0 }, 'x: 0'));
+    store.dispatch(setFormula({ context: sheet.id, y: 0, x: 0 }, 'i: x + 1'));
+    store.dispatch(setFormula({ context: sheet.id, y: 0, x: 0 }, 'j: i(x: 1)'));
+
+    const j = find(({ name }) => name === 'j');
+    expect(getCellValue(j)).toEqual({
+      value: 2,
+      override: false,
+    });
+
+    const i = find(({ name }) => name === 'i');
+    store.dispatch(deleteThing(i.id));
+
+    const newJ = find(({ name }) => name === 'j');
+    expect(getCellValue(newJ)).toEqual({
+      error: 'Error: i does not exist.',
+      override: false,
+    });
+  });
 });
 

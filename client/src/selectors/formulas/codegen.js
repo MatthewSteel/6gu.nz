@@ -68,6 +68,9 @@ const tryExpandExpr = (expr) => {
 };
 
 export const expandUserCall = (callTerm) => {
+  if (!callTerm.call.ref) {
+    return 'pleaseThrow("Can only \'call\' plain references")';
+  }
   const signature = callSignature(callTerm);
   if (!callTerm.kwargs.every(({ ref }) => ref.ref)) {
     return 'pleaseThrow("Call arguments must be plain references")';
@@ -383,9 +386,14 @@ export const getCellValuesById = createSelector(
     const allTerms = [].concat(...allFormulas.map(flattenExpr));
     const allCalls = allTerms.filter(({ call }) => call && !(call.name in globalFunctions));
     allCalls.forEach((callTerm) => {
-      const signature = callSignature(callTerm);
-      if (globals[signature]) return;
-      globals[signature] = createFunction(callTerm, refExpressions);
+      try {
+        const signature = callSignature(callTerm);
+        if (globals[signature]) return;
+        globals[signature] = createFunction(callTerm, refExpressions);
+      } catch (e) {
+        // Probably calling a looked-up value. Nothing we can do here, there
+        // is no valid signature. Raise an error at codegen time.
+      }
     });
 
     // Evaluate every cell.
