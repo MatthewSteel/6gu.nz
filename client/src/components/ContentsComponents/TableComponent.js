@@ -4,14 +4,13 @@ import { connect } from 'react-redux';
 import TableKeysComponent from './TableKeysComponent';
 import TableIndicesComponent from './TableIndicesComponent';
 import TableContentsComponent from './TableContentsComponent';
-import ContentsBaseComponent from './ContentsBaseComponent';
+import ContentsBaseComponent, { mapDispatchToProps } from './ContentsBaseComponent';
 import CellNameComponent from '../CellComponent/CellNameComponent';
 import CellSelectionComponent from '../CellComponent/CellSelectionComponent';
 import ResizeHandleComponent from '../DragComponents/ResizeHandleComponent';
 
 import { getRefsById } from '../../selectors/formulas/selectors';
 import { DRAG_MOVE } from '../../selectors/geom/dragGeom';
-import { deleteThing, toggleMaximiseSheetElem } from '../../redux/documentEditing';
 
 
 class TableComponent extends ContentsBaseComponent {
@@ -185,11 +184,6 @@ class TableComponent extends ContentsBaseComponent {
 
 const mapStateToProps = (state, ownProps) => ({
   table: getRefsById(state)[ownProps.id],
-});
-
-const mapDispatchToProps = dispatch => ({
-  deleteCell: cellId => dispatch(deleteThing(cellId)),
-  toggleElementSize: refId => toggleMaximiseSheetElem(dispatch, refId),
 });
 
 export default connect(

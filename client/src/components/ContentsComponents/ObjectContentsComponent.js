@@ -5,11 +5,10 @@ import CellNameComponent from '../CellComponent/CellNameComponent';
 import CellValueComponent from '../CellComponent/CellValueComponent';
 import CellSelectionComponent from '../CellComponent/CellSelectionComponent';
 import EmptyCellComponent from '../CellComponent/EmptyCellComponent';
-import ContentsBaseComponent from './ContentsBaseComponent';
+import ContentsBaseComponent, { mapDispatchToProps } from './ContentsBaseComponent';
 
 import { getRefsById, refsAtPosition } from '../../selectors/formulas/selectors';
 import { OBJECT_CELL } from '../../redux/stateConstants';
-import { deleteLoc, deleteThing } from '../../redux/documentEditing';
 
 
 class ObjectContentsComponent extends ContentsBaseComponent {
@@ -157,11 +156,6 @@ const mapStateToProps = (state, ownProps) => {
   const cells = !context.formula && refsAtPosition(state)[ownProps.contextId];
   return { context, cells };
 };
-
-const mapDispatchToProps = dispatch => ({
-  deleteCell: cellId => dispatch(deleteThing(cellId)),
-  deleteLocation: (context, y, x) => dispatch(deleteLoc(context, y, x)),
-});
 
 export default connect(
   mapStateToProps,

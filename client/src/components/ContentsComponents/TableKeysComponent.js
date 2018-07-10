@@ -3,11 +3,10 @@ import { connect } from 'react-redux';
 
 import CellNameComponent from '../CellComponent/CellNameComponent';
 import CellSelectionComponent from '../CellComponent/CellSelectionComponent';
-import ContentsBaseComponent from './ContentsBaseComponent';
+import ContentsBaseComponent, { mapDispatchToProps } from './ContentsBaseComponent';
 
 import { getRefsById, refsAtPosition } from '../../selectors/formulas/selectors';
 import { TABLE_COLUMN } from '../../redux/stateConstants';
-import { deleteLoc, deleteThing } from '../../redux/documentEditing';
 
 
 class TableKeysComponent extends ContentsBaseComponent {
@@ -124,11 +123,6 @@ const mapStateToProps = (state, ownProps) => {
   const { columns } = !context.formula && refsAtPosition(state)[ownProps.contextId];
   return { context, columns };
 };
-
-const mapDispatchToProps = dispatch => ({
-  deleteCell: cellId => dispatch(deleteThing(cellId)),
-  deleteLocation: (context, y, x) => dispatch(deleteLoc(context, y, x)),
-});
 
 export default connect(
   mapStateToProps,

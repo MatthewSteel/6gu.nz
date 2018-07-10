@@ -2,14 +2,13 @@ import React, { Fragment } from 'react';
 import { connect } from 'react-redux';
 
 import ObjectContentsComponent from './ObjectContentsComponent';
-import ContentsBaseComponent from './ContentsBaseComponent';
+import ContentsBaseComponent, { mapDispatchToProps } from './ContentsBaseComponent';
 import CellNameComponent from '../CellComponent/CellNameComponent';
 import CellSelectionComponent from '../CellComponent/CellSelectionComponent';
 import ResizeHandleComponent from '../DragComponents/ResizeHandleComponent';
 
 import { getRefsById } from '../../selectors/formulas/selectors';
 import { DRAG_MOVE } from '../../selectors/geom/dragGeom';
-import { deleteLoc, deleteThing, toggleMaximiseSheetElem } from '../../redux/documentEditing';
 
 
 class ObjectComponent extends ContentsBaseComponent {
@@ -128,12 +127,6 @@ class ObjectComponent extends ContentsBaseComponent {
 
 const mapStateToProps = (state, ownProps) => ({
   object: getRefsById(state)[ownProps.id],
-});
-
-const mapDispatchToProps = dispatch => ({
-  deleteCell: cellId => dispatch(deleteThing(cellId)),
-  deleteLocation: (context, y, x) => dispatch(deleteLoc(context, y, x)),
-  toggleElementSize: refId => toggleMaximiseSheetElem(dispatch, refId),
 });
 
 export default connect(

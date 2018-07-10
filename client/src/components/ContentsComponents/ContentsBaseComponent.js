@@ -2,6 +2,8 @@ import React, { Component } from 'react';
 import equal from 'fast-deep-equal';
 import { CELL } from '../../redux/stateConstants';
 import { clampValue, clampOverlap, rangesOverlap, truncateOverlap } from '../../selectors/geom/geom';
+import { clearDrag, startDrag, updateDrag } from '../../redux/uistate';
+import { deleteLoc, deleteThing, moveThing, toggleMaximiseSheetElem } from '../../redux/documentEditing';
 import '../CellComponent/CellComponent.css';
 
 // For moving the cursor out of a large cell
@@ -359,3 +361,20 @@ export default class ContentsBaseComponent extends Component {
     return ret;
   }
 }
+
+// Chrome doesn't like us updating the DOM in the drag start handler...
+const asyncStartDrag = (dispatch, refId, type) => {
+  setTimeout(() => dispatch(startDrag(refId, type)), 0);
+};
+
+export const mapDispatchToProps = dispatch => ({
+  clearDragProp: () => dispatch(clearDrag()),
+  startDragProp: (refId, type) => asyncStartDrag(dispatch, refId, type),
+  updateDragProp: (sheetId, dragY, dragX) => (
+    dispatch(updateDrag(sheetId, dragY, dragX))),
+  deleteCell: cellId => dispatch(deleteThing(cellId)),
+  deleteLocation: (context, y, x) => dispatch(deleteLoc(context, y, x)),
+  moveCell: (cellId, sheetId, y, x, width, height) => (
+    dispatch(moveThing(cellId, sheetId, y, x, width, height))),
+  toggleElementSize: refId => toggleMaximiseSheetElem(dispatch, refId),
+});
