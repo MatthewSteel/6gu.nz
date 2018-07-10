@@ -1,6 +1,9 @@
-Oauth:
- - Buy and deploy a prod server,
- - Activate facebook login for prod.
+Short term work:
+ - Scrolling with the touch pad,
+   - scroll bars too, if it's big enough for that to make sense.
+ - New table/object/array buttons (hover?)
+ - Cut, copy, paste,
+ - Browse into more things,
 
  - The haversine sheet/service/youtube vid,
 
@@ -35,8 +38,6 @@ The longer-term list:
      - input modes for rich text?
  - ?? closures and first-class functions.
  - ?? laziness
- - ?? a website, some vids.
- - ?? putting it online
  - Totally offline: docs, scripts, _everything_ in storage/indexeddb.
 
 
@@ -47,7 +48,6 @@ Out of scope for MVP:
  - Date, time, random functions.
  - Range selection :-(
  - Cut copy paste :-((,
- - Undo/redo,
  - Better formula input (clicking),
  - Type tagging,
  - Maybe relative table/array references in formulas (?). `$row - 1`?
@@ -75,43 +75,19 @@ Next up:
        - Righto. But later.
 
 
-Cutting down rendering time:
-- CSS grid lines could have "changing names"? Then we might not need to re-render children if we scroll... Dunno about performance, though...
-  - Still need to re-render for internal scrolling, I guess...
-  - Maybe CSS grid isn't for us...
-  - We could absolutely position a container, I guess? Move that thing?
-  - Something something "rows/cols"?
-
-  How to make moving the selection better? Could we connect everything and have just the cells re-render (if the selection changes?)
-    Wouldn't mind that...
-  We could make "blocks" of components?
-
-
 
 What do we think about multiple indexes to dig?
   arr[range(n), 0] could get the first column of a matrix.
 Dunno... Doesn't seem powerful enough? I don't think it can transpose...
 
 
-Philosophical differences:
-  - Should tables contain formulas?
-    - No: It makes overriding awkward -- those formulas can disappear.
-    - Yes: "Augmenting" tables with "column formulas" is awkward.
-  - Maybe a table can have a "column formula" that is internal to it, and
-    when you override it you _can't_ override that formula...
-      What does that even mean...
-        I like it, though...
-
-
 Possible projects after/during MVP work:
- - Undo/redo,
  - Cut, copy, paste,
  - Clicking on cells while editing formulas.
  - Drag select to make arrays/objects/tables? In a formula?
    - shift/ctrl + click could also make an array, or add to one :-)
    - Maybe "drag to select, makes an array. Hit 'tab' to turn it into an object/table". Seems reasonable?
    - "Make it an array" in the formula, or in the sheet, though?
- - Consistent cell-sizing and text-overflow?
  - Row/column headers (or scroll indicators of some other kind.)
     - Simple fake scroll bars, maybe?
     - Just shadows?
