@@ -33,6 +33,8 @@ export const initialState = {
   },
   dragState: BLANK_DRAG_STATE,
   uistate: DEFAULT_VIEW,
+  undoStack: [],
+  redoStack: [],
 };
 
 export const path = terminalName => ({

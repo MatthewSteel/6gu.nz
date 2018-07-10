@@ -7,7 +7,7 @@ import EmptyCellComponent from '../CellComponent/EmptyCellComponent';
 import CellSelectionComponent from '../CellComponent/CellSelectionComponent';
 import DragOverCellComponent from '../DragComponents/DragOverCellComponent';
 import DragOutlineComponent from '../DragComponents/DragOutlineComponent';
-import ContentsBaseComponent from './ContentsBaseComponent';
+import ContentsBaseComponent, { mapDispatchToProps } from './ContentsBaseComponent';
 import ArrayComponent from './ArrayComponent';
 import ObjectComponent from './ObjectComponent';
 import TableComponent from './TableComponent';
@@ -20,8 +20,6 @@ import getDragGeom, {
   getDragState,
 } from '../../selectors/geom/dragGeom';
 import { getType } from '../../selectors/formulas/tables';
-import { deleteLoc, deleteThing, moveThing, toggleMaximiseSheetElem } from '../../redux/documentEditing';
-import { clearDrag, startDrag, updateDrag } from '../../redux/uistate';
 import { TABLE } from '../../redux/stateConstants';
 
 
@@ -327,23 +325,6 @@ const mapStateToProps = (state, ownProps) => ({
   placedCellLocs: sheetPlacedCellLocs(state)[ownProps.contextId],
   viewOffsetX: 0,
   viewOffsetY: 0,
-});
-
-// Chrome doesn't like us updating the DOM in the drag start handler...
-const asyncStartDrag = (dispatch, refId, type) => {
-  setTimeout(() => dispatch(startDrag(refId, type)), 0);
-};
-
-const mapDispatchToProps = dispatch => ({
-  clearDragProp: () => dispatch(clearDrag()),
-  startDragProp: (refId, type) => asyncStartDrag(dispatch, refId, type),
-  updateDragProp: (sheetId, dragY, dragX) => (
-    dispatch(updateDrag(sheetId, dragY, dragX))),
-  deleteCell: cellId => dispatch(deleteThing(cellId)),
-  deleteLocation: (context, y, x) => dispatch(deleteLoc(context, y, x)),
-  moveCell: (cellId, sheetId, y, x, width, height) => (
-    dispatch(moveThing(cellId, sheetId, y, x, width, height))),
-  toggleElementSize: refId => toggleMaximiseSheetElem(dispatch, refId),
 });
 
 export default connect(mapStateToProps, mapDispatchToProps)(SheetContentsComponent);

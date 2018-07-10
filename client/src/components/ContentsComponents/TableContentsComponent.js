@@ -4,11 +4,10 @@ import { connect } from 'react-redux';
 import CellValueComponent from '../CellComponent/CellValueComponent';
 import EmptyCellComponent from '../CellComponent/EmptyCellComponent';
 import CellSelectionComponent from '../CellComponent/CellSelectionComponent';
-import ContentsBaseComponent from './ContentsBaseComponent';
+import ContentsBaseComponent, { mapDispatchToProps } from './ContentsBaseComponent';
 
 import { getRefsById, refsAtPosition } from '../../selectors/formulas/selectors';
 import { COMPUTED_TABLE_COLUMN } from '../../redux/stateConstants';
-import { deleteLoc, deleteThing } from '../../redux/documentEditing';
 
 
 class TableContentsComponent extends ContentsBaseComponent {
@@ -155,11 +154,6 @@ const mapStateToProps = (state, ownProps) => {
   const { cells, columns } = !context.formula && refsAtPosition(state)[ownProps.contextId];
   return { context, cells, columns };
 };
-
-const mapDispatchToProps = dispatch => ({
-  deleteCell: cellId => dispatch(deleteThing(cellId)),
-  deleteLocation: (context, y, x) => dispatch(deleteLoc(context, y, x)),
-});
 
 export default connect(
   mapStateToProps,

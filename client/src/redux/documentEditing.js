@@ -83,6 +83,9 @@ export const toggleMaximiseSheetElem = (dispatch, refId) => {
   return dispatch(moveThing(refId, ref.sheetId, y, x, height, width));
 };
 
+export const undo = () => ({ type: 'UNDO' });
+export const redo = () => ({ type: 'REDO' });
+
 const defaultArrayCell = (contextId, index, formula = DEFAULT_FORMULA) => ({
   id: uuidv4(),
   arrayId: contextId,
@@ -382,12 +385,13 @@ const rewireBadRefs = (newState, updatedRefs) => {
 export const documentReducer = (state, action) => {
   if (action.type === 'CREATE_SHEET') {
     // Re-wire? Dunno...
-    return scheduleSave((
+    return scheduleSave(
+      state,
       digMut(state, path('sheets'), sheets => [
         ...sheets,
         newSheet(state),
-      ])
-    ));
+      ]),
+    );
   }
 
   if (action.type === 'SET_CELL_FORMULA') {
@@ -439,9 +443,10 @@ export const documentReducer = (state, action) => {
       cell,
       ...children,
     ]);
-    return scheduleSave((
-      rewireBadRefs(stateWithCell, [cell, ...children])
-    ));
+    return scheduleSave(
+      state,
+      rewireBadRefs(stateWithCell, [cell, ...children]),
+    );
   }
 
   if (action.type === 'DELETE_THING') {
@@ -465,9 +470,10 @@ export const documentReducer = (state, action) => {
         sheets,
       );
     }
-    return scheduleSave((
-      translateDeletions(state, stateMinusDeletions, idsToDelete)
-    ));
+    return scheduleSave(
+      state,
+      translateDeletions(state, stateMinusDeletions, idsToDelete),
+    );
   }
 
   if (action.type === 'DELETE_LOCATION') {
@@ -495,9 +501,10 @@ export const documentReducer = (state, action) => {
           return { ...cell, index: cell.index - 1 };
         }),
     }));
-    return scheduleSave((
-      translateDeletions(state, stateMinusDeletions, idsToDelete)
-    ));
+    return scheduleSave(
+      state,
+      translateDeletions(state, stateMinusDeletions, idsToDelete),
+    );
   }
 
   if (action.type === 'MOVE_THING') {
@@ -508,15 +515,18 @@ export const documentReducer = (state, action) => {
       throw new Error('Can only move/resize things in sheets');
     }
 
-    return scheduleSave(digMut(state, path('cells'), cells => [
-      ...cells.filter(({ id }) => id !== refId),
-      { ...existingRef, ...newGeometry },
-    ]));
+    return scheduleSave(
+      state,
+      digMut(state, path('cells'), cells => [
+        ...cells.filter(({ id }) => id !== refId),
+        { ...existingRef, ...newGeometry },
+      ]),
+    );
   }
 
   if (action.type === 'RENAME_SHEET') {
     const { id, name } = action.payload;
-    const refsById = getRefsById(store.getState());
+    const refsById = getRefsById(state);
     const ref = refsById[id];
     if (!ref || ref.type !== SHEET || ref.name === name) return state;
 
@@ -526,14 +536,15 @@ export const documentReducer = (state, action) => {
       path('sheets'),
       sheets => sheets.map(sheet => (sheet.id === id ? updated : sheet)),
     );
-    return scheduleSave((
-      rewireBadRefs(newState, [updated])
-    ));
+    return scheduleSave(
+      state,
+      rewireBadRefs(newState, [updated]),
+    );
   }
 
   if (action.type === 'COPY_SHEET') {
     const { id } = action.payload;
-    const refsById = getRefsById(store.getState());
+    const refsById = getRefsById(state);
     const ref = refsById[id];
     if (!ref || ref.type !== SHEET) return state;
     const newThings = copySheetContents(id, state);
@@ -545,9 +556,46 @@ export const documentReducer = (state, action) => {
     const sheetId = newThings[0].id;
     const viewState = digMut(newState, ['uistate', 'sheetId'], sheetId);
 
-    return scheduleSave((
-      rewireBadRefs(viewState, newThings)
-    ));
+    return scheduleSave(
+      state,
+      rewireBadRefs(viewState, newThings),
+    );
+  }
+
+  if (action.type === 'UNDO') {
+    const { undoStack, redoStack } = state;
+    if (undoStack.length === 0) return state;
+    const newDoc = undoStack[undoStack.length - 1];
+    const newUndoStack = undoStack.slice(0, -1);
+    const newRedoStack = [...redoStack, state.openDocument];
+    return scheduleSave(
+      state,
+      {
+        ...state,
+        undoStack: newUndoStack,
+        redoStack: newRedoStack,
+        openDocument: newDoc,
+      },
+      false, // scheduleSave should not mess with the stacks.
+    );
+  }
+
+  if (action.type === 'REDO') {
+    const { undoStack, redoStack } = state;
+    if (redoStack.length === 0) return state;
+    const newDoc = redoStack[redoStack.length - 1];
+    const newUndoStack = [...undoStack, state.openDocument];
+    const newRedoStack = redoStack.slice(0, -1);
+    return scheduleSave(
+      state,
+      {
+        ...state,
+        undoStack: newUndoStack,
+        redoStack: newRedoStack,
+        openDocument: newDoc,
+      },
+      false, // scheduleSave should not mess with the stacks.
+    );
   }
 
   return state;

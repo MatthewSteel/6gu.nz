@@ -264,9 +264,16 @@ class FetchQueue {
 }
 const fetchQueue = new FetchQueue();
 
-export const scheduleSave = (state) => {
+export const scheduleSave = (prevState, state, pushQueue = true) => {
   const nextUpdateId = uuidv4();
-  const ret = digMut(state, path('updateId'), () => nextUpdateId);
+  let ret = digMut(state, path('updateId'), () => nextUpdateId);
+  if (pushQueue) {
+    ret = {
+      ...ret,
+      redoStack: [],
+      undoStack: [...prevState.undoStack, prevState.openDocument],
+    };
+  }
   fetchQueue.push(ret.openDocument);
 
   // TODO: "unsaved" status in new redux state
@@ -356,7 +363,16 @@ export const userStateReducer = (state, action) => {
 
   if (action.type === 'SAVE_COPY') {
     // Set open document and save it.
-    return scheduleSave(digMut(state, ['openDocument'], action.payload));
+    return scheduleSave(
+      state,
+      {
+        ...state,
+        openDocument: action.payload,
+        undoStack: [], // The stack documents all have ids :-/
+        redoStack: [],
+      },
+      false, // don't push an undo action.
+    );
   }
 
   if (action.type === 'RENAME_DOCUMENT') {
@@ -367,7 +383,7 @@ export const userStateReducer = (state, action) => {
     const newDoc = digMut(doc, ['metadata', 'name'], name);
     const newState = saveDocState(state, newDoc);
     if (state.openDocument.id === documentId) {
-      return scheduleSave(newState);
+      return scheduleSave(state, newState);
     }
     updateDocumentDetails(newDoc);
     return newState;
