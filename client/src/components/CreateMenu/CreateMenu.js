@@ -87,7 +87,6 @@ class CreateMenuItem extends Component {
           title={buttonText}
           onClick={this.submit}
           type="button"
-          style={{ width: '40px' }}
         >
           &#x2714;
         </button>
@@ -155,7 +154,7 @@ class CreateMenu extends Component {
   }
 
   ping(actionId) {
-    window.setTimeout(this.maybeCloseMenu.bind(this, actionId), 300);
+    window.setTimeout(this.maybeCloseMenu.bind(this, actionId), 400);
   }
 
   componentWillUnmount() {
@@ -187,8 +186,8 @@ class CreateMenu extends Component {
       <Fragment>
         <TetherComponent
           attachment="top left"
-          constraints={[{ to: 'window', attachment: 'element' }]}
-          targetAttachment="middle center"
+          constraints={[{ to: 'window', attachment: 'together' }]}
+          targetAttachment="bottom right"
         >
           <div
             style={style}
