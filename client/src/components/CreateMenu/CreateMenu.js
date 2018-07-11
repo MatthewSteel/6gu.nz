@@ -201,6 +201,9 @@ class CreateMenu extends Component {
               onMouseEnter={this.enterMenu}
               onMouseLeave={this.exitMenu}
             >
+              <div className="CreateMenuHeader">
+                New
+              </div>
               {items.map(({ name, buttonText, fn }) => (
                 <CreateMenuItem
                   initialName={name}

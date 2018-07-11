@@ -15,6 +15,21 @@
   flex-grow: 1;
 }
 
+.CreateMenuHeader {
+  font-size: 0.8em;
+  width: 100%;
+  border: none;
+  color: #F8F8F8;
+  margin: 1px 1px 0px 0px;
+  text-align: left;
+  background-color: #444;
+  z-index: 11;
+  padding: 2px;
+}
+.CreateMenuHeader:hover {
+  background-color: #4A4A4A;
+}
+
 .DropDownRow {
   width: 100%;
   border: none;
