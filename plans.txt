@@ -1,7 +1,6 @@
 Short term work:
  - Scrolling with the touch pad,
    - scroll bars too, if it's big enough for that to make sense.
- - New table/object/array buttons (hover?)
  - Cut, copy, paste,
  - Browse into more things,
 
