@@ -16,6 +16,7 @@
   overflow: hidden;
   white-space: nowrap;
   z-index: 1;
+  padding-top: 3px;
   margin-right: -1px;
   margin-bottom: -1px;
 }
@@ -30,6 +31,7 @@
   overflow: hidden;
   white-space: nowrap;
   z-index: 1;
+  padding-top: 3px;
   margin-right: -1px;
   margin-bottom: -1px;
   position: relative;
