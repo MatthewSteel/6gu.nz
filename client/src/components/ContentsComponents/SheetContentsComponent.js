@@ -11,6 +11,7 @@ import ContentsBaseComponent, { mapDispatchToProps } from './ContentsBaseCompone
 import ArrayComponent from './ArrayComponent';
 import ObjectComponent from './ObjectComponent';
 import TableComponent from './TableComponent';
+import CreateMenu from '../CreateMenu/CreateMenu';
 
 import { getChildrenOfRef, getRefsById, sheetPlacedCellLocs } from '../../selectors/formulas/selectors';
 import { overlaps, truncateOverlap } from '../../selectors/geom/geom';
@@ -230,6 +231,7 @@ class SheetContentsComponent extends ContentsBaseComponent {
           cy + scrollY === selection.y &&
           cx + scrollX === selection.x;
         if (cellSelected) {
+          emptyCells.push((<CreateMenu key="menu" selection={selection} />));
           emptyCells.push((
             <CellSelectionComponent
               key={screenPlace}

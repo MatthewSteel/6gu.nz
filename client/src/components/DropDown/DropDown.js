@@ -5,6 +5,10 @@ import KeyboardListener from '../util/KeyboardListener';
 import './DropDown.css';
 import copyIcon from './copyIcon.svg';
 
+const selectTarget = (ev) => {
+  ev.target.select();
+};
+
 class DropDownRow extends Component {
   constructor(props) {
     super(props);
@@ -94,6 +98,7 @@ class DropDownRow extends Component {
                 autoFocus
                 onBlur={this.reset}
                 ref={this.setInputRef}
+                onFocus={selectTarget}
               />
             </form>
           ) : (
