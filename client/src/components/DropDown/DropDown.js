@@ -79,8 +79,8 @@ class DropDownRow extends Component {
     const renaming = state === 'renaming';
     const highlight = selected || renaming;
 
-    const deleteAction = (state === 'deleting') ?
-      this.delete : this.startDelete;
+    const deleteAction = (state === 'deleting')
+      ? this.delete : this.startDelete;
     const rowClassName = classNames(
       'DropDownRow',
       { DropDownHovered: highlight },
@@ -92,7 +92,7 @@ class DropDownRow extends Component {
       >
         <div>
           {state === 'renaming' ? (
-            <form onSubmit={this.rename} >
+            <form onSubmit={this.rename}>
               <input
                 defaultValue={name}
                 autoFocus
@@ -111,6 +111,7 @@ class DropDownRow extends Component {
         {this.props.renameItem && (
           <button
             className="DropDownButton"
+            type="button"
             title="Rename"
             onClick={this.startRename}
             style={{ fontFamily: 'monospace' }}
@@ -121,6 +122,7 @@ class DropDownRow extends Component {
         {this.props.copyItem && (
           <button
             className="DropDownButton"
+            type="button"
             title="Copy"
             onClick={this.copy}
           >
@@ -133,6 +135,7 @@ class DropDownRow extends Component {
               'DropDownButton',
               { DeleteDropDownButton: state === 'deleting' },
             )}
+            type="button"
             title="Delete"
             onClick={deleteAction}
           >
@@ -168,10 +171,13 @@ export default class DropDownMenu extends Component {
   openMenu() {
     this.setState({ open: true });
   }
+
   closeMenu() {
     this.setState({ open: false });
   }
+
   static itemIsUnsaved() { return false; }
+
   static itemName(item) { return item.name; }
 
   render() {
@@ -185,7 +191,8 @@ export default class DropDownMenu extends Component {
           className="TitleElem TitleLink"
           onClick={open ? this.closeMenu : this.openMenu}
         >
-          {this.constructor.itemName(selectedItem)}...
+          {this.constructor.itemName(selectedItem)}
+          ...
         </div>
         {open && (
           <div className="DropDownMenu">
@@ -219,7 +226,7 @@ export default class DropDownMenu extends Component {
     // the button and it (having had a chance to re-render) opens itself.
     // So let's consider the open/close button "inside" the menu :-).
     return (
-      <FireWhenClickedOutside callback={this.closeMenu} >
+      <FireWhenClickedOutside callback={this.closeMenu}>
         <KeyboardListener callback={this.keys} />
         {ret}
       </FireWhenClickedOutside>

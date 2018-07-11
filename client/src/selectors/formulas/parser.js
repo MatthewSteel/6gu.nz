@@ -124,12 +124,12 @@ export const parseTermFromName = (tokens, i) => {
   const { term, newIndex } = parseLookups(tokens, i + 1, tokens[i]);
   const nextToken = tokens[newIndex];
   if (
-    nextToken === undefined ||
-    nextToken.op ||
-    nextToken.close ||
-    nextToken.comma ||
-    nextToken.closeBracket ||
-    nextToken.closeBrace
+    nextToken === undefined
+    || nextToken.op
+    || nextToken.close
+    || nextToken.comma
+    || nextToken.closeBracket
+    || nextToken.closeBrace
   ) {
     return {
       term,
@@ -186,11 +186,11 @@ const parseTerm = (tokens, i) => {
 const parseExpression = (tokens, i) => {
   const { term, newIndex } = parseTerm(tokens, i);
   if (
-    newIndex === tokens.length ||
-    tokens[newIndex].close ||
-    tokens[newIndex].comma ||
-    tokens[newIndex].closeBracket ||
-    tokens[newIndex].closeBrace
+    newIndex === tokens.length
+    || tokens[newIndex].close
+    || tokens[newIndex].comma
+    || tokens[newIndex].closeBracket
+    || tokens[newIndex].closeBrace
   ) {
     return { term, newIndex };
   }
@@ -317,8 +317,8 @@ export const translateLookups = (newRefs) => {
       return { ref: newRefsByName[existingTerm.lookup] };
     }
     if (
-      'lookupIndex' in existingTerm &&
-      newRefsByName[existingTerm.lookupIndex.value]
+      'lookupIndex' in existingTerm
+      && newRefsByName[existingTerm.lookupIndex.value]
     ) {
       return { ref: newRefsByName[existingTerm.lookupIndex.value] };
     }
@@ -421,8 +421,8 @@ const fixPrecedence = (term) => {
   const ourPrecedence = binaryPrecedences[term.binary];
   const otherPrecedence = binaryPrecedences[other.binary];
   if (
-    ourPrecedence < otherPrecedence ||
-    (ourPrecedence === otherPrecedence && assocRight.has(term.binary))
+    ourPrecedence < otherPrecedence
+    || (ourPrecedence === otherPrecedence && assocRight.has(term.binary))
   ) return term;
   return { ...other, left: fixPrecedence({ ...term, right: other.left }) };
 };

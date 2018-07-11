@@ -288,9 +288,9 @@ const updateDocState = (state, doc, insert) => {
 
   // Only insert into the list when we have a confirmed save, otherwise
   // just do a replacement.
-  const newDocs = insert ?
-    [docWithoutData, ...existingDocs.filter(({ id }) => id !== doc.id)] :
-    existingDocs.map(d => (d.id === doc.id ? docWithoutData : d));
+  const newDocs = insert
+    ? [docWithoutData, ...existingDocs.filter(({ id }) => id !== doc.id)]
+    : existingDocs.map(d => (d.id === doc.id ? docWithoutData : d));
 
   const mutatedDocs = digMut(state, ['userState', 'documents'], newDocs);
   if (state.openDocument.id !== doc.id) return mutatedDocs;
@@ -334,8 +334,8 @@ export const fetchAndLoadDocument = async (dispatch, documentId) => {
 export const copyDocument = async (dispatch, docs, documentId) => {
   // Get the data we need,
   const { openDocument } = store.getState();
-  const newDoc = (openDocument.id === documentId) ?
-    { ...openDocument } : (await fetchDocument(documentId));
+  const newDoc = (openDocument.id === documentId)
+    ? { ...openDocument } : (await fetchDocument(documentId));
 
   // Update properties on the document,
   const existingNames = docs.map(doc => doc.metadata.name);
@@ -394,8 +394,8 @@ export const userStateReducer = (state, action) => {
     const docId = action.payload;
     scheduleDelete(docId);
 
-    const newOpenDoc = (state.openDocument.id === docId) ?
-      digMut(state, ['openDocument'], blankDocument()) : state;
+    const newOpenDoc = (state.openDocument.id === docId)
+      ? digMut(state, ['openDocument'], blankDocument()) : state;
 
     const newDocs = state.userState.documents
       .filter(({ id }) => id !== docId);

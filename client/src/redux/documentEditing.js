@@ -76,9 +76,9 @@ export const toggleMaximiseSheetElem = (dispatch, refId) => {
   const ref = refsById[refId];
   if (!ref || !ref.sheetId) return undefined;
   const { y, x } = ref;
-  const { width, height } = (ref.width * ref.height) > 1 ?
-    { width: 1, height: 1 } :
-    idealWidthAndHeight(store.getState(), refId, ref.sheetId, y, x);
+  const { width, height } = (ref.width * ref.height) > 1
+    ? { width: 1, height: 1 }
+    : idealWidthAndHeight(store.getState(), refId, ref.sheetId, y, x);
 
   return dispatch(moveThing(refId, ref.sheetId, y, x, height, width));
 };
@@ -255,9 +255,9 @@ const defaultTableElemForLocation = (
     return { baseCell, children };
   }
   if (locationSelected.type === TABLE_COLUMN) {
-    const baseCell = formula ?
-      defaultComputedTableColumn(context.id, locationSelected.index) :
-      defaultTableColumn(context.id, locationSelected.index);
+    const baseCell = formula
+      ? defaultComputedTableColumn(context.id, locationSelected.index)
+      : defaultTableColumn(context.id, locationSelected.index);
 
     return { baseCell, children: [] };
   }
@@ -400,13 +400,13 @@ export const documentReducer = (state, action) => {
 
     const contextRef = getRefsById(state)[selection.context];
 
-    const { baseCell, children } = selection.cellId ?
-      {
+    const { baseCell, children } = selection.cellId
+      ? {
         baseCell: state.openDocument.data.cells
           .find(({ id }) => id === selection.cellId),
         children: [],
-      } :
-      defaultCellForLocation(
+      }
+      : defaultCellForLocation(
         contextRef,
         selection.y,
         selection.x,
@@ -484,17 +484,17 @@ export const documentReducer = (state, action) => {
 
     const refToDelete = getChildrenOfRef(state, contextId)
       .find(({ type, index }) => index === indexToDelete && type === typeToDelete);
-    const idsToDelete = refToDelete ?
-      transitiveChildren(state, refToDelete.id) :
-      new Set();
+    const idsToDelete = refToDelete
+      ? transitiveChildren(state, refToDelete.id)
+      : new Set();
 
     const stateMinusDeletions = digMut(state, path('data'), data => ({
       ...data,
       sheets: data.sheets.filter(({ id }) => !idsToDelete.has(id)),
       cells: data.cells.filter(({ id }) => !idsToDelete.has(id))
         .map((cell) => {
-          const typesToDelete = (TABLE_COLUMN_TYPES.includes(refToDelete.type)) ?
-            TABLE_COLUMN_TYPES : [refToDelete.type];
+          const typesToDelete = (TABLE_COLUMN_TYPES.includes(refToDelete.type))
+            ? TABLE_COLUMN_TYPES : [refToDelete.type];
           if (!typesToDelete.includes(cell.type)) return cell;
           if (refParentId(cell) !== contextId) return cell;
           if (cell.index < indexToDelete) return cell;

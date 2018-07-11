@@ -39,13 +39,11 @@ class SheetContentsComponent extends ContentsBaseComponent {
     return cells.find(cell => overlaps(selY, 1, selX, 1, cell));
   }
 
-  // eslint-disable-next-line class-methods-use-this
   cellPosition(cell) {
     const { x, y, width, height } = cell;
     return { x, y, width, height };
   }
 
-  // eslint-disable-next-line class-methods-use-this
   bounds() {
     return { xLB: 0, yLB: 0, xUB: Infinity, yUB: Infinity };
   }

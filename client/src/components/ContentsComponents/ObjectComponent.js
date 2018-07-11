@@ -30,7 +30,6 @@ class ObjectComponent extends ContentsBaseComponent {
     return { ...object, childSelected: true }; // eww, see below
   }
 
-  // eslint-disable-next-line class-methods-use-this
   cellPosition(obj) {
     const { viewWidth } = this.props;
     if (!obj.childSelected) return { y: 0, x: 0, width: 1, height: 1 };
@@ -45,7 +44,6 @@ class ObjectComponent extends ContentsBaseComponent {
     return { xLB: 0, yLB: 0, xUB: viewWidth, yUB: 1 };
   }
 
-  // eslint-disable-next-line class-methods-use-this
   localScale() {
     return { y: 2, x: 1 };
   }

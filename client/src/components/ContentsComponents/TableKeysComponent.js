@@ -27,14 +27,12 @@ class TableKeysComponent extends ContentsBaseComponent {
     updateScroll({ linkedScrollX: scrollX });
   }
 
-  // eslint-disable-next-line class-methods-use-this
   cellPosition(cell) {
     const { columns } = this.props;
     if (columns) return { y: 0, x: cell.index, width: 1, height: 1 };
     return { y: 0, x: cell.selX, width: 1, height: 1 };
   }
 
-  // eslint-disable-next-line class-methods-use-this
   locationSelected() {
     const { context } = this.props;
     if (context.formula) return undefined;
@@ -56,7 +54,6 @@ class TableKeysComponent extends ContentsBaseComponent {
     };
   }
 
-  // eslint-disable-next-line class-methods-use-this
   localScale() {
     return { y: 2, x: 1 };
   }

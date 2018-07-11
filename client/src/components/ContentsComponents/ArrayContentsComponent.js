@@ -22,14 +22,12 @@ class ArrayContentsComponent extends ContentsBaseComponent {
     return maybeCell && { ...maybeCell, selX };
   }
 
-  // eslint-disable-next-line class-methods-use-this
   cellPosition(cell) {
     const { context } = this.props;
     if (context.formula) return { y: cell.selY, x: cell.selX, width: 1, height: 1 };
     return { y: cell.index, x: cell.selX, width: 1, height: 1 };
   }
 
-  // eslint-disable-next-line class-methods-use-this
   locationSelected() {
     const { context } = this.props;
     if (context.formula) return undefined;
@@ -49,7 +47,6 @@ class ArrayContentsComponent extends ContentsBaseComponent {
     };
   }
 
-  // eslint-disable-next-line class-methods-use-this
   localScale() {
     return { y: 2, x: 1 };
   }

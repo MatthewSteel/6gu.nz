@@ -23,8 +23,8 @@ class Formula extends Component {
 
   componentWillReceiveProps(nextProps) {
     if (
-      nextProps.initialValue !== this.props.initialValue ||
-      !equal(nextProps.selection, this.props.selection)
+      nextProps.initialValue !== this.props.initialValue
+      || !equal(nextProps.selection, this.props.selection)
     ) {
       this.setState({ value: nextProps.initialValue });
     }
@@ -113,9 +113,9 @@ class Formula extends Component {
 const mapStateToProps = (state, ownProps) => {
   const selectedCellId = ownProps.selection && ownProps.selection.cellId;
   return {
-    initialValue: selectedCellId ?
-      stringFormula(state, selectedCellId) :
-      '',
+    initialValue: selectedCellId
+      ? stringFormula(state, selectedCellId)
+      : '',
   };
 };
 

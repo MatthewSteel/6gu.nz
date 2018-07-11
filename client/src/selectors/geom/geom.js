@@ -1,5 +1,5 @@
-export const rangesOverlap = (x1, length1, x2, length2) =>
-  !(x1 + length1 <= x2 || x2 + length2 <= x1);
+export const rangesOverlap = (x1, length1, x2, length2) => (
+  !(x1 + length1 <= x2 || x2 + length2 <= x1));
 
 export const overlaps = (y1, height1, x1, width1, cell) => {
   const {
@@ -8,8 +8,8 @@ export const overlaps = (y1, height1, x1, width1, cell) => {
     width: width2,
     height: height2,
   } = cell;
-  return rangesOverlap(y1, height1, y2, height2) &&
-    rangesOverlap(x1, width1, x2, width2);
+  return rangesOverlap(y1, height1, y2, height2)
+    && rangesOverlap(x1, width1, x2, width2);
 };
 
 export const clampValue = (x, lower, upper) => (

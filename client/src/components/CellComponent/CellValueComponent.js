@@ -29,7 +29,9 @@ const defaultFormatter = (value, pushStack) => {
       return (
         <div style={{ position: 'relative', zIndex: 0 }}>
           {contentsStr}
-          <button onClick={pushStack} className="StackButton">+</button>
+          <button onClick={pushStack} className="StackButton" type="button">
+            +
+          </button>
         </div>
       );
     }

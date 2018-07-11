@@ -5,8 +5,8 @@ import { getCellValuesById } from './codegen';
 import { ARRAY, LOGIN_STATES } from '../../redux/stateConstants';
 import { blankDocument } from '../../redux/backend';
 
-const getCell = cellName =>
-  getCells(store.getState()).find(({ name }) => name === cellName);
+const getCell = cellName => (
+  getCells(store.getState()).find(({ name }) => name === cellName));
 const getCellValue = cellName => getCellValuesById(store.getState())[getCell(cellName).id];
 
 const makeFormula = (context, formula) => (

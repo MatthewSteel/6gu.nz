@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, { Component, PureComponent } from 'react';
 import classNames from 'classnames';
 
 export class PathElem extends Component {
@@ -14,7 +14,13 @@ export class PathElem extends Component {
 
   render() {
     const { last, pathElem } = this.props;
-    if (last) return <span className="TitleElem">{pathElem}</span>;
+    if (last) {
+      return (
+        <span className="TitleElem">
+          {pathElem}
+        </span>
+      );
+    }
     return (
       <span
         className={classNames('TitleElem', 'TitleLink')}
@@ -26,7 +32,7 @@ export class PathElem extends Component {
   }
 }
 
-export default class TitleBar extends Component {
+export default class TitleBar extends PureComponent {
   render() {
     const { children, pathElems, setStackDepth } = this.props;
 

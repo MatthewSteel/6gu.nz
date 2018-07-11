@@ -30,7 +30,6 @@ class ArrayComponent extends ContentsBaseComponent {
     return { ...array, childSelected: true }; // eww
   }
 
-  // eslint-disable-next-line class-methods-use-this
   cellPosition(arr) {
     const { viewHeight, viewWidth } = this.props;
     const width = Math.min(viewWidth, 2);
@@ -47,7 +46,6 @@ class ArrayComponent extends ContentsBaseComponent {
     return { xLB: 0, yLB: 0, xUB: width, yUB: 2 * viewHeight };
   }
 
-  // eslint-disable-next-line class-methods-use-this
   localScale() {
     return { y: 2, x: 1 };
   }

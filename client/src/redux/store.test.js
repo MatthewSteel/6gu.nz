@@ -298,4 +298,3 @@ describe('actions/the store', () => {
     });
   });
 });
-

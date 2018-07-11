@@ -45,7 +45,6 @@ class TableComponent extends ContentsBaseComponent {
     return { ...table, valuesSelected: true };
   }
 
-  // eslint-disable-next-line class-methods-use-this
   cellPosition(table) {
     const { viewHeight, viewWidth } = this.props;
     if (table.valuesSelected) {
@@ -65,7 +64,6 @@ class TableComponent extends ContentsBaseComponent {
     return { xLB: 0, yLB: 0, xUB: viewWidth, yUB: 2 * viewHeight };
   }
 
-  // eslint-disable-next-line class-methods-use-this
   localScale() {
     return { y: 2, x: 1 };
   }
@@ -109,10 +107,10 @@ class TableComponent extends ContentsBaseComponent {
     const keysSelected = viewSelected && selectedCell.keysSelected;
     const indicesSelected = viewSelected && selectedCell.indicesSelected;
     const valuesSelected = viewSelected && selectedCell.valuesSelected;
-    const wholeTableSelected = viewSelected &&
-      !keysSelected &&
-      !indicesSelected &&
-      !valuesSelected;
+    const wholeTableSelected = viewSelected
+      && !keysSelected
+      && !indicesSelected
+      && !valuesSelected;
     return (
       <Fragment>
         {wholeTableSelected && (

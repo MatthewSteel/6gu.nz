@@ -9,15 +9,15 @@ const shortid = require('shortid');
 const session = require('express-session');
 const PgSession = require('connect-pg-simple')(session);
 const passport = require('passport');
+const migrate = require('migrate');
 const GoogleStrategy = require('passport-google-oauth20').Strategy;
 const FacebookStrategy = require('passport-facebook').Strategy;
 const FakeOauth2Strategy = require('./fakeOauthServer/fakeStrategy');
-const migrate = require('migrate');
-const migrationStore = require('./migrationStore');
+const MigrationStore = require('./migrationStore');
 
 const { pool, query } = require('../src/db');
 
-const getOrPutUser = (provider, id, next) =>
+const getOrPutUser = (provider, id, next) => (
   // An upsert where the update is a no-op so we can fetch the thing if it
   // exists already. Used for logins and registrations.
   // The first user is automatically an admin, and should (in the future) be
@@ -33,12 +33,12 @@ const getOrPutUser = (provider, id, next) =>
   RETURNING *;
   `, [provider, id])
     .then(res => next(null, res.rows[0]))
-    .catch(next);
+    .catch(next));
 
-const getUser = (id, next) =>
+const getUser = (id, next) => (
   query('SELECT * FROM users WHERE id=$1;', [id])
     .then(res => next(null, res.rows[0]))
-    .catch(next);
+    .catch(next));
 
 
 // Session data
@@ -49,15 +49,15 @@ passport.deserializeUser(getUser);
 
 
 // Oauth2
-const providers = process.env.NODE_ENV === 'production' ?
-  ['google', 'facebook'] :
-  ['fake'];
+const providers = process.env.NODE_ENV === 'production'
+  ? ['google', 'facebook']
+  : ['fake'];
 
 
-const hostWithProtocol = process.env.NODE_ENV === 'production' ?
-  `https://${process.env.HOST}` : `http://${process.env.HOST}`;
-const serverHost = process.env.NODE_ENV === 'production' ?
-  hostWithProtocol : `${hostWithProtocol}:3001`;
+const hostWithProtocol = process.env.NODE_ENV === 'production'
+  ? `https://${process.env.HOST}` : `http://${process.env.HOST}`;
+const serverHost = process.env.NODE_ENV === 'production'
+  ? hostWithProtocol : `${hostWithProtocol}:3001`;
 
 const fakeOauthFromServer = 'http://fake_oauth_server:2999';
 const fakeOauthFromClient = `${hostWithProtocol}:2999`;
@@ -84,8 +84,8 @@ providers.forEach((provider) => {
       callbackURL: `${serverHost}/api/auth/${provider}/callback`,
       ...extraArgs[provider],
     },
-    (accessToken, refreshToken, profile, cb) =>
-      getOrPutUser(provider, profile.id, cb),
+    (accessToken, refreshToken, profile, cb) => (
+      getOrPutUser(provider, profile.id, cb)),
   ));
 });
 
@@ -115,7 +115,7 @@ const authParams = {
   google: { scope: ['openid'] },
   facebook: {},
   fake: {},
-}
+};
 providers.forEach((provider) => {
   // They send users here after login on their site
   app.get(
@@ -137,8 +137,8 @@ providers.forEach((provider) => {
 });
 
 
-const clientHost = process.env.NODE_ENV === 'production' ?
-  hostWithProtocol : `${hostWithProtocol}:3000`;
+const clientHost = process.env.NODE_ENV === 'production'
+  ? hostWithProtocol : `${hostWithProtocol}:3000`;
 
 ['loginSuccess', 'loginFailure'].forEach((route) => {
   app.get(
@@ -185,8 +185,7 @@ app.get('/api/userInfo/:docId?', async (req, res) => {
       )
       OR d."prettyId"=$2
      ORDER BY d."prettyId"=$2 DESC
-     LIMIT 1;`
-    ,
+     LIMIT 1;`,
     [userId, req.params.docId],
   );
   const maybeRecentDocument = recentDocumentResults.rows[0];
@@ -291,14 +290,14 @@ app.put('/api/documents/:documentId', async (req, res) => {
 
 
 app.get('/api/migrations', async (req, res) => {
-  const anyUsers = (await query(`SELECT 1 FROM USERS LIMIT 1;`)).rowCount;
+  const anyUsers = (await query('SELECT 1 FROM USERS LIMIT 1;')).rowCount;
   const permitted = (req.user && req.user.isAdmin) || !anyUsers;
   if (!permitted) {
     res.status(403).end();
     return;
   }
   const loadArgs = {
-    stateStore: new migrationStore(),
+    stateStore: new MigrationStore(),
     migrationsDirectory: 'migrations',
   };
   migrate.load(loadArgs, (err, data) => {
@@ -311,7 +310,7 @@ app.get('/api/migrations', async (req, res) => {
 
     const rows = data.migrations.map(({ title, timestamp }, i) => {
       const action = (timestamp === null) ? 'up' : 'down';
-      const link = (i + 1 === numRun) ?  '' : (`
+      const link = (i + 1 === numRun) ? '' : (`
         <form action="/api/migrate" method="post">
           <input type="text" name="title" />
           <button type="submit">${action}</button>
@@ -320,7 +319,7 @@ app.get('/api/migrations', async (req, res) => {
       return (`
         <tr>
           <td>${title}</td>
-          <td>${timestamp ? timestamp : ''}</td>
+          <td>${timestamp || ''}</td>
           <td>${link}</td>
         </tr>
       `);
@@ -343,14 +342,14 @@ app.get('/api/migrations', async (req, res) => {
 });
 
 app.post('/api/migrate', async (req, res) => {
-  const anyUsers = (await query(`SELECT 1 FROM USERS LIMIT 1;`)).rowCount;
+  const anyUsers = (await query('SELECT 1 FROM USERS LIMIT 1;')).rowCount;
   const permitted = (req.user && req.user.isAdmin) || !anyUsers;
   if (!permitted) {
     res.status(403).end();
     return;
   }
   const loadArgs = {
-    stateStore: new migrationStore(),
+    stateStore: new MigrationStore(),
     migrationsDirectory: 'migrations',
   };
   migrate.load(loadArgs, (err, data) => {
@@ -359,21 +358,21 @@ app.post('/api/migrate', async (req, res) => {
       return;
     }
     const { migrations } = data;
-    const migration = migrations.find(({ title, timestamp }) => (
+    const migration = migrations.find(({ title }) => (
       title === req.body.title));
     if (!migration) {
       res.status(404).end();
       return;
     }
-    const cb = (err) => {
-      if (err) {
+    const cb = (err2) => {
+      if (err2) {
         res.status(500).end();
       } else {
         res.send('<html><head /><body><a href="/api/migrations">back</a></body></html>');
       }
     };
 
-    req.connection.setTimeout( 1000 * 60 * 10 ); // ten minutes
+    req.connection.setTimeout(1000 * 60 * 10); // ten minutes
     if (migration.timestamp) {
       data.down(migration.title, cb);
     } else {
