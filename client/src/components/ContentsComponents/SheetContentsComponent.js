@@ -227,9 +227,9 @@ class SheetContentsComponent extends ContentsBaseComponent {
         if (placedCellLocs[worldPlace]) continue;
         const screenPlace = `${cy},${cx}`;
 
-        const cellSelected = !dragInProgress && viewSelected &&
-          cy + scrollY === selection.y &&
-          cx + scrollX === selection.x;
+        const cellSelected = !dragInProgress && viewSelected
+          && cy + scrollY === selection.y
+          && cx + scrollX === selection.x;
         if (cellSelected) {
           emptyCells.push((<CreateMenu key="menu" selection={selection} />));
           emptyCells.push((
@@ -301,16 +301,16 @@ class SheetContentsComponent extends ContentsBaseComponent {
         {emptyCells}
         {filledCells}
         {dragOverCells}
-        {viewSelected && !formulaHasFocus &&
+        {viewSelected && !formulaHasFocus && (
           <KeyboardListener
             callback={this.cellKeys}
           />
-        }
-        {viewSelected && formulaHasFocus &&
+        )}
+        {viewSelected && formulaHasFocus && (
           <KeyboardListener
             callback={this.formulaKeys}
           />
-        }
+        )}
       </Fragment>
     );
   }
