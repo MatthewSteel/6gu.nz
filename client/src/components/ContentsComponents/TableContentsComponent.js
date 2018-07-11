@@ -37,7 +37,6 @@ class TableContentsComponent extends ContentsBaseComponent {
     return cell && { ...cell, selY, selX };
   }
 
-  // eslint-disable-next-line class-methods-use-this
   cellPosition(cell) {
     return { y: cell.selY, x: cell.selX, width: 1, height: 1 };
   }
@@ -63,7 +62,6 @@ class TableContentsComponent extends ContentsBaseComponent {
     };
   }
 
-  // eslint-disable-next-line class-methods-use-this
   localScale() {
     return { y: 2, x: 1 };
   }

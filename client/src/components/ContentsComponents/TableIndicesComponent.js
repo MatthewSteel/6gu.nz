@@ -27,14 +27,12 @@ class TableIndicesComponent extends ContentsBaseComponent {
     updateScroll({ linkedScrollY: scrollY });
   }
 
-  // eslint-disable-next-line class-methods-use-this
   cellPosition(cell) {
     const { rows } = this.props;
     if (rows) return { x: 0, y: cell.index, width: 1, height: 1 };
     return { x: 0, y: cell.selY, width: 1, height: 1 };
   }
 
-  // eslint-disable-next-line class-methods-use-this
   locationSelected() {
     const { context } = this.props;
     if (context.formula) return undefined;
@@ -53,7 +51,6 @@ class TableIndicesComponent extends ContentsBaseComponent {
     };
   }
 
-  // eslint-disable-next-line class-methods-use-this
   localScale() {
     return { y: 2, x: 1 };
   }

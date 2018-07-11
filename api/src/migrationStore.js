@@ -1,3 +1,5 @@
+'use strict';
+
 const { query } = require('../src/db');
 
 module.exports = class DbStore {

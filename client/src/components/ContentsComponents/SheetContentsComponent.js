@@ -11,6 +11,7 @@ import ContentsBaseComponent, { mapDispatchToProps } from './ContentsBaseCompone
 import ArrayComponent from './ArrayComponent';
 import ObjectComponent from './ObjectComponent';
 import TableComponent from './TableComponent';
+import CreateMenu from '../CreateMenu/CreateMenu';
 
 import { getChildrenOfRef, getRefsById, sheetPlacedCellLocs } from '../../selectors/formulas/selectors';
 import { overlaps, truncateOverlap } from '../../selectors/geom/geom';
@@ -38,13 +39,11 @@ class SheetContentsComponent extends ContentsBaseComponent {
     return cells.find(cell => overlaps(selY, 1, selX, 1, cell));
   }
 
-  // eslint-disable-next-line class-methods-use-this
   cellPosition(cell) {
     const { x, y, width, height } = cell;
     return { x, y, width, height };
   }
 
-  // eslint-disable-next-line class-methods-use-this
   bounds() {
     return { xLB: 0, yLB: 0, xUB: Infinity, yUB: Infinity };
   }
@@ -226,10 +225,11 @@ class SheetContentsComponent extends ContentsBaseComponent {
         if (placedCellLocs[worldPlace]) continue;
         const screenPlace = `${cy},${cx}`;
 
-        const cellSelected = !dragInProgress && viewSelected &&
-          cy + scrollY === selection.y &&
-          cx + scrollX === selection.x;
+        const cellSelected = !dragInProgress && viewSelected
+          && cy + scrollY === selection.y
+          && cx + scrollX === selection.x;
         if (cellSelected) {
+          emptyCells.push((<CreateMenu key="menu" selection={selection} />));
           emptyCells.push((
             <CellSelectionComponent
               key={screenPlace}
@@ -299,16 +299,16 @@ class SheetContentsComponent extends ContentsBaseComponent {
         {emptyCells}
         {filledCells}
         {dragOverCells}
-        {viewSelected && !formulaHasFocus &&
+        {viewSelected && !formulaHasFocus && (
           <KeyboardListener
             callback={this.cellKeys}
           />
-        }
-        {viewSelected && formulaHasFocus &&
+        )}
+        {viewSelected && formulaHasFocus && (
           <KeyboardListener
             callback={this.formulaKeys}
           />
-        }
+        )}
       </Fragment>
     );
   }

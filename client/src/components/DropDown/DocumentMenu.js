@@ -54,6 +54,7 @@ class DocumentMenu extends DropDown {
   static itemName(doc) {
     return doc.metadata.name;
   }
+
   static itemIsUnsaved(doc) {
     return !doc.prettyId;
   }

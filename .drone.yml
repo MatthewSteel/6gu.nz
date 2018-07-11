@@ -1,9 +1,19 @@
 pipeline:
   test_client:
+    group: test
     image: node:10-alpine
     commands:
       - yarn --cwd client install
       - CI=true yarn --cwd client run react-scripts test --env=jsdom
+
+  lint_js:
+    group: test
+    image: node:10-alpine
+    commands:
+      - yarn install
+      # We should probably install recursively so we can check dependencies
+      # properly...
+      - yarn run ci-lint
 
   build_prod_client:
     image: plugins/docker

@@ -15,9 +15,9 @@ const lexName = (input, i) => {
     chars.push(input[j]);
   }
   const str = chars.join('');
-  const token = literalValues.has(str) ?
-    { value: JSON.parse(str) } :
-    { name: str };
+  const token = literalValues.has(str)
+    ? { value: JSON.parse(str) }
+    : { name: str };
   return { matchEnd: j, token };
 };
 

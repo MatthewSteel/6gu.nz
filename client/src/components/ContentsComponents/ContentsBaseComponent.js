@@ -121,12 +121,10 @@ export default class ContentsBaseComponent extends Component {
     };
   }
 
-  // eslint-disable-next-line class-methods-use-this
   localScale() {
     return { y: 1, x: 1 };
   }
 
-  // eslint-disable-next-line class-methods-use-this
   locationSelected() {
     // { typeToDelete, indexToDelete } or undefined.
     return undefined;
@@ -140,8 +138,8 @@ export default class ContentsBaseComponent extends Component {
     // We might just be a cell that holds an array or something. If so,
     // provide the cell's (sheet) context to the formula box so we can
     // rename the cell.
-    const realContext = (selectedCell && selectedCell.type === CELL) ?
-      selectedCell.sheetId : contextId;
+    const realContext = (selectedCell && selectedCell.type === CELL)
+      ? selectedCell.sheetId : contextId;
     return {
       context: realContext,
       cellId: selectedCell && selectedCell.id, // may be undefined
@@ -165,9 +163,9 @@ export default class ContentsBaseComponent extends Component {
     const selectedCell = this.maybeSelectedCell();
 
     // Speed past "big" cells -- move multiple "spaces"
-    const selBox = selectedCell ?
-      this.cellPosition(selectedCell) :
-      { x: selX, y: selY, width: 1, height: 1 };
+    const selBox = selectedCell
+      ? this.cellPosition(selectedCell)
+      : { x: selX, y: selY, width: 1, height: 1 };
     const wantedNewY = maybeBreakOut(selY, dy, selBox.y, selBox.height);
     const wantedNewX = maybeBreakOut(selX, dx, selBox.x, selBox.width);
 
@@ -177,8 +175,8 @@ export default class ContentsBaseComponent extends Component {
     const newX = clampOverlap(wantedNewX, 0.5, xLB, xUB);
 
     if (
-      rangesOverlap(newY, 0.5, selBox.y, selBox.height) &&
-      rangesOverlap(newX, 0.5, selBox.x, selBox.width)
+      rangesOverlap(newY, 0.5, selBox.y, selBox.height)
+      && rangesOverlap(newX, 0.5, selBox.x, selBox.width)
     ) {
       // Only move (and swallow event) if we actually move somewhere.
       // In particular, send the event to our parent if we hit a wall.
@@ -200,7 +198,7 @@ export default class ContentsBaseComponent extends Component {
     }
 
     if ('zZ'.includes(ev.key) && (ev.ctrlKey || ev.metaKey)) {
-      if ('z' === ev.key) {
+      if (ev.key === 'z') {
         dispatchUndo();
       } else {
         dispatchRedo();

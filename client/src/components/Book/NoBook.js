@@ -15,6 +15,7 @@ class NoBook extends PureComponent {
       this.props.fetchUserInfoProp();
     }
   }
+
   render() {
     const { loginState } = this.props;
     return (

@@ -75,8 +75,8 @@ export const expandUserCall = (callTerm) => {
   if (!callTerm.kwargs.every(({ ref }) => ref.ref)) {
     return 'pleaseThrow("Call arguments must be plain references")';
   }
-  const customArgs = callTerm.kwargs.map(({ expr }) =>
-    expandExpr(expr));
+  const customArgs = callTerm.kwargs.map(({ expr }) => (
+    expandExpr(expr)));
   const allArgs = ['globals', ...customArgs].join(', ');
   return `globals[${JSON.stringify(signature)}](${allArgs})`;
 };
@@ -431,8 +431,8 @@ const functionCellsInOrder = (call) => {
   const cellsToEvaluate = setIntersection(dependOnArgs, leadsToValue);
 
   const topoLocationsById = getTopoLocationById(store.getState());
-  return [...cellsToEvaluate, call.call.ref].sort((id1, id2) =>
-    topoLocationsById[id1] - topoLocationsById[id2]);
+  return [...cellsToEvaluate, call.call.ref].sort((id1, id2) => (
+    topoLocationsById[id1] - topoLocationsById[id2]));
 };
 
 class RefPusher {

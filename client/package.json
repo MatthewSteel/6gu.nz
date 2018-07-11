@@ -12,6 +12,7 @@
     "react-redux": "^5.0.7",
     "react-scripts": "1.1.1",
     "react-sizeme": "^2.4.4",
+    "react-tether": "^1.0.1",
     "redux": "^3.7.2",
     "reselect": "^3.0.1",
     "uuid-v4": "^0.1.0"

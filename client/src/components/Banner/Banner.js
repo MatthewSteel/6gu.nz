@@ -28,9 +28,9 @@ const commaListElems = (items) => {
 // same port. (Don't want to use an environment variable for the host because
 // I want the same client build for staging and production. Could maybe have
 // a var for the port, though?)
-const serverUrl = process.env.NODE_ENV === 'production' ?
-  `https://${window.location.hostname}` :
-  `http://${window.location.hostname}:3001`;
+const serverUrl = process.env.NODE_ENV === 'production'
+  ? `https://${window.location.hostname}`
+  : `http://${window.location.hostname}:3001`;
 
 /* eslint-disable react/jsx-no-target-blank */
 /* It's a slight security issue, but we should be able to trust the login
@@ -58,13 +58,14 @@ const providerLoginButtons = [(
   >
     Continue with Facebook
   </a>
-)];
+  )];
 
 /* eslint-enable react/jsx-no-target-blank */
 
 const logoutButton = logout => (
   <button
     className="BannerButton"
+    type="button"
     onClick={logout}
   >
     Logout
@@ -97,9 +98,11 @@ class Banner extends PureComponent {
     const { loginState, logout } = this.props;
     return (
       <div className="Banner">
-        {loginState === LOGIN_STATES.UNKNOWN &&
-          <span>Fetching data...</span>
-        }
+        {loginState === LOGIN_STATES.UNKNOWN && (
+          <span>
+            Fetching data...
+          </span>
+        )}
         {loginState === LOGIN_STATES.LOGGED_IN && logoutButton(logout)}
         {loginState === LOGIN_STATES.LOGGED_OUT && [
           'Save your work:',
