@@ -1,6 +1,7 @@
 import React, { Component, Fragment } from 'react';
 import { connect } from 'react-redux';
 import classNames from 'classnames';
+import equal from 'fast-deep-equal';
 import TetherComponent from 'react-tether';
 import uuidv4 from 'uuid-v4';
 
@@ -114,6 +115,17 @@ class CreateMenu extends Component {
       inMenu: false,
       actionId: null,
     };
+  }
+
+  componentDidUpdate(prevProps) {
+    if (!this.state.open) return;
+    if (!equal(this.props.selection, prevProps.selection)) {
+      // Don't care about another render, there should only be one of these
+      // things and it's small. We _could_ make the `inCell` state member
+      // the actual selection, though, and do an equality check in `render`.
+      // eslint-disable-next-line react/no-did-update-set-state
+      this.setState({ open: false });
+    }
   }
 
   newThing(str, name) {
