@@ -43,14 +43,13 @@ class ObjectContentsComponent extends ContentsBaseComponent {
   }
 
   bounds() {
-    const { context, readOnly } = this.props;
-    const { colsByIndex } = this.state;
+    const { context, readOnly, tableData } = this.props;
     const appendExtraCell = (readOnly || context.formula) ? 0 : 1;
     return {
       xLB: 0,
       yLB: 0,
       yUB: 2,
-      xUB: colsByIndex.length + appendExtraCell,
+      xUB: Object.keys(tableData.byName).length + appendExtraCell,
     };
   }
 
