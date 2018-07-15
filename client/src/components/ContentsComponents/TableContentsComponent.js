@@ -116,7 +116,6 @@ class TableContentsComponent extends ContentsBaseComponent {
           children.push((
             <CellSelectionComponent
               {...geomProps}
-              selected={cellSelected}
               key="selection"
             />
           ));

@@ -115,7 +115,6 @@ class TableComponent extends ContentsBaseComponent {
       <Fragment>
         {wholeTableSelected && (
           <CellSelectionComponent
-            selected={wholeTableSelected}
             x={viewOffsetX}
             y={viewOffsetY}
             width={viewWidth}

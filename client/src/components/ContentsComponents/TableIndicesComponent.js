@@ -84,7 +84,6 @@ class TableIndicesComponent extends ContentsBaseComponent {
             height={0.5}
             y={worldRow}
             width={outerViewWidth}
-            selected={nameSelected}
             key="selection"
           />
         ));

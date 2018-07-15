@@ -82,7 +82,6 @@ class ArrayContentsComponent extends ContentsBaseComponent {
               width={viewWidth}
               y={worldRow}
               height={0.5}
-              selected={cellSelected}
               key="selection"
             />
           ));
@@ -116,7 +115,6 @@ class ArrayContentsComponent extends ContentsBaseComponent {
         children.push((
           <CellSelectionComponent
             {...geomProps}
-            selected={cellSelected}
             key="selection"
           />
         ));

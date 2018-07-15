@@ -88,7 +88,6 @@ class TableKeysComponent extends ContentsBaseComponent {
             height={outerViewHeight}
             y={viewOffsetY}
             width={1}
-            selected={nameSelected}
             key="selection"
           />
         ));

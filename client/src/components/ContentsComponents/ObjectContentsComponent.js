@@ -86,7 +86,6 @@ class ObjectContentsComponent extends ContentsBaseComponent {
             height={1}
             y={viewOffsetY}
             width={1}
-            selected={nameSelected}
             key="selection"
           />
         ));
@@ -117,7 +116,6 @@ class ObjectContentsComponent extends ContentsBaseComponent {
         children.push((
           <CellSelectionComponent
             {...geomProps}
-            selected={cellSelected}
             key="selection"
           />
         ));
