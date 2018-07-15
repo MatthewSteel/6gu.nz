@@ -102,6 +102,7 @@ class TableComponent extends ContentsBaseComponent {
       viewSelY,
       setViewSelection,
       updateScroll: this.setChildScroll,
+      parentRelativeScroll: this.relativeScroll,
     };
 
     const keysSelected = viewSelected && selectedCell.keysSelected;

@@ -116,6 +116,7 @@ class ObjectComponent extends ContentsBaseComponent {
             viewSelX={viewSelX}
             viewSelY={viewSelY}
             setViewSelection={setViewSelection}
+            parentRelativeScroll={this.relativeScroll}
           />
         </ResizeHandleComponent>
       </Fragment>

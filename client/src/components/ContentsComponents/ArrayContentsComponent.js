@@ -1,4 +1,4 @@
-import React, { Fragment } from 'react';
+import React from 'react';
 import { connect } from 'react-redux';
 
 import ContentsBaseComponent, { mapDispatchToProps } from './ContentsBaseComponent';
@@ -8,10 +8,16 @@ import CellSelectionComponent from '../CellComponent/CellSelectionComponent';
 import EmptyCellComponent from '../CellComponent/EmptyCellComponent';
 
 import { getRefsById, refsAtPosition } from '../../selectors/formulas/selectors';
+import scrollHelper from '../util/ScrollHelper';
 import { ARRAY_CELL } from '../../redux/stateConstants';
 
 
 class ArrayContentsComponent extends ContentsBaseComponent {
+  constructor(props) {
+    super(props);
+    this.ScrollHelper = scrollHelper(this.onScroll);
+  }
+
   maybeSelectedCell() {
     const { cells, context } = this.props;
     const { selY, selX } = this.localSelection();
@@ -136,10 +142,10 @@ class ArrayContentsComponent extends ContentsBaseComponent {
     }
 
     return (
-      <Fragment>
+      <this.ScrollHelper>
         {super.render()}
         {children}
-      </Fragment>
+      </this.ScrollHelper>
     );
   }
 }

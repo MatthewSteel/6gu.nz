@@ -23,6 +23,10 @@ export default class ContentsBaseComponent extends Component {
 
     this.childSelectionTableRef = null;
     this.state = { scrollX: 0, scrollY: 0 };
+    this.scrollXPx = 0;
+    this.scrollYPx = 0;
+    this.onScroll = this.onScroll.bind(this);
+    this.relativeScroll = this.relativeScroll.bind(this);
     this.updateSelection();
   }
 
@@ -58,6 +62,42 @@ export default class ContentsBaseComponent extends Component {
     const worldCoords = this.localToWorld({ y: selY, x: selX });
     setViewSelection(worldCoords.y, worldCoords.x);
     this.updateSelection();
+  }
+
+  onScroll(pxOffset) {
+    // Pixel offsets from wheel/touch listening
+    const { dx, dy } = pxOffset;
+    const xOffset = dx - this.scrollXPx;
+    const yOffset = dy - this.scrollYPx;
+    const xMove = Math.trunc(xOffset / 100);
+    const yMove = Math.trunc(yOffset / 40);
+    if (xMove !== 0 || yMove !== 0) {
+      this.scrollXPx += xMove * 100;
+      this.scrollYPx += yMove * 40;
+      this.relativeScroll(yMove, xMove);
+    }
+  }
+
+  relativeScroll(wantDY, wantDX) {
+    // discretised onScroll or left-over scroll from children that have
+    // scrolled all the way to the end.
+    const { yUB, xUB } = this.bounds();
+    const { viewWidth, viewHeight } = this.props;
+    const scale = this.localScale();
+    const { scrollX, scrollY } = this.state;
+    const maxScrollY = yUB - (viewHeight * scale.y);
+    const maxScrollX = xUB - (viewWidth * scale.x);
+    const newYPos = clampValue(scrollY + wantDY, 0, maxScrollY);
+    const newXPos = clampValue(scrollX + wantDX, 0, maxScrollX);
+
+    const leftOverY = scrollY + wantDY - newYPos;
+    const leftOverX = scrollX + wantDX - newXPos;
+    this.scroll({ scrollY: newYPos, scrollX: newXPos });
+    if (leftOverY || leftOverX) {
+      const { parentRelativeScroll } = this.props;
+      if (!parentRelativeScroll) return;
+      parentRelativeScroll(leftOverY, leftOverX);
+    }
   }
 
   scroll(coords) {

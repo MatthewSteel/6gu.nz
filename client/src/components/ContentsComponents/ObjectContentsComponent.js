@@ -1,4 +1,4 @@
-import React, { Fragment } from 'react';
+import React from 'react';
 import { connect } from 'react-redux';
 
 import CellNameComponent from '../CellComponent/CellNameComponent';
@@ -6,12 +6,18 @@ import CellValueComponent from '../CellComponent/CellValueComponent';
 import CellSelectionComponent from '../CellComponent/CellSelectionComponent';
 import EmptyCellComponent from '../CellComponent/EmptyCellComponent';
 import ContentsBaseComponent, { mapDispatchToProps } from './ContentsBaseComponent';
+import scrollHelper from '../util/ScrollHelper';
 
 import { getRefsById, refsAtPosition } from '../../selectors/formulas/selectors';
 import { OBJECT_CELL } from '../../redux/stateConstants';
 
 
 class ObjectContentsComponent extends ContentsBaseComponent {
+  constructor(props) {
+    super(props);
+    this.ScrollHelper = scrollHelper(this.onScroll);
+  }
+
   static getDerivedStateFromProps(nextProps) {
     const { cells, tableData } = nextProps;
     if (cells) return { colsByIndex: cells.map(({ name }) => name) };
@@ -137,10 +143,10 @@ class ObjectContentsComponent extends ContentsBaseComponent {
     }
 
     return (
-      <Fragment>
+      <this.ScrollHelper>
         {super.render()}
         {children}
-      </Fragment>
+      </this.ScrollHelper>
     );
   }
 }

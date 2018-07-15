@@ -119,6 +119,7 @@ class ArrayComponent extends ContentsBaseComponent {
             viewSelX={viewSelX}
             viewSelY={viewSelY}
             setViewSelection={setViewSelection}
+            parentRelativeScroll={this.relativeScroll}
           />
         </ResizeHandleComponent>
       </Fragment>
