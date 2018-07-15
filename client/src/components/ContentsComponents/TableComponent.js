@@ -102,6 +102,7 @@ class TableComponent extends ContentsBaseComponent {
       viewSelY,
       setViewSelection,
       updateScroll: this.setChildScroll,
+      parentRelativeScroll: this.relativeScroll,
     };
 
     const keysSelected = viewSelected && selectedCell.keysSelected;
@@ -115,7 +116,6 @@ class TableComponent extends ContentsBaseComponent {
       <Fragment>
         {wholeTableSelected && (
           <CellSelectionComponent
-            selected={wholeTableSelected}
             x={viewOffsetX}
             y={viewOffsetY}
             width={viewWidth}

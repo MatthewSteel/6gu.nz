@@ -1,16 +1,22 @@
-import React, { Fragment } from 'react';
+import React from 'react';
 import { connect } from 'react-redux';
 
 import CellValueComponent from '../CellComponent/CellValueComponent';
 import EmptyCellComponent from '../CellComponent/EmptyCellComponent';
 import CellSelectionComponent from '../CellComponent/CellSelectionComponent';
 import ContentsBaseComponent, { mapDispatchToProps } from './ContentsBaseComponent';
+import scrollHelper from '../util/ScrollHelper';
 
 import { getRefsById, refsAtPosition } from '../../selectors/formulas/selectors';
 import { COMPUTED_TABLE_COLUMN } from '../../redux/stateConstants';
 
 
 class TableContentsComponent extends ContentsBaseComponent {
+  constructor(props) {
+    super(props);
+    this.ScrollHelper = scrollHelper(this.onScroll);
+  }
+
   static getDerivedStateFromProps(nextProps) {
     return {
       scrollY: nextProps.linkedScrollY,
@@ -116,7 +122,6 @@ class TableContentsComponent extends ContentsBaseComponent {
           children.push((
             <CellSelectionComponent
               {...geomProps}
-              selected={cellSelected}
               key="selection"
             />
           ));
@@ -139,10 +144,10 @@ class TableContentsComponent extends ContentsBaseComponent {
     }
 
     return (
-      <Fragment>
+      <this.ScrollHelper>
         {super.render()}
         {children}
-      </Fragment>
+      </this.ScrollHelper>
     );
   }
 }

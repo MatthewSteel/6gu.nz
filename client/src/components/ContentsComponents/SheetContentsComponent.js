@@ -1,7 +1,8 @@
-import React, { Fragment } from 'react';
+import React from 'react';
 import { connect } from 'react-redux';
 
 import KeyboardListener from '../util/KeyboardListener';
+import scrollHelper from '../util/ScrollHelper';
 import SheetCellComponent from '../CellComponent/SheetCellComponent';
 import EmptyCellComponent from '../CellComponent/EmptyCellComponent';
 import CellSelectionComponent from '../CellComponent/CellSelectionComponent';
@@ -27,6 +28,7 @@ import { TABLE } from '../../redux/stateConstants';
 class SheetContentsComponent extends ContentsBaseComponent {
   constructor(props) {
     super(props);
+    this.ScrollHelper = scrollHelper(this.onScroll);
     this.startDragForRef = this.startDragForRef.bind(this);
     this.dragOver = this.dragOver.bind(this);
     this.drop = this.drop.bind(this);
@@ -171,6 +173,7 @@ class SheetContentsComponent extends ContentsBaseComponent {
         viewSelX,
         viewSelY,
         setViewSelection,
+        parentRelativeScroll: this.relativeScroll,
       };
 
       if (!cellContents.error && truncXLen > 1) {
@@ -294,7 +297,7 @@ class SheetContentsComponent extends ContentsBaseComponent {
     }
 
     return (
-      <Fragment>
+      <this.ScrollHelper>
         {super.render()}
         {emptyCells}
         {filledCells}
@@ -309,7 +312,7 @@ class SheetContentsComponent extends ContentsBaseComponent {
             callback={this.formulaKeys}
           />
         )}
-      </Fragment>
+      </this.ScrollHelper>
     );
   }
 }
