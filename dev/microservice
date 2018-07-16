@@ -1,0 +1,17 @@
+#!/bin/bash
+set -o errexit
+set -o nounset
+set -o pipefail
+set -o xtrace
+
+if [ "$1" == "stop" ]; then
+  yarn --cwd client forever stop -c "node -r esm" src/microservices/server.js
+  exit 0
+fi
+
+if [ ! -f "$1" ]; then
+  echo "arg should be a userInfo response JSON file"
+  exit 1
+fi
+
+FILENAME="$1" yarn --cwd client forever start -c "node -r esm" src/microservices/server.js

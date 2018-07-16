@@ -1,5 +1,6 @@
 import http from 'http';
 import url from 'url';
+import fs from 'fs';
 
 import { lexFormula } from '../selectors/formulas/lexer';
 import { parseTermFromName, subNamesForRefsInTerm } from '../selectors/formulas/parser';
@@ -8,12 +9,22 @@ import { fromJson1, toJson1 } from '../selectors/formulas/builtins';
 import store from '../redux/store';
 import { callSignature, createFunction, expandUserCall, getCellValuesById, getRefExpressions } from '../selectors/formulas/codegen';
 
+const openDocument = JSON.parse(fs.readFileSync(
+  process.env.FILENAME,
+  { encoding: 'utf8' },
+)).maybeRecentDocument;
+store.dispatch({ type: 'USER_STATE', payload: { openDocument } });
 const globals = getCellValuesById(store.getState());
 
 const parseName = (name, context = undefined) => {
   const tokens = lexFormula(name);
   const expr = parseTermFromName(tokens, 0).term;
-  const ref = translateExpr(expr, context, subNamesForRefsInTerm);
+  const ref = translateExpr(
+    expr,
+    context,
+    store.getState(),
+    subNamesForRefsInTerm,
+  );
   if (!ref.ref) {
     throw new Error(`Reference to ${name} did not resolve.`);
   }
