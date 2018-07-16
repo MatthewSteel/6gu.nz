@@ -1,17 +1,13 @@
-Short term work:
- - Scrolling with the touch pad,
-   - scroll bars too, if it's big enough for that to make sense.
+More short term work:
+ - Talk to the guys,
  - Cut, copy, paste,
  - Browse into more things,
 
- - The haversine sheet/service/youtube vid,
-
-
-Rest of the TODO list:
+Little jobs:
  - [index] on objects,
  - max, deep equals?
  - See what it looks like in different browsers, different screen res.
-
+ - Fast-movement shortcuts (ctrl+move)
 
  - Let all arguments to `if` and && (etc?) be objects.
  - Change `byName` into a Map.
@@ -19,15 +15,18 @@ Rest of the TODO list:
 
 
 The longer-term list:
+ - V2 Cut/copy/paste
  - V2 Overridden deep values look special? Hrm... "parent overridden" prop?
  - V2 browse into more things -- arrays etc, complex table elements.
- - V2 cut, copy, paste,
  - V2 Multi-select,
+ - V2 "each" or "depth" or "height", maybe [i, j] indexing?
  - V2 "native" map/for etc?
+   - Concatenate/map/zip tables/arrays
  - V2 better formula box:
      - terms look like cells,
      - "click to write",
      - tab completion
+ - V3 Date, time, random functions.
  - V3 "actions" (xhr etc),
      - mutation story (redux?),
      - conditional evaluation, HOF or first-class cell references,
@@ -37,18 +36,8 @@ The longer-term list:
      - input modes for rich text?
  - ?? closures and first-class functions.
  - ?? laziness
+ - ?? Type tagging, efficient operations on homogeneous arrays
  - Totally offline: docs, scripts, _everything_ in storage/indexeddb.
-
-
-Out of scope for MVP:
- - Browse into table/sheet cells (not "browse into anything complicated")
- - each
- - Concatenating tables/arrays, zip functions,
- - Date, time, random functions.
- - Range selection :-(
- - Cut copy paste :-((,
- - Better formula input (clicking),
- - Type tagging,
  - Maybe relative table/array references in formulas (?). `$row - 1`?
  - Animations, "Fly-in-from-side"
  - Value writes -- `cellObject(k1.k2.k3: v)`?
@@ -81,7 +70,6 @@ Dunno... Doesn't seem powerful enough? I don't think it can transpose...
 
 
 Possible projects after/during MVP work:
- - Cut, copy, paste,
  - Clicking on cells while editing formulas.
  - Drag select to make arrays/objects/tables? In a formula?
    - shift/ctrl + click could also make an array, or add to one :-)
