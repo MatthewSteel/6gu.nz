@@ -60,7 +60,7 @@ This is a bit crap at the moment :-)
 dev/microservice filename
 ```
 
-where `filename` is a `userInfo` response with the document you want inside it. The server runs on port 5000.
+where `filename` is a `userInfo` response with the document you want inside it. The server runs on port 5010.
 
 To stop it, run
 
