@@ -1,4 +1,4 @@
-import React, { PureComponent } from 'react';
+import React, { Component } from 'react';
 import { connect } from 'react-redux';
 import { getSheets } from '../../selectors/formulas/selectors';
 import { getDisplayView, getView } from '../../selectors/uistate/uistate';
@@ -26,7 +26,9 @@ const mapDispatchToProps = dispatch => ({
   updateViewProp: view => dispatch(updateView(view)),
 });
 
-class Book extends PureComponent {
+export const formulaPlaceContext = React.createContext(null);
+
+class Book extends Component {
   constructor(props) {
     super(props);
     this.pushStack = this.pushStack.bind(this);
@@ -34,6 +36,12 @@ class Book extends PureComponent {
     this.setStackDepth = this.setStackDepth.bind(this);
     this.changeSheetViewSheet = this.changeSheetViewSheet.bind(this);
     this.deleteSheet = this.deleteSheet.bind(this);
+    this.setFormulaPlaceRef = this.setFormulaPlaceRef.bind(this);
+    this.state = { formulaPlaceRef: null };
+  }
+
+  setFormulaPlaceRef(ref) {
+    this.setState({ formulaPlaceRef: ref });
   }
 
   changeSheetViewSheet(targetSheetId) {
@@ -97,12 +105,12 @@ class Book extends PureComponent {
           deleteSheet={this.deleteSelectedSheet}
           popViewStack={this.popStack}
           pushViewStack={this.pushStack}
-          depth={i}
         />
       );
     });
     const stringPathElems = displayView.map(({ pathElem }) => pathElem);
     const [sheetPathElem, ...stackPathElems] = stringPathElems;
+    const { formulaPlaceRef } = this.state;
     return (
       <div className="BookClass">
         <Navigation path={stringPathElems.join('')} />
@@ -126,7 +134,12 @@ class Book extends PureComponent {
           )}
         </TitleBar>
         <div className="SheetContainer">
-          {sheetViews}
+          {formulaPlaceRef && (
+            <formulaPlaceContext.Provider value={formulaPlaceRef}>
+              {sheetViews}
+            </formulaPlaceContext.Provider>
+          )}
+          <div className="FormulaInputRow" ref={this.setFormulaPlaceRef} />
         </div>
       </div>
     );

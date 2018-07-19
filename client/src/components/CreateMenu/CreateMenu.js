@@ -36,9 +36,7 @@ class CreateMenuItem extends Component {
   }
 
   keys(ev) {
-    if (ev.key === 'Escape') {
-      this.reset();
-    }
+    if (ev.key === 'Escape') this.reset();
   }
 
   startRename(ev) {
@@ -67,7 +65,9 @@ class CreateMenuItem extends Component {
         className={rowClassName}
         onClick={this.startRename}
       >
-        {renaming && <KeyboardListener callback={this.keys} />}
+        {renaming && (
+          <KeyboardListener callback={this.keys} priority={10} greedy />
+        )}
         <div>
           {state === 'renaming' ? (
             <form onSubmit={this.submit}>

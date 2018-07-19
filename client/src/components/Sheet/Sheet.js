@@ -1,7 +1,5 @@
 import sizeMe from 'react-sizeme';
 import React, { Component } from 'react';
-import equal from 'fast-deep-equal';
-import Formula from '../Formula/Formula';
 
 import SheetContentsComponent from '../ContentsComponents/SheetContentsComponent';
 import './Sheet.css';
@@ -9,36 +7,11 @@ import './Sheet.css';
 class Sheet extends Component {
   constructor(props) {
     super(props);
-    this.setFormulaFocus = this.setFormulaFocus.bind(this);
-    this.setFormulaRef = this.setFormulaRef.bind(this);
     this.popStack = this.popStack.bind(this);
     this.pushStack = this.pushStack.bind(this);
-    this.setFormulaSelection = this.setFormulaSelection.bind(this);
     this.setWindowSelection = this.setWindowSelection.bind(this);
 
-    this.formulaRef = null;
-    this.state = {
-      formulaHasFocus: false,
-      formulaSelection: null,
-      selY: 0,
-      selX: 0,
-    };
-  }
-
-  setFormulaRef(ref) {
-    this.formulaRef = ref;
-  }
-
-  setFormulaFocus(formulaHasFocus) {
-    // callback used by formula component
-    this.setState({ formulaHasFocus });
-  }
-
-  setFormulaSelection(newSelection) {
-    // Reference to cell or x/y coords
-    const { formulaSelection } = this.state;
-    if (equal(formulaSelection, newSelection)) return;
-    this.setState({ formulaSelection: newSelection });
+    this.state = { selY: 0, selX: 0 };
   }
 
   setWindowSelection(y, x) {
@@ -66,12 +39,9 @@ class Sheet extends Component {
       readOnly,
       selected,
       size,
-      depth,
       sheetId,
     } = this.props;
     const {
-      formulaHasFocus,
-      formulaSelection,
       selY,
       selX,
     } = this.state;
@@ -80,50 +50,27 @@ class Sheet extends Component {
     const style = {
       gridTemplateColumns: `repeat(${width}, 100px)`,
       gridTemplateRows: `repeat(${height * 2}, 20px)`,
-      zIndex: depth + 1,
     };
 
     return (
-      <div style={{ position: 'absolute', width: '100%', height: '100%' }}>
-        <div
-          className="Sheet"
-          style={style}
-        >
-          <SheetContentsComponent
-            cellValuesById={cellValuesById}
-            formulaRef={this.formulaRef}
-            pushViewStack={this.pushStack}
-            popViewStack={this.popStack}
-            readOnly={readOnly}
-            setFormulaSelection={this.setFormulaSelection}
-            formulaHasFocus={formulaHasFocus}
-            contextId={sheetId}
-            viewHeight={height}
-            viewWidth={width}
-            viewSelected={selected}
-            viewSelX={selX}
-            viewSelY={selY}
-            setViewSelection={this.setWindowSelection}
-          />
-        </div>
-        <div className="SheetViewInputRow">
-          <div ref={this.setFormulaPlaceRef} />
-          <Formula
-            readOnly={readOnly}
-            ref={this.setFormulaRef}
-            selection={formulaSelection}
-            setFormulaHasFocus={this.setFormulaFocus}
-            sheetId={sheetId}
-          />
-        </div>
+      <div className="Sheet" style={style}>
+        <SheetContentsComponent
+          cellValuesById={cellValuesById}
+          pushViewStack={this.pushStack}
+          popViewStack={this.popStack}
+          readOnly={readOnly}
+          contextId={sheetId}
+          viewHeight={height}
+          viewWidth={width}
+          viewSelected={selected}
+          viewSelX={selX}
+          viewSelY={selY}
+          setViewSelection={this.setWindowSelection}
+        />
       </div>
     );
   }
 }
 
-const sizeMeHoc = sizeMe({
-  monitorWidth: true,
-  monitorHeight: true,
-});
-
+const sizeMeHoc = sizeMe({ monitorWidth: true, monitorHeight: true });
 export default sizeMeHoc(Sheet);

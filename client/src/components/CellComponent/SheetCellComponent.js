@@ -32,6 +32,7 @@ class SheetCellComponent extends PureComponent {
       selected,
       setSelection,
       value,
+      readOnly,
       startDragCallback,
       endDragCallback,
       toggleElementSize,
@@ -45,13 +46,15 @@ class SheetCellComponent extends PureComponent {
             y={y}
             width={width}
             height={height}
+            readOnly={readOnly}
+            selection={selected}
           />
         )}
         <ResizeHandleComponent
           y={y + height - 1}
           x={x + width - 1}
           resizeRefId={id}
-          selected={selected}
+          selected={!!selected}
           startDragCallback={startDragCallback}
           endDragCallback={endDragCallback}
           onClick={toggleElementSize}
@@ -62,7 +65,6 @@ class SheetCellComponent extends PureComponent {
             y={y}
             width={width}
             height={0.5}
-            selected={selected}
             setSelection={setSelection}
             onDragStart={this.onNameDragStart}
             onDragEnd={endDragCallback}
@@ -72,7 +74,6 @@ class SheetCellComponent extends PureComponent {
             y={y + 0.5}
             width={width}
             height={height - 0.5}
-            selected={selected}
             setSelection={setSelection}
             value={value}
             pushViewStack={pushViewStack}

@@ -3,7 +3,7 @@ import equal from 'fast-deep-equal';
 import { CELL } from '../../redux/stateConstants';
 import { clampValue, clampOverlap, rangesOverlap, truncateOverlap } from '../../selectors/geom/geom';
 import { clearDrag, startDrag, updateDrag } from '../../redux/uistate';
-import { deleteLoc, deleteThing, moveThing, toggleMaximiseSheetElem, undo, redo } from '../../redux/documentEditing';
+import { moveThing, toggleMaximiseSheetElem, undo, redo } from '../../redux/documentEditing';
 import '../CellComponent/CellComponent.css';
 
 // For moving the cursor out of a large cell
@@ -17,7 +17,6 @@ export default class ContentsBaseComponent extends Component {
   constructor(props) {
     super(props);
     this.cellKeys = this.cellKeys.bind(this);
-    this.formulaKeys = this.formulaKeys.bind(this);
     this.setViewSelection = this.setViewSelection.bind(this);
     this.setChildSelectionTableRef = this.setChildSelectionTableRef.bind(this);
 
@@ -26,12 +25,8 @@ export default class ContentsBaseComponent extends Component {
     this.scrollXPx = 0;
     this.scrollYPx = 0;
     this.onScroll = this.onScroll.bind(this);
+    this.move = this.move.bind(this);
     this.relativeScroll = this.relativeScroll.bind(this);
-    this.updateSelection();
-  }
-
-  componentDidUpdate() {
-    this.updateSelection();
   }
 
   componentWillUnmount() {
@@ -61,7 +56,6 @@ export default class ContentsBaseComponent extends Component {
     this.scroll({ scrollY: newScrollY, scrollX: newScrollX });
     const worldCoords = this.localToWorld({ y: selY, x: selX });
     setViewSelection(worldCoords.y, worldCoords.x);
-    this.updateSelection();
   }
 
   onScroll(pxOffset) {
@@ -189,14 +183,7 @@ export default class ContentsBaseComponent extends Component {
     };
   }
 
-  updateSelection() {
-    const { setFormulaSelection, viewSelected } = this.props;
-    if (!viewSelected) return;
-    if (this.childSelectionTableRef) return;
-    setFormulaSelection(this.selectedCellId());
-  }
-
-  move(dy, dx, event) {
+  move(dy, dx) {
     // All coords are "local", scaled for our data and relative to the
     // start of our data.
     const { selY, selX } = this.localSelection();
@@ -220,15 +207,15 @@ export default class ContentsBaseComponent extends Component {
     ) {
       // Only move (and swallow event) if we actually move somewhere.
       // In particular, send the event to our parent if we hit a wall.
-      return;
+      const { parentMove } = this.props;
+      if (parentMove) parentMove(dy, dx);
+    } else {
+      this.setSelection(newY, newX);
     }
-    this.setSelection(newY, newX);
-    event.preventDefault();
   }
 
   cellKeys(ev) {
-    const { dispatchUndo, dispatchRedo, formulaRef, readOnly } = this.props;
-    const realFormulaRef = formulaRef && formulaRef.getWrappedInstance();
+    const { dispatchUndo, dispatchRedo } = this.props;
 
     if (this.childSelectionTableRef) {
       this.childSelectionTableRef
@@ -256,82 +243,22 @@ export default class ContentsBaseComponent extends Component {
     // Movement actions
     if (moves[ev.key]) {
       // Cursor key nav
-      this.move(...moves[ev.key], ev);
+      ev.preventDefault();
+      this.move(...moves[ev.key]);
     }
     if (ev.key === 'Enter') {
-      if (ev.shiftKey) {
-        this.move(-1, 0, ev);
-      } else if (readOnly) {
-        this.move(1, 0, ev);
-      } else if (realFormulaRef) {
-        // Enter selects the formula box when editable
-        realFormulaRef.focus();
-        ev.preventDefault();
-      }
+      ev.preventDefault();
+      const yMove = ev.shiftKey ? -1 : 1;
+      this.move(yMove, 0);
     }
     if (ev.key === 'Tab') {
+      ev.preventDefault();
       const xMove = ev.shiftKey ? -1 : 1;
-      this.move(0, xMove, ev);
+      this.move(0, xMove);
     }
     if (ev.key === 'Escape') {
       const { popViewStack } = this.props;
       popViewStack();
-      ev.preventDefault();
-    }
-
-    // Modification actions
-    if (ev.key === 'Backspace' || ev.key === 'Delete') {
-      ev.preventDefault();
-      if (!readOnly) {
-        // Careful: swallow the event so a parent doesn't get it.
-        const selection = this.selectedCellId();
-        const { deleteCell, deleteLocation } = this.props;
-        if (selection.locationSelected) {
-          const { type, index } = selection.locationSelected;
-          deleteLocation(selection.context, type, index);
-        } else {
-          deleteCell(selection.cellId);
-        }
-        if (realFormulaRef) realFormulaRef.resetValue();
-      }
-    }
-    if (ev.key.length === 1) {
-      // User just starts typing.
-      // Careful: swallow the event so a parent doesn't get it.
-      ev.preventDefault();
-      if (!readOnly && realFormulaRef) {
-        realFormulaRef.sendKey(ev.key);
-      }
-    }
-  }
-
-  formulaKeys(ev) {
-    if (this.childSelectionTableRef) {
-      this.childSelectionTableRef
-        .getWrappedInstance()
-        .formulaKeys(ev);
-      if (ev.defaultPrevented) return;
-    }
-    const { formulaRef } = this.props;
-    const realFormulaRef = formulaRef && formulaRef.getWrappedInstance();
-    if (ev.key === 'Escape') {
-      // Enter selects the formula box
-      if (realFormulaRef) realFormulaRef.blur();
-      ev.preventDefault();
-    }
-    // I'm not over the moon about intercepting shift-enter and tab --
-    // they could be useful for entering multiline, rich text etc...
-    // Maybe if/when we do that, that entry can suppress this behaviour?
-    if (ev.key === 'Enter') {
-      if (realFormulaRef) realFormulaRef.submit(ev);
-      const yMove = ev.shiftKey ? -1 : 1;
-      this.move(yMove, 0, ev);
-      ev.preventDefault();
-    }
-    if (ev.key === 'Tab') {
-      if (realFormulaRef) realFormulaRef.submit(ev);
-      const xMove = ev.shiftKey ? -1 : 1;
-      this.move(0, xMove, ev);
       ev.preventDefault();
     }
   }
@@ -418,8 +345,6 @@ export const mapDispatchToProps = dispatch => ({
   startDragProp: (refId, type) => asyncStartDrag(dispatch, refId, type),
   updateDragProp: (sheetId, dragY, dragX) => (
     dispatch(updateDrag(sheetId, dragY, dragX))),
-  deleteCell: cellId => dispatch(deleteThing(cellId)),
-  deleteLocation: (context, y, x) => dispatch(deleteLoc(context, y, x)),
   dispatchUndo: () => dispatch(undo()),
   dispatchRedo: () => dispatch(redo()),
   moveCell: (cellId, sheetId, y, x, width, height) => (

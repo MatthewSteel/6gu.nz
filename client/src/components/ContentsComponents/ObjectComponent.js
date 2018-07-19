@@ -78,6 +78,8 @@ class ObjectComponent extends ContentsBaseComponent {
             y={viewOffsetY}
             width={viewWidth}
             height={viewHeight}
+            readOnly={readOnly}
+            selection={this.selectedCellId()}
           />
         )}
         <ResizeHandleComponent
@@ -102,11 +104,9 @@ class ObjectComponent extends ContentsBaseComponent {
           <ObjectContentsComponent
             ref={contentsSelected && this.setChildSelectionTableRef}
             contextId={id}
-            formulaRef={this.props.formulaRef}
             pushViewStack={pushViewStack}
             popViewStack={this.props.popViewStack}
             readOnly={readOnly}
-            setFormulaSelection={this.props.setFormulaSelection}
             tableData={tableData}
             viewHeight={1}
             viewWidth={viewWidth - 1}
@@ -116,6 +116,7 @@ class ObjectComponent extends ContentsBaseComponent {
             viewSelX={viewSelX}
             viewSelY={viewSelY}
             setViewSelection={setViewSelection}
+            parentMove={this.move}
             parentRelativeScroll={this.relativeScroll}
           />
         </ResizeHandleComponent>

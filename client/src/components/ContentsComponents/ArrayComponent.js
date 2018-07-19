@@ -81,6 +81,8 @@ class ArrayComponent extends ContentsBaseComponent {
             y={viewOffsetY}
             width={viewWidth}
             height={viewHeight}
+            readOnly={readOnly}
+            selection={this.selectedCellId()}
           />
         )}
         <ResizeHandleComponent
@@ -105,11 +107,9 @@ class ArrayComponent extends ContentsBaseComponent {
           <ArrayContentsComponent
             ref={contentsSelected && this.setChildSelectionTableRef}
             contextId={id}
-            formulaRef={this.props.formulaRef}
             pushViewStack={pushViewStack}
             popViewStack={this.props.popViewStack}
             readOnly={readOnly}
-            setFormulaSelection={this.props.setFormulaSelection}
             tableData={tableData}
             viewHeight={viewHeight - 0.5}
             viewWidth={width}
@@ -119,6 +119,7 @@ class ArrayComponent extends ContentsBaseComponent {
             viewSelX={viewSelX}
             viewSelY={viewSelY}
             setViewSelection={setViewSelection}
+            parentMove={this.move}
             parentRelativeScroll={this.relativeScroll}
           />
         </ResizeHandleComponent>

@@ -163,9 +163,7 @@ export default class DropDownMenu extends Component {
   }
 
   keys(ev) {
-    if (ev.key === 'Escape') {
-      this.closeMenu();
-    }
+    if (ev.key === 'Escape') this.closeMenu();
   }
 
   openMenu() {
@@ -227,7 +225,7 @@ export default class DropDownMenu extends Component {
     // So let's consider the open/close button "inside" the menu :-).
     return (
       <FireWhenClickedOutside callback={this.closeMenu}>
-        <KeyboardListener callback={this.keys} />
+        <KeyboardListener callback={this.keys} priority={20} greedy />
         {ret}
       </FireWhenClickedOutside>
     );

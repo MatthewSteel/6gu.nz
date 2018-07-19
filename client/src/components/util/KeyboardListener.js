@@ -2,29 +2,30 @@ import { PureComponent } from 'react';
 import uuidv4 from 'uuid-v4';
 
 let listenerStack = [];
+const processKey = (ev) => {
+  let seenGreedyHandler = false;
+  listenerStack.forEach(({ callback, greedy }) => {
+    if (ev.defaultPrevented || seenGreedyHandler) return;
+    callback(ev);
+    seenGreedyHandler = seenGreedyHandler || greedy;
+  });
+};
+document.addEventListener('keydown', processKey);
 
 class KeyboardListenerComponent extends PureComponent {
   constructor(props) {
     super(props);
-    this.callback = this.callback.bind(this);
     this.id = uuidv4();
   }
 
   componentDidMount() {
-    document.addEventListener('keydown', this.callback);
-    listenerStack.push(this.id);
+    const { priority, callback, greedy } = this.props;
+    listenerStack.push({ id: this.id, priority, callback, greedy });
+    listenerStack.sort((a, b) => b.priority - a.priority);
   }
 
   componentWillUnmount() {
-    document.removeEventListener('keydown', this.callback);
-    listenerStack = listenerStack.filter(id => id !== this.id);
-  }
-
-  callback(ev) {
-    if (this.id === listenerStack[listenerStack.length - 1]) {
-      return this.props.callback(ev);
-    }
-    return false;
+    listenerStack = listenerStack.filter(({ id }) => id !== this.id);
   }
 
   render() { return false; }

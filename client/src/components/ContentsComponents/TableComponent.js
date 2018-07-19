@@ -92,16 +92,15 @@ class TableComponent extends ContentsBaseComponent {
 
     const commonChildProps = {
       contextId: id,
-      formulaRef: this.props.formulaRef,
       pushViewStack,
       popViewStack: this.props.popViewStack,
       readOnly,
-      setFormulaSelection: this.props.setFormulaSelection,
       tableData,
       viewSelX,
       viewSelY,
       setViewSelection,
       updateScroll: this.setChildScroll,
+      parentMove: this.move,
       parentRelativeScroll: this.relativeScroll,
     };
 
@@ -120,6 +119,8 @@ class TableComponent extends ContentsBaseComponent {
             y={viewOffsetY}
             width={viewWidth}
             height={viewHeight}
+            readOnly={readOnly}
+            selection={this.selectedCellId()}
           />
         )}
         <ResizeHandleComponent

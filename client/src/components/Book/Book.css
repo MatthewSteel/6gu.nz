@@ -4,3 +4,12 @@
   display: flex;
   flex-direction: column;
 }
+
+.FormulaInputRow {
+  display: flex;
+  flex-direction: row;
+  position: fixed;
+  bottom: 0px;
+  width: 100%;
+  z-index: 1;
+}

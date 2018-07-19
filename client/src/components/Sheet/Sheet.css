@@ -46,15 +46,9 @@
   padding-right: 1px;
   padding-bottom: 1px;
   position: absolute;
-}
-
-.SheetViewInputRow {
-  display: flex;
-  flex-direction: row;
-  position: fixed;
-  bottom: 0px;
   width: 100%;
-  z-index: 1;
+  height: 100%;
+  z-index: 0;
 }
 
 .StackButton {

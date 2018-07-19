@@ -101,7 +101,6 @@ class SheetContentsComponent extends ContentsBaseComponent {
       cells,
       cellValuesById,
       contextId,
-      formulaHasFocus,
       placedCellLocs,
       pushViewStack,
       readOnly,
@@ -158,10 +157,8 @@ class SheetContentsComponent extends ContentsBaseComponent {
       const commonComplexChildProps = {
         ref: cellSelected && this.setChildSelectionTableRef,
         contextId,
-        formulaRef: this.props.formulaRef,
         popViewStack: this.props.popViewStack,
         readOnly,
-        setFormulaSelection: this.props.setFormulaSelection,
         tableData: cellContents.value,
         // TODO: should share names with SheetCell so we can specify them
         // once. Most (all?) of the rest are shared...
@@ -173,6 +170,7 @@ class SheetContentsComponent extends ContentsBaseComponent {
         viewSelX,
         viewSelY,
         setViewSelection,
+        parentMove: this.move,
         parentRelativeScroll: this.relativeScroll,
       };
 
@@ -211,7 +209,7 @@ class SheetContentsComponent extends ContentsBaseComponent {
           height={truncYLen}
           name={name}
           value={cellContents}
-          selected={cellSelected}
+          selected={cellSelected && selection}
           setSelection={this.setViewSelection}
           toggleElementSize={toggleElementSize}
         />
@@ -240,7 +238,8 @@ class SheetContentsComponent extends ContentsBaseComponent {
               y={cy}
               width={1}
               height={1}
-              selected={cellSelected}
+              readOnly={readOnly}
+              selection={selection}
             />
           ));
         }
@@ -302,15 +301,8 @@ class SheetContentsComponent extends ContentsBaseComponent {
         {emptyCells}
         {filledCells}
         {dragOverCells}
-        {viewSelected && !formulaHasFocus && (
-          <KeyboardListener
-            callback={this.cellKeys}
-          />
-        )}
-        {viewSelected && formulaHasFocus && (
-          <KeyboardListener
-            callback={this.formulaKeys}
-          />
+        {viewSelected && (
+          <KeyboardListener callback={this.cellKeys} priority={5} />
         )}
       </this.ScrollHelper>
     );
