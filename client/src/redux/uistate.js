@@ -25,6 +25,10 @@ export const updateView = newView => ({
   type: 'UPDATE_VIEW', payload: { newView },
 });
 
+export const updateSelection = (newSelection) => ({
+  type: 'UPDATE_SELECTION', payload: { newSelection },
+});
+
 export const uistateReducer = (state, action) => {
   if (action.type === 'START_DRAG') {
     return digMut(state, path('dragState'), action.payload);
@@ -47,6 +51,12 @@ export const uistateReducer = (state, action) => {
     const { newView } = action.payload;
     if (equal(newView, state.uistate)) return state;
     return digMut(state, ['uistate'], newView);
+  }
+
+  if (action.type === 'UPDATE_SELECTION') {
+    const { newSelection } = action.payload;
+    if (equal(newSelection, state.selection)) return state;
+    return digMut(state, ['selection'], newSelection);
   }
 
   return state;

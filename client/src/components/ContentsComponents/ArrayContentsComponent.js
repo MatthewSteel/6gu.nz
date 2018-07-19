@@ -59,7 +59,6 @@ class ArrayContentsComponent extends ContentsBaseComponent {
 
   render() {
     const {
-      readOnly,
       tableData,
       viewSelected,
       viewHeight,
@@ -90,7 +89,6 @@ class ArrayContentsComponent extends ContentsBaseComponent {
               y={worldRow}
               height={0.5}
               key="selection"
-              readOnly={readOnly}
               selection={this.selectedCellId()}
             />
           ));
@@ -124,7 +122,6 @@ class ArrayContentsComponent extends ContentsBaseComponent {
         children.push((
           <CellSelectionComponent
             {...geomProps}
-            readOnly={readOnly}
             selection={this.selectedCellId()}
             key="selection"
           />

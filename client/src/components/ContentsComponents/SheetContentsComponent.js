@@ -238,7 +238,6 @@ class SheetContentsComponent extends ContentsBaseComponent {
               y={cy}
               width={1}
               height={1}
-              readOnly={readOnly}
               selection={selection}
             />
           ));

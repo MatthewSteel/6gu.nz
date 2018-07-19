@@ -78,7 +78,6 @@ class ObjectComponent extends ContentsBaseComponent {
             y={viewOffsetY}
             width={viewWidth}
             height={viewHeight}
-            readOnly={readOnly}
             selection={this.selectedCellId()}
           />
         )}

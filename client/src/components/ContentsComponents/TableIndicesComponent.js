@@ -68,7 +68,6 @@ class TableIndicesComponent extends ContentsBaseComponent {
       viewOffsetX,
       viewOffsetY,
       outerViewWidth,
-      readOnly,
     } = this.props;
     const children = [];
     const { selY } = this.localSelection();
@@ -92,7 +91,6 @@ class TableIndicesComponent extends ContentsBaseComponent {
             y={worldRow}
             width={outerViewWidth}
             key="selection"
-            readOnly={readOnly}
             selection={this.selectedCellId()}
           />
         ));

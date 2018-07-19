@@ -32,7 +32,6 @@ class SheetCellComponent extends PureComponent {
       selected,
       setSelection,
       value,
-      readOnly,
       startDragCallback,
       endDragCallback,
       toggleElementSize,
@@ -46,7 +45,6 @@ class SheetCellComponent extends PureComponent {
             y={y}
             width={width}
             height={height}
-            readOnly={readOnly}
             selection={selected}
           />
         )}

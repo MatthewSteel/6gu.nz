@@ -1,4 +1,4 @@
-import React, { Component } from 'react';
+import React, { PureComponent } from 'react';
 import { connect } from 'react-redux';
 import { getSheets } from '../../selectors/formulas/selectors';
 import { getDisplayView, getView } from '../../selectors/uistate/uistate';
@@ -6,6 +6,7 @@ import { getCellValuesById } from '../../selectors/formulas/codegen';
 import store from '../../redux/store';
 import { createSheet, deleteThing } from '../../redux/documentEditing';
 import { updateView } from '../../redux/uistate';
+import Formula from '../Formula/Formula';
 import Sheet from '../Sheet/Sheet';
 import TitleBar, { PathElem } from './TitleBar';
 import DocumentMenu from '../DropDown/DocumentMenu';
@@ -26,9 +27,7 @@ const mapDispatchToProps = dispatch => ({
   updateViewProp: view => dispatch(updateView(view)),
 });
 
-export const formulaPlaceContext = React.createContext(null);
-
-class Book extends Component {
+class Book extends PureComponent {
   constructor(props) {
     super(props);
     this.pushStack = this.pushStack.bind(this);
@@ -36,12 +35,6 @@ class Book extends Component {
     this.setStackDepth = this.setStackDepth.bind(this);
     this.changeSheetViewSheet = this.changeSheetViewSheet.bind(this);
     this.deleteSheet = this.deleteSheet.bind(this);
-    this.setFormulaPlaceRef = this.setFormulaPlaceRef.bind(this);
-    this.state = { formulaPlaceRef: null };
-  }
-
-  setFormulaPlaceRef(ref) {
-    this.setState({ formulaPlaceRef: ref });
   }
 
   changeSheetViewSheet(targetSheetId) {
@@ -110,7 +103,6 @@ class Book extends Component {
     });
     const stringPathElems = displayView.map(({ pathElem }) => pathElem);
     const [sheetPathElem, ...stackPathElems] = stringPathElems;
-    const { formulaPlaceRef } = this.state;
     return (
       <div className="BookClass">
         <Navigation path={stringPathElems.join('')} />
@@ -134,12 +126,10 @@ class Book extends Component {
           )}
         </TitleBar>
         <div className="SheetContainer">
-          {formulaPlaceRef && (
-            <formulaPlaceContext.Provider value={formulaPlaceRef}>
-              {sheetViews}
-            </formulaPlaceContext.Provider>
-          )}
-          <div className="FormulaInputRow" ref={this.setFormulaPlaceRef} />
+          {sheetViews}
+          <div className="FormulaInputRow">
+            <Formula />
+          </div>
         </div>
       </div>
     );

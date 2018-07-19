@@ -167,7 +167,7 @@ export default class ContentsBaseComponent extends Component {
   selectedCellId() {
     const { selY, selX } = this.localSelection();
     const selectedCell = this.maybeSelectedCell();
-    const { contextId } = this.props;
+    const { contextId, readOnly } = this.props;
 
     // We might just be a cell that holds an array or something. If so,
     // provide the cell's (sheet) context to the formula box so we can
@@ -180,6 +180,7 @@ export default class ContentsBaseComponent extends Component {
       y: selY,
       x: selX,
       locationSelected: this.locationSelected(),
+      readOnly,
     };
   }
 

@@ -1,9 +1,7 @@
 import React, { Component, Fragment } from 'react';
-import ReactDOM from 'react-dom';
 import { connect } from 'react-redux';
 import equal from 'fast-deep-equal';
 
-import { formulaPlaceContext } from '../Book/Book';
 import KeyboardListener from '../util/KeyboardListener';
 import { stringFormula } from '../../selectors/formulas/unparser';
 import { deleteLoc, deleteThing, setFormula } from '../../redux/documentEditing';
@@ -45,9 +43,8 @@ class Formula extends Component {
       deleteCell,
       selection,
       setCellFormula,
-      readOnly,
     } = this.props;
-    if (readOnly) return;
+    if (selection.readOnly) return;
     if (formulaStr !== '') {
       setCellFormula(selection, formulaStr);
     } else if (selection.cellId) {
@@ -65,7 +62,6 @@ class Formula extends Component {
   }
 
   focus() {
-    // Called by Sheet component only
     this.inputRef.focus();
     const { length } = this.state.value;
     this.inputRef.setSelectionRange(length, length);
@@ -119,8 +115,8 @@ class Formula extends Component {
   }
 
   cellKeys(ev) {
-    const { deleteCell, deleteLocation, readOnly, selection } = this.props;
-    if (readOnly) return;
+    const { deleteCell, deleteLocation, selection } = this.props;
+    if (selection.readOnly) return;
     if (ev.key === 'Enter') {
       this.focus();
       ev.preventDefault();
@@ -141,34 +137,31 @@ class Formula extends Component {
   }
 
   render() {
+    const selection = this.props;
+    const readOnly = !selection || selection.readOnly;
     return (
-      <formulaPlaceContext.Consumer>
-        {domNode => domNode && ReactDOM.createPortal(
-          (
-            <Fragment>
-              <input
-                type="text"
-                className="FormulaInput"
-                disabled={this.props.readOnly}
-                value={this.state.value}
-                onChange={this.handleChange}
-                onBlur={this.handleOnBlur}
-                onFocus={this.handleOnFocus}
-                ref={this.setRef}
-              />
-              <KeyboardListener callback={this.keys} priority={6} />
-            </Fragment>
-          ),
-          domNode,
-        )}
-      </formulaPlaceContext.Consumer>
+      <Fragment>
+        <input
+          type="text"
+          className="FormulaInput"
+          disabled={readOnly}
+          value={this.state.value}
+          onChange={this.handleChange}
+          onBlur={this.handleOnBlur}
+          onFocus={this.handleOnFocus}
+          ref={this.setRef}
+        />
+        <KeyboardListener callback={this.keys} priority={6} />
+      </Fragment>
     );
   }
 }
 
-const mapStateToProps = (state, ownProps) => {
-  const selectedCellId = ownProps.selection && ownProps.selection.cellId;
+const mapStateToProps = (state) => {
+  const { selection } = state;
+  const selectedCellId = selection && selection.cellId;
   return {
+    selection,
     initialValue: selectedCellId
       ? stringFormula(state, selectedCellId)
       : '',

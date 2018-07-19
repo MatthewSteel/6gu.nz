@@ -65,7 +65,6 @@ class ObjectContentsComponent extends ContentsBaseComponent {
 
   render() {
     const {
-      readOnly,
       tableData,
       viewSelected,
       viewWidth,
@@ -94,7 +93,6 @@ class ObjectContentsComponent extends ContentsBaseComponent {
             y={viewOffsetY}
             width={1}
             key="selection"
-            readOnly={readOnly}
             selection={this.selectedCellId()}
           />
         ));
@@ -126,7 +124,6 @@ class ObjectContentsComponent extends ContentsBaseComponent {
           <CellSelectionComponent
             {...geomProps}
             key="selection"
-            readOnly={readOnly}
             selection={this.selectedCellId()}
           />
         ));

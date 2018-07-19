@@ -66,7 +66,6 @@ class TableKeysComponent extends ContentsBaseComponent {
 
   render() {
     const {
-      readOnly,
       tableData,
       viewSelected,
       viewWidth,
@@ -96,7 +95,6 @@ class TableKeysComponent extends ContentsBaseComponent {
             y={viewOffsetY}
             width={1}
             key="selection"
-            readOnly={readOnly}
             selection={this.selectedCellId()}
           />
         ));

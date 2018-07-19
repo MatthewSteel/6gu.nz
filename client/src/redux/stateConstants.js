@@ -35,6 +35,7 @@ export const initialState = {
   uistate: DEFAULT_VIEW,
   undoStack: [],
   redoStack: [],
+  selection: null,
 };
 
 export const path = terminalName => ({
