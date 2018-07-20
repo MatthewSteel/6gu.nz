@@ -17,6 +17,7 @@ module.exports = {
     'no-continue': 0,
     'no-use-before-define': 0,
     'no-eval': 0,
+    'no-labels': 0,
     'no-restricted-syntax': 0,
     'no-mixed-operators': 0,
     'no-plusplus': 0,
