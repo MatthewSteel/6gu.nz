@@ -3,43 +3,43 @@ import { generatorLex, lexFormula } from './lexer';
 describe('lexFormula', () => {
   it('lexes a simple assignment', () => {
     expect(lexFormula('foo:bar')).toEqual([
-      { name: 'foo' },
-      { assignment: ':' },
-      { name: 'bar' },
+      { name: 'foo', inputLength: 3 },
+      { assignment: ':', inputLength: 1 },
+      { name: 'bar', inputLength: 3 },
     ]);
   });
 
   it('works with spaces', () => {
     expect(lexFormula(' "hello"  + " world!" * 12.0')).toEqual([
-      { value: 'hello' },
-      { op: '+' },
-      { value: ' world!' },
-      { op: '*' },
-      { value: 12.0 },
+      { value: 'hello', inputLength: 7 },
+      { op: '+', inputLength: 1 },
+      { value: ' world!', inputLength: 9 },
+      { op: '*', inputLength: 1 },
+      { value: 12, inputLength: 4 },
     ]);
   });
 
   it('gives us what we expect for lookups and calls', () => {
     expect(lexFormula(' :func( sheet.cell:0).value')).toEqual([
-      { assignment: ':' },
-      { name: 'func' },
-      { open: '(' },
-      { name: 'sheet' },
-      { lookup: '.' },
-      { name: 'cell' },
-      { assignment: ':' },
-      { value: 0 },
-      { close: ')' },
-      { lookup: '.' },
-      { name: 'value' },
+      { assignment: ':', inputLength: 1 },
+      { name: 'func', inputLength: 4 },
+      { open: '(', inputLength: 1 },
+      { name: 'sheet', inputLength: 5 },
+      { lookup: '.', inputLength: 1 },
+      { name: 'cell', inputLength: 4 },
+      { assignment: ':', inputLength: 1 },
+      { value: 0, inputLength: 1 },
+      { close: ')', inputLength: 1 },
+      { lookup: '.', inputLength: 1 },
+      { name: 'value', inputLength: 5 },
     ]);
   });
 
   it('handles literal bools', () => {
     expect(lexFormula('true||false')).toEqual([
-      { value: true },
-      { op: '||' },
-      { value: false },
+      { value: true, inputLength: 4 },
+      { op: '||', inputLength: 2 },
+      { value: false, inputLength: 5 },
     ]);
   });
 
@@ -48,18 +48,26 @@ describe('lexFormula', () => {
   });
 
   it('deals with escaped things in names and strings', () => {
-    expect(lexFormula('\\ hi')).toEqual([{ name: ' hi' }]);
-    expect(lexFormula('hi\\ there')).toEqual([{ name: 'hi there' }]);
-    expect(lexFormula('"hi\\nthere"')).toEqual([{ value: 'hi\nthere' }]);
-    expect(lexFormula('"\\\\"')).toEqual([{ value: '\\' }]);
+    expect(lexFormula('\\ hi')).toEqual([{
+      name: ' hi', inputLength: 4,
+    }]);
+    expect(lexFormula('hi\\ there')).toEqual([{
+      name: 'hi there', inputLength: 9,
+    }]);
+    expect(lexFormula('"hi\\nthere"')).toEqual([{
+      value: 'hi\nthere', inputLength: 11,
+    }]);
+    expect(lexFormula('"\\\\"')).toEqual([{ value: '\\', inputLength: 4 }]);
   });
 
   it('lexes all the numbers we are interested in', () => {
-    expect(lexFormula('0.5')).toEqual([{ value: 0.5 }]);
-    expect(lexFormula('1')).toEqual([{ value: 1 }]);
+    expect(lexFormula('0.5')).toEqual([{ value: 0.5, inputLength: 3 }]);
+    expect(lexFormula('1')).toEqual([{ value: 1, inputLength: 1 }]);
 
     // :-(
-    expect(lexFormula('.5')).toEqual([{ lookup: '.' }, { value: 5 }]);
+    expect(lexFormula('.5')).toEqual([
+      { lookup: '.', inputLength: 1 }, { value: 5, inputLength: 1 },
+    ]);
     expect(() => lexFormula('0.')).toThrow(SyntaxError);
   });
 
@@ -67,18 +75,28 @@ describe('lexFormula', () => {
     const stream = [
       { input: null, output: [] },
       { input: 'x', output: [] },
-      { input: '+', output: [{ name: 'x' }, { op: '+' }] },
+      {
+        input: '+',
+        output: [{ name: 'x', inputLength: 1 }, { op: '+', inputLength: 1 }],
+      },
       { input: 'x', output: [] },
       { input: 'y', output: [] },
       { input: 'z', output: [] },
-      { input: '>', output: [{ name: 'xyz' }] },
-      { input: '=', output: [{ op: '>=' }] },
-      { input: '(', output: [{ open: '(' }] },
+      { input: '>', output: [{ name: 'xyz', inputLength: 3 }] },
+      { input: '=', output: [{ op: '>=', inputLength: 2 }] },
+      { input: '(', output: [{ open: '(', inputLength: 1 }] },
       { input: '1', output: [] },
-      { input: ')', output: [{ value: 1 }, { close: ')' }] },
+      {
+        input: ')',
+        output: [{ value: 1, inputLength: 1 }, { close: ')', inputLength: 1 }],
+      },
       { input: '<', output: [] },
-      { input: '6', output: [{ op: '<' }] },
-      { input: null, output: [{ value: 6 }] },
+      { input: '6', output: [{ op: '<', inputLength: 1 }] },
+      { input: ' ', output: [{ value: 6, inputLength: 1 }] },
+      { input: '"', output: [{ whitespace: ' ', inputLength: 1 }] },
+      { input: 'a', output: [] },
+      { input: '"', output: [{ value: 'a', inputLength: 3 }] },
+      { input: null, output: [] },
     ];
     const gen = generatorLex();
     stream.forEach(({ input, output }) => {
