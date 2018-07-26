@@ -176,7 +176,7 @@ class Formula extends Component {
     const formulaChanged = next.initialValue !== this.props.initialValue;
     const selectionChanged = !equal(next.selection, this.props.selection);
     if (this.inputRef && (formulaChanged || selectionChanged)) {
-      this.inputRef.innerHTML = next.initialValue || zeroWidthSpace;
+      this.inputRef.innerHTML = next.initialValue || nbsp;
     }
   }
 
