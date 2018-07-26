@@ -1,4 +1,5 @@
 import React from 'react';
+import classNames from 'classnames';
 import { renderToStaticMarkup } from 'react-dom/server';
 import { unlexToken, unparseFormula } from './unparser';
 import { getCellValuesById } from './codegen';
@@ -71,8 +72,8 @@ const opStrings = {
   '/': '\u2044',
 };
 
-const renderCell = (name, value) => (
-  <div className="CellTermSurround">
+const renderCell = (name, value, isName) => (
+  <div className={classNames('CellTermSurround', isName && 'NameToken')}>
     <SheetCellComponent
       x={0}
       y={0}
@@ -89,7 +90,7 @@ const renderToken = (state, token) => {
     const name = unlexToken(state)(token);
     const value = token.name
       ? { value: nbsp } : getCellValuesById(state)[token.ref];
-    return renderCell(name, value);
+    return renderCell(name, value, token.name);
   }
 
   const { inputLength, ...restOfToken } = token;

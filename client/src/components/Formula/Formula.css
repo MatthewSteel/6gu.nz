@@ -30,6 +30,18 @@
   text-align: center;
   box-shadow: 1px 1px 4px 0px #000;
   margin: 0px 2px;
+  position: relative;
+}
+
+.CellTermSurround.NameToken::after {
+  content: " ";
+  position: absolute;
+  background: linear-gradient(#FFF0, #FFF, #FFF);
+  top: 50%;
+  bottom: -4px;
+  left: -4px;
+  right: -4px;
+  z-index: 10;
 }
 
 .BigToken {
