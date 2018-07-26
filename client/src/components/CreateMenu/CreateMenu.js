@@ -6,7 +6,7 @@ import TetherComponent from 'react-tether';
 import uuidv4 from 'uuid-v4';
 
 import KeyboardListener from '../util/KeyboardListener';
-import { unparseName } from '../../selectors/formulas/unparser';
+import { unlexName } from '../../selectors/formulas/unparser';
 import { setFormula } from '../../redux/documentEditing';
 import '../DropDown/DropDown.css';
 
@@ -130,7 +130,7 @@ class CreateMenu extends Component {
 
   newThing(str, name) {
     const { selection, setFormulaProp } = this.props;
-    const formula = `${unparseName(name)}: ${str}`;
+    const formula = `${unlexName(name)}: ${str}`;
     setFormulaProp(selection, formula);
   }
 

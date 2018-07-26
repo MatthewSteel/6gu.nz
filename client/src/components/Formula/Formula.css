@@ -1,3 +1,43 @@
 .FormulaInput {
+  background-color: white;
+  text-align: left;
   flex-grow: 1;
+  padding: 4px;
+  border: thin solid #888;
+  min-height: 10px;
+  transition:min-height 0.2s ease;
+  display: flex;
+  align-items: center;
+  color: #666;
+}
+
+.FormulaInput.HasContent {
+  min-height: 40px;
+}
+
+.FormulaInput:focus {
+  min-height: 40px;
+}
+
+.ReadOnlyFormula {
+  background-color: #AAA;
+}
+
+.CellTermSurround {
+  display: grid;
+  min-width: 50px;
+  max-width: 100px;
+  text-align: center;
+  box-shadow: 1px 1px 4px 0px #000;
+  margin: 0px 2px;
+}
+
+.BigToken {
+  font-size: 40px;
+  font-weight: 100;
+  font-family: serif;
+  transform: scaleX(0.5);
+}
+
+.SmallToken {
 }

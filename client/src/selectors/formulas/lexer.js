@@ -74,7 +74,13 @@ function* lexString(prevLeftOverTokens) {
     inputLength += 1;
     charEscaped = next === '\\';
   }
-  throw new Error('Unterminated string');
+  // Unterminated strings just get taken literally from the quote to the end.
+  // Then we don't need to worry about "what if it ends with a backslash" etc.
+  const token = {
+    value: chars.slice(1).join(''),
+    inputLength: inputLength - 1,
+  };
+  return { nextChar: next, leftOverTokens: [token] };
 }
 
 

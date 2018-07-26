@@ -103,4 +103,17 @@ describe('lexFormula', () => {
       expect(gen.next(input).value).toEqual(output);
     });
   });
+
+  it('"gracefully" lexes unterminated strings', () => {
+    const stream = [
+      { input: null, output: [] },
+      { input: '"', output: [] },
+      { input: 'a', output: [] },
+      { input: null, output: [{ value: 'a', inputLength: 2 }] },
+    ];
+    const gen = generatorLex();
+    stream.forEach(({ input, output }) => {
+      expect(gen.next(input).value).toEqual(output);
+    });
+  });
 });

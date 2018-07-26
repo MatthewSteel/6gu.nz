@@ -20,28 +20,22 @@ const defaultFormatter = (value, pushStack) => {
     );
   }
   const ourType = getType(value);
-  if (ourType === 'array') {
-    return `[${value.arr.length}]`;
-  }
+  const ellipsis = '\u22ef';
+  const vertEllipsis = '\u22ee';
+  if (ourType === 'array') return `[${vertEllipsis}]`;
   if (ourType === 'object') {
-    const contentsStr = `{${Object.keys(value.byName).length}}`;
-    if (pushStack && value.template) {
-      return (
-        <div style={{ position: 'relative', zIndex: 0 }}>
-          {contentsStr}
-          <button onClick={pushStack} className="StackButton" type="button">
-            +
-          </button>
-        </div>
-      );
-    }
-    return contentsStr;
+    const contentsStr = `{${ellipsis}}`;
+    if (!pushStack || !value.template) return contentsStr;
+    return (
+      <div style={{ position: 'relative', zIndex: 0 }}>
+        {contentsStr}
+        <button onClick={pushStack} className="StackButton" type="button">
+          +
+        </button>
+      </div>
+    );
   }
-  if (ourType === 'table') {
-    const numCols = Object.keys(value.arr[0].value.byName).length;
-    const numRows = value.arr.length;
-    return `[{${numCols}} x ${numRows}]`;
-  }
+  if (ourType === 'table') return `[{${ellipsis}}]`;
   return JSON.stringify(value);
 };
 
