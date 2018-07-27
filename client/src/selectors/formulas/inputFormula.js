@@ -85,12 +85,12 @@ const renderCell = (name, value, isName) => (
   </div>
 );
 
-const renderToken = (state, token) => {
+const renderToken = (state, token, blankOutRefValue) => {
   if (token.name || token.ref) {
     const name = unlexToken(state)(token);
-    const value = token.name
+    const value = (token.name || blankOutRefValue)
       ? { value: nbsp } : getCellValuesById(state)[token.ref];
-    return renderCell(name, value, token.name);
+    return renderCell(name, value, token.name && !blankOutRefValue);
   }
 
   const { inputLength, ...restOfToken } = token;
@@ -110,6 +110,9 @@ export const htmlFromInput = (input, state) => {
     if (typeof elem === 'string') {
       ret.push(elem.replace(' ', nbsp));
     } else {
+      const nextToken = input[i + 1];
+      const blankOutRefValue = nextToken
+        && (nextToken.open || nextToken.assignment);
       ret.push([
         zeroWidthSpace,
         (
@@ -119,7 +122,7 @@ export const htmlFromInput = (input, state) => {
             style={{ display: 'inline-block' }}
             key={i}
           >
-            {renderToken(state, elem)}
+            {renderToken(state, elem, blankOutRefValue)}
           </div>
         ),
         zeroWidthSpace,
