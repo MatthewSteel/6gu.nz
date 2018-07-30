@@ -350,6 +350,14 @@ export const copyDocument = async (dispatch, docs, documentId) => {
 export const newDocument = () => ({ type: 'NEW_DOCUMENT' });
 
 
+const replaceDoc = (state, newDoc) => ({
+  ...state,
+  openDocument: newDoc,
+  undoStack: [],
+  redoStack: [],
+});
+
+
 export const userStateReducer = (state, action) => {
   if (action.type === 'USER_STATE') {
     // login with open doc, document list, login state etc.
@@ -362,17 +370,8 @@ export const userStateReducer = (state, action) => {
   }
 
   if (action.type === 'SAVE_COPY') {
-    // Set open document and save it.
-    return scheduleSave(
-      state,
-      {
-        ...state,
-        openDocument: action.payload,
-        undoStack: [], // The stack documents all have ids :-/
-        redoStack: [],
-      },
-      false, // don't push an undo action.
-    );
+    // Set open document and save it. Clear the undo/redo stacks.
+    return scheduleSave(replaceDoc(state, action.payload), false);
   }
 
   if (action.type === 'RENAME_DOCUMENT') {
@@ -405,11 +404,11 @@ export const userStateReducer = (state, action) => {
   if (action.type === 'LOAD_DOCUMENT') {
     // set document title and url?
     // Reset the view?
-    return digMut(state, ['openDocument'], action.payload);
+    return replaceDoc(state, action.payload);
   }
 
   if (action.type === 'NEW_DOCUMENT') {
-    return digMut(state, ['openDocument'], blankDocument());
+    return replaceDoc(state, blankDocument());
   }
 
   return state;
