@@ -59,7 +59,8 @@ const rawOps = new Set(['>', '<', '=', '+']);
 
 const tokenRenderable = token => !('value' in token)
   && !token.whitespace
-  && !rawOps.has(token.op);
+  && !rawOps.has(token.op)
+  && !token.badFormula;
 
 const opStrings = {
   '<<': '\u226A',
