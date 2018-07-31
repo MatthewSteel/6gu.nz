@@ -25,28 +25,31 @@ import './Formula.css';
 
 const normalisePoint = (inputRef, position, allPositions, isAnchor) => {
   // If the point is before the formula bar, reset it to the start.
+  const insidePosition = (position.node === inputRef)
+    ? { node: inputRef.childNodes[position.offset], offset: 0 }
+    : position;
   const firstNode = allPositions[0].node;
-  const leftCompare = position.node.compareDocumentPosition(firstNode);
+  const leftCompare = insidePosition.node.compareDocumentPosition(firstNode);
   if ((leftCompare & 4) === 4) return allPositions[0];
 
   // If the point is after the formula bar, reset it to the start.
   const lastNode = allPositions[allPositions.length - 1].node;
-  const rightCompare = position.node.compareDocumentPosition(lastNode);
+  const rightCompare = insidePosition.node.compareDocumentPosition(lastNode);
   if ((rightCompare & 2) === 2) {
     return allPositions[allPositions.length - 1];
   }
 
   // If the point is in a text node, make sure it is in a valid location.
-  let selectedNode = position.node;
+  let selectedNode = insidePosition.node;
   if (selectedNode.parentNode === inputRef && isText(selectedNode)) {
     // In a text node, thank goodness. Return a close "ok" position.
     const sameNodePositions = allPositions.filter(({ node }) => (
       node === selectedNode));
     const maybeSamePosition = sameNodePositions.find(({ offset }) => (
-      offset === position.offset));
+      offset === insidePosition.offset));
     if (maybeSamePosition) return maybeSamePosition;
     const maybeClosePosition = sameNodePositions.find(({ offset }) => (
-      Math.abs(offset - position.offset) === 1));
+      Math.abs(offset - insidePosition.offset) === 1));
     if (maybeClosePosition) return maybeClosePosition;
     return sameNodePositions[0]; // !!!
   }
