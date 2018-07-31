@@ -25,7 +25,7 @@ export const updateView = newView => ({
   type: 'UPDATE_VIEW', payload: { newView },
 });
 
-export const updateSelection = (newSelection) => ({
+export const updateSelection = newSelection => ({
   type: 'UPDATE_SELECTION', payload: { newSelection },
 });
 
