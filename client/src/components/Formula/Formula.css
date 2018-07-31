@@ -20,8 +20,16 @@
   min-height: 40px;
 }
 
-.ReadOnlyFormula {
+.ReadOnlyFormula::after {
+  content: ' ';
+  left: 0px;
+  right: 0px;
+  top: 0px;
+  bottom: 0px;
+  position: absolute;
+  z-index: 10;
   background-color: #AAA;
+  opacity: 0.5;
 }
 
 .CellTermSurround {
