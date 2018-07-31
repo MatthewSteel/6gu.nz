@@ -2,6 +2,7 @@
   background-color: white;
   text-align: left;
   flex-grow: 1;
+  flex-wrap: wrap;
   padding: 4px;
   border: thin solid #888;
   min-height: 10px;
