@@ -35,6 +35,20 @@ class Book extends PureComponent {
     this.setStackDepth = this.setStackDepth.bind(this);
     this.changeSheetViewSheet = this.changeSheetViewSheet.bind(this);
     this.deleteSheet = this.deleteSheet.bind(this);
+
+    this.setFormulaRef = this.setFormulaRef.bind(this);
+    this.maybeInsertRefIntoFormula = this.maybeInsertRefIntoFormula.bind(this);
+    this.formulaRef = null;
+  }
+
+  setFormulaRef(ref) {
+    this.formulaRef = ref;
+  }
+
+  maybeInsertRefIntoFormula(ref) {
+    if (!this.formulaRef) return false;
+    return this.formulaRef.getWrappedInstance()
+      .maybeInsertRefIntoFormula(ref);
   }
 
   changeSheetViewSheet(targetSheetId) {
@@ -96,6 +110,7 @@ class Book extends PureComponent {
           readOnly={i !== 0}
           selected={i === displayView.length - 1}
           deleteSheet={this.deleteSelectedSheet}
+          maybeInsertRefIntoFormula={this.maybeInsertRefIntoFormula}
           popViewStack={this.popStack}
           pushViewStack={this.pushStack}
         />
@@ -128,7 +143,7 @@ class Book extends PureComponent {
         <div className="SheetContainer">
           {sheetViews}
           <div className="FormulaInputRow">
-            <Formula />
+            <Formula ref={this.setFormulaRef} />
           </div>
         </div>
       </div>

@@ -1,7 +1,7 @@
 import React from 'react';
 import classNames from 'classnames';
 import { renderToStaticMarkup } from 'react-dom/server';
-import { unlexToken, unparseFormula } from './unparser';
+import { unlexToken, unparseRefFormula } from './unparser';
 import { getCellValuesById } from './codegen';
 import SheetCellComponent from '../../components/CellComponent/SheetCellComponent';
 
@@ -12,7 +12,7 @@ export const nbsp = '\u00A0';
 export const inputFromFormula = (ref, state) => {
   // Translate refs into lookups etc for now. Later on we can set it to
   // false.
-  const tokens = unparseFormula(ref, state, false);
+  const tokens = unparseRefFormula(ref, state, false);
   const ret = [];
   let currentString = [];
   const addStrings = () => {

@@ -94,6 +94,7 @@ class ArrayComponent extends ContentsBaseComponent {
           onClick={toggleElementSize}
         >
           <CellNameComponent
+            id={id}
             name={array.name}
             x={viewOffsetX}
             y={viewOffsetY}

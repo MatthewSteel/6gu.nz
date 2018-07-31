@@ -187,22 +187,25 @@ const undoTranslateIndexLookups = (term) => {
   return term;
 };
 
-export const unparseFormula = (ref, state) => {
-  const refParent = refParentId(ref);
+export const unparseFormula = (formula, context, state) => {
+  if (!formula) return [];
   const translations = [
     subRefsForLookupsInTerm,
     undoTranslateIndexLookups,
     unparseTerm,
-  ].filter(Boolean);
+  ];
+  return runTranslations(
+    formula,
+    getContextIdForRefId(getRefsById(state), context, context),
+    state,
+    translations,
+  );
+};
 
-  const tokens = ref.formula
-    ? runTranslations(
-      ref.formula,
-      getContextIdForRefId(getRefsById(state), refParent, refParent),
-      state,
-      translations,
-    )
-    : [];
+export const unparseRefFormula = (ref, state) => {
+  const refParent = refParentId(ref);
+  const tokens = unparseFormula(ref.formula, refParent, state);
+
   if (!ref.name) return tokens;
   return [
     { name: unlexName(ref.name) },
@@ -215,5 +218,5 @@ export const unparseFormula = (ref, state) => {
 export const stringFormula = (state, refId) => {
   const ref = getRefsById(state)[refId];
   if (!ref) return '';
-  return unparseFormula(ref, state).map(unlexToken(state)).join('');
+  return unparseRefFormula(ref, state).map(unlexToken(state)).join('');
 };

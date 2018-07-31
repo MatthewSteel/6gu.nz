@@ -59,6 +59,8 @@ class ArrayContentsComponent extends ContentsBaseComponent {
 
   render() {
     const {
+      cells,
+      contextId,
       tableData,
       viewSelected,
       viewHeight,
@@ -78,6 +80,7 @@ class ArrayContentsComponent extends ContentsBaseComponent {
     ) {
       const worldRow = viewOffsetY + (row - scrollY) / 2;
 
+      const clickId = cells && cells[row] ? cells[row].id : contextId;
       // labels
       if (scrollX === 0) {
         const cellSelected = viewSelected && selX === 0 && selY === row;
@@ -99,6 +102,7 @@ class ArrayContentsComponent extends ContentsBaseComponent {
             width={1}
             y={worldRow}
             height={0.5}
+            id={clickId}
             name={`${row}`}
             setSelection={this.setViewSelection}
             key={`name-${row}`}
@@ -112,6 +116,7 @@ class ArrayContentsComponent extends ContentsBaseComponent {
       const cellSelected = viewSelected && selX === 1 && selY === row;
       const maybeValue = tableData.arr[row];
       const geomProps = {
+        id: clickId,
         x: viewOffsetX + contentsX,
         width: 1,
         y: worldRow,

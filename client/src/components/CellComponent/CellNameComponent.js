@@ -4,6 +4,7 @@ import BaseCellComponent from './BaseCellComponent';
 class CellNameComponent extends PureComponent {
   render() {
     const {
+      id,
       x,
       y,
       width,
@@ -15,6 +16,7 @@ class CellNameComponent extends PureComponent {
     } = this.props;
     return (
       <BaseCellComponent
+        id={id}
         x={x}
         y={y}
         width={width}

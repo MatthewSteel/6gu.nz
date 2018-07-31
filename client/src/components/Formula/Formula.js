@@ -5,6 +5,7 @@ import equal from 'fast-deep-equal';
 
 import KeyboardListener, { FALL_THROUGH, CAPTURE } from '../util/KeyboardListener';
 import { getRefsById } from '../../selectors/formulas/selectors';
+import { unparseFormula } from '../../selectors/formulas/unparser';
 import { deleteLoc, deleteThing, setFormula } from '../../redux/documentEditing';
 import {
   inputFromFormula,
@@ -204,6 +205,21 @@ class Formula extends Component {
     }
   }
 
+  maybeInsertRefIntoFormula(ref) {
+    if (!this.hasFocus) return false;
+    this.normaliseSelection();
+    const selection = window.getSelection();
+    if (selection.rangeCount === 0) return false;
+    const { renderFormula } = this.props;
+    const range = selection.getRangeAt(0);
+    const newHtml = renderFormula({ ref });
+    const newNode = document.createRange().createContextualFragment(newHtml);
+    range.insertNode(newNode);
+    this.normaliseSelection(); // ?
+    selection.collapseToEnd();
+    return true;
+  }
+
   blur() {
     this.resetValue();
     this.inputRef.blur();
@@ -289,7 +305,7 @@ class Formula extends Component {
     return CAPTURE;
   }
 
-  onClick() {
+  normaliseSelection() {
     const positions = getPositions(this.inputRef);
     const selection = window.getSelection();
     const { anchor, focus } = normaliseSelection(
@@ -300,6 +316,10 @@ class Formula extends Component {
     selection.setBaseAndExtent(
       anchor.node, anchor.offset, focus.node, focus.offset,
     );
+  }
+
+  onClick() {
+    this.normaliseSelection();
   }
 
   onInput() {
@@ -380,13 +400,15 @@ const mapStateToProps = (state) => {
   const selectedCellId = selection && selection.cellId;
   const formulaStrFromElem = elem => (
     formulaFromInput(inputFromDom(elem), state));
+  const renderFormula = formula => (
+    htmlFromInput(unparseFormula(formula, selection.context, state), state));
   if (!selectedCellId) {
-    return { formulaStrFromElem, selection, initialValue: '' };
+    return { formulaStrFromElem, selection, initialValue: '', renderFormula };
   }
 
   const ref = getRefsById(state)[selectedCellId];
   const initialValue = htmlFromInput(inputFromFormula(ref, state), state);
-  return { formulaStrFromElem, selection, initialValue };
+  return { formulaStrFromElem, selection, initialValue, renderFormula };
 };
 
 const mapDispatchToProps = dispatch => ({
@@ -395,4 +417,9 @@ const mapDispatchToProps = dispatch => ({
   setCellFormula: (context, cellId, formula) => dispatch(setFormula(context, cellId, formula)),
 });
 
-export default connect(mapStateToProps, mapDispatchToProps)(Formula);
+export default connect(
+  mapStateToProps,
+  mapDispatchToProps,
+  null,
+  { withRef: true },
+)(Formula);

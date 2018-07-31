@@ -65,7 +65,7 @@ class CellValueComponent extends PureComponent {
   }
 
   render() {
-    const { x, y, width, height, setSelection, extraClasses } = this.props;
+    const { id, x, y, width, height, setSelection, extraClasses } = this.props;
     const { error, formattedValue, override } = this.getCellContents();
     const className = classNames(
       'CellValue',
@@ -80,6 +80,7 @@ class CellValueComponent extends PureComponent {
       <BaseCellComponent
         x={x}
         y={y}
+        id={id}
         width={width}
         height={height}
         className={className}
