@@ -26,9 +26,17 @@ import './Formula.css';
 
 const normalisePoint = (inputRef, position, allPositions, isAnchor) => {
   // If the point is before the formula bar, reset it to the start.
-  const insidePosition = (position.node === inputRef)
-    ? { node: inputRef.childNodes[position.offset], offset: 0 }
-    : position;
+  let insidePosition = position;
+  if (position.node === inputRef) {
+    const numChildren = inputRef.childNodes.length;
+    if (numChildren === position.offset) {
+      const lastChild = inputRef.childNodes[numChildren - 1];
+      insidePosition = { node: lastChild, offset: lastChild.length };
+    } else {
+      const node = inputRef.childNodes[position.offset];
+      insidePosition = { node, offset: 0 };
+    }
+  }
   const firstNode = allPositions[0].node;
   const leftCompare = insidePosition.node.compareDocumentPosition(firstNode);
   if ((leftCompare & 4) === 4) return allPositions[0];
@@ -324,6 +332,7 @@ class Formula extends Component {
 
   onInput() {
     normaliseFormulaContents(this.inputRef);
+    this.normaliseSelection();
   }
 
   updateSelection(direction, speed, leaveAnchor) {
