@@ -1,4 +1,4 @@
-import { lexFormula } from './lexer';
+import { lexFormula, bareToken } from './lexer';
 import { getSheets } from './selectors';
 import store from '../../redux/store';
 import { parseFormula, parseTokens } from './parser';
@@ -70,7 +70,8 @@ describe('parser', () => {
       },
     };
 
-    expect(lexFormula(formula)).toEqual(tokens); // Just in case...
+    // Just in case:
+    expect(lexFormula(formula).map(bareToken)).toEqual(tokens);
     expect(parseTokens(tokens, 0)).toEqual(expectedOutput);
   });
 

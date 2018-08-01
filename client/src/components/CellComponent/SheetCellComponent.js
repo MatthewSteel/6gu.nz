@@ -58,6 +58,7 @@ class SheetCellComponent extends PureComponent {
           onClick={toggleElementSize}
         >
           <CellNameComponent
+            id={id}
             name={name}
             x={x}
             y={y}

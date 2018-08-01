@@ -1,6 +1,8 @@
 import React, { PureComponent } from 'react';
 import './CellComponent.css';
 
+const preventDefault = (ev) => { ev.preventDefault(); };
+
 class BaseCellComponent extends PureComponent {
   constructor(props) {
     super(props);
@@ -9,8 +11,8 @@ class BaseCellComponent extends PureComponent {
 
   onClick(ev) {
     ev.preventDefault();
-    const { x, y, setSelection } = this.props;
-    setSelection(y, x);
+    const { x, y, id, setSelection } = this.props;
+    setSelection(y, x, id);
   }
 
   bounds() {
@@ -35,6 +37,7 @@ class BaseCellComponent extends PureComponent {
         className={className}
         style={style}
         onClick={this.onClick}
+        onMouseDown={preventDefault}
         onDragStart={onDragStart}
         onDragEnd={onDragEnd}
         title={title}

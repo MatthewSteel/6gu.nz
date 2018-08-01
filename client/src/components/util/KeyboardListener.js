@@ -1,13 +1,17 @@
 import { PureComponent } from 'react';
 import uuidv4 from 'uuid-v4';
 
+export const FALL_THROUGH = undefined;
+export const CAPTURE = true;
+
 let listenerStack = [];
 const processKey = (ev) => {
   let seenGreedyHandler = false;
   listenerStack.forEach(({ callback, greedy }) => {
     if (ev.defaultPrevented || seenGreedyHandler) return;
-    callback(ev);
-    seenGreedyHandler = seenGreedyHandler || greedy;
+    const captureGreedily = callback(ev);
+    const captured = captureGreedily === CAPTURE;
+    seenGreedyHandler = seenGreedyHandler || greedy || captured;
   });
 };
 document.addEventListener('keydown', processKey);

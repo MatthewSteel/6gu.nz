@@ -5,11 +5,12 @@ import {
   lookupExpression,
   refParentId,
   runTranslations,
+  translateExpr,
 } from './selectors';
 
 // Turning a stored raw formula back into a string.
 
-export const unparseName = (name) => {
+export const unlexName = (name) => {
   const toJoin = [];
   for (let i = 0; i < name.length; ++i) {
     const character = name[i];
@@ -24,67 +25,132 @@ export const unparseName = (name) => {
   return toJoin.join('');
 };
 
-const unparseRef = (id, state) => {
+const unlexRef = (id, state) => {
   const ref = getRefsById(state)[id];
   if (!ref || !ref.name) throw new Error('ugh');
-  return unparseName(ref.name);
+  return unlexName(ref.name);
 };
 
-const unparseObject = (object) => {
-  if (object.length === 0) return '{}';
-  const args = object.map(({ key, value }) => {
-    const unparsedKey = unparseName(key);
-    if (unparsedKey === value) return value;
-    if (value.endsWith(`.${unparsedKey}`)) {
-      // Make sure there is an even number (like zero) of backslashes
-      // before that dot, so it is not part of some sneaky name...
-      const upToKey = value.slice(0, -key.length - 1);
-      const match = upToKey.match(/[\\]*$/);
-      if (match.length % 2 === 0) return value;
-    }
-    return `${unparsedKey}: ${value}`;
-  });
-  return `{ ${args.join(', ')} }`;
+export const unlexToken = state => (token) => {
+  if (token.expanded) {
+    return translateExpr(token.expanded, state, unparseTerm)
+      .map(unlexToken(state)).join('');
+  }
+  if (token.ref) return unlexRef(token.ref, state);
+  if (token.name) return unlexName(token.name);
+  if (token.value) return JSON.stringify(token.value);
+  const values = Object.values(token);
+  if (values.length !== 1) {
+    throw new Error(`Weird token ${JSON.stringify(token)}`);
+  }
+  return values[0];
 };
+
+const unparseObject = (object, state) => {
+  if (object.length === 0) return [{ openBrace: '{' }, { closeBrace: '}' }];
+
+  const elems = object.map(({ key, value }) => {
+    if (value.length === 1 && value[0].ref) {
+      const ref = getRefsById(state)[value[0].ref];
+      if (ref.name && ref.name === key) return value;
+    }
+    return [key, { comma: ',' }, { whitespace: ' ' }, ...value];
+  });
+
+  return [
+    { openBrace: '{' },
+    { whitespace: ' ' },
+    ...join(elems),
+    { whitespace: ' ' },
+    { closeBrace: '}' },
+  ];
+};
+
+const unparseLookupIndex = term => [
+  ...term.on,
+  { openBracket: '[' },
+  ...term.lookupIndex,
+  { closeBracket: ']' },
+];
+
+const unparseIndexLookup = term => [
+  ...term.on,
+  { openBracket: '[' },
+  ...term.keyCol,
+  { assignment: ':' },
+  { whitespace: ' ' },
+  ...term.indexLookup,
+  { closeBracket: ']' },
+];
+
+const join = (seq) => {
+  const ret = [];
+  seq.forEach((elem, i) => {
+    if (i !== 0) {
+      ret.push(...[{ comma: ',' }, { whitespace: ' ' }]);
+    }
+    ret.push(...elem);
+  });
+  return ret;
+};
+
+const unparseCall = (term) => {
+  const argsList = [
+    ...term.args,
+    ...term.kwargs.map(({ ref, expr }) => [
+      ...ref, { assignment: ':' }, { whitespace: ' ' }, ...expr,
+    ]),
+  ];
+  return [
+    ...term.call,
+    { open: '(' },
+    ...join(argsList),
+    { close: ')' },
+  ];
+};
+
+const unparseBinary = term => [
+  ...term.left,
+  { whitespace: ' ' },
+  { op: term.binary },
+  { whitespace: ' ' },
+  ...term.right,
+];
+
+const unparseArray = term => [
+  { openBracket: '[' },
+  ...join(term.array),
+  { closeBracket: ']' },
+];
 
 export const unparseTerm = (term, contextId, state) => {
-  if (term.lookup) return `${term.on}.${unparseName(term.lookup)}`;
-  if (term.lookupIndex) return `${term.on}[${term.lookupIndex}]`;
-  if (term.indexLookup) {
-    return `${term.on}[${term.keyCol}: ${term.indexLookup}]`;
+  if (term.lookup) return [...term.on, { lookup: '.' }, { name: term.lookup }];
+  if (term.lookupIndex) return unparseLookupIndex(term);
+  if (term.indexLookup) return unparseIndexLookup(term);
+  if (term.call) return unparseCall(term);
+  if (term.expression) {
+    return [{ open: '(' }, ...term.expression, { close: ')' }];
   }
-  if (term.call) {
-    const argsText = [
-      ...term.args,
-      ...term.kwargs.map(({ ref, expr }) => `${ref}: ${expr}`),
-    ].join(', ');
-    return `${term.call}(${argsText})`;
+  if (term.unary) return [{ op: term.unary }, ...term.on];
+  if (term.binary) return unparseBinary(term);
+  if (term.array) return unparseArray(term);
+  if (term.object) return unparseObject(term.object, state);
+  if (term.ref || term.name || term.badFormula || 'value' in term) {
+    return [term];
   }
-  if (term.expression) return `(${term.expression})`;
-  if (term.badFormula) return term.badFormula;
-  if (term.op) return term.op;
-  if (term.ref) return unparseRef(term.ref, state);
-  if (term.name) return unparseName(term.name);
-  if ('value' in term) return JSON.stringify(term.value);
-  if (term.unary) return `${term.unary}${term.on}`;
-  if (term.binary) return `${term.left} ${term.binary} ${term.right}`;
-  if (term.array) return `[${term.array.join(', ')}]`;
-  if (term.object) return unparseObject(term.object);
   throw new Error('Unknown term type');
 };
 
 const subRefsForLookupsInTerm = (term, contextId, state) => {
-  if (term.ref) {
-    return lookupExpression(
-      getRefsById(state),
-      contextId,
-      term.ref,
-    );
-  }
-  return term;
+  if (!term.ref) return term;
+  const expanded = lookupExpression(getRefsById(state), contextId, term.ref);
+  // Add some data for later use -- for refs like `Table[0].foo` we add
+  //   { lookup: 'foo', on: { lookupIndex: { value: 10 }, on: {...} } }.
+  return { ...term, expanded };
 };
 
 const translateIndexLookupKeyCol = term => (
+  // For a formula like Table[age: "Fred"].name
   // Turns
   //   indexLookup: { value: "Fred" },
   //   on: { lookup: "age", on: { ref: table.id } },
@@ -93,9 +159,10 @@ const translateIndexLookupKeyCol = term => (
   //   indexLookup: { value: "Fred" },
   //   on: { lookup: "age", on: { ref: table.id } },
   //   keyCol: { name: "name" },
-  { ...term, keyCol: { name: term.keyCol.lookup } });
+  { ...term, keyCol: { name: term.keyCol.expanded.lookup } });
 
 const undoTranslateIndexLookups = (term) => {
+  // For a formula like Table[name: "Fred"].age
   // Turns
   //   indexLookup: { value: "Fred" },
   //   keyCol: { lookup: "name", on: { ref: table.id } },
@@ -107,32 +174,49 @@ const undoTranslateIndexLookups = (term) => {
   //     keyCol: { lookup: "name", on: { ref: table.id } },
   //     on: { ref: table.id },
   //   },
-  if (term.indexLookup && term.on.lookup) {
+  //  TODO: Consider just having formulas like
+  //    Table.age[Table.name: "Fred"]
+  //  instead. It's shorter now that we have a fancy formula box...
+  if (term.indexLookup && term.on.expanded.lookup) {
     return {
-      lookup: term.on.lookup,
-      on: translateIndexLookupKeyCol({ ...term, on: term.on.on }),
+      lookup: term.on.expanded.lookup,
+      on: translateIndexLookupKeyCol({ ...term, on: term.on.expanded.on }),
     };
   }
   if (term.indexLookup) return translateIndexLookupKeyCol(term);
   return term;
 };
 
-const formulaExpressionString = (ref, state) => {
-  if (!ref.formula) return [];
-  const refParent = refParentId(ref);
+export const unparseFormula = (formula, context, state) => {
+  if (!formula) return [];
+  const translations = [
+    subRefsForLookupsInTerm,
+    undoTranslateIndexLookups,
+    unparseTerm,
+  ];
   return runTranslations(
-    ref.formula,
-    getContextIdForRefId(getRefsById(state), refParent, refParent),
+    formula,
+    getContextIdForRefId(getRefsById(state), context, context),
     state,
-    [subRefsForLookupsInTerm, undoTranslateIndexLookups, unparseTerm],
+    translations,
   );
+};
+
+export const unparseRefFormula = (ref, state) => {
+  const refParent = refParentId(ref);
+  const tokens = unparseFormula(ref.formula, refParent, state);
+
+  if (!ref.name) return tokens;
+  return [
+    { name: unlexName(ref.name) },
+    { assignment: ':' },
+    { whitespace: ' ' },
+    ...tokens,
+  ];
 };
 
 export const stringFormula = (state, refId) => {
   const ref = getRefsById(state)[refId];
   if (!ref) return '';
-
-  const expressionString = formulaExpressionString(ref, state);
-  if (!ref.name) return expressionString;
-  return `${unparseName(ref.name)}: ${expressionString}`;
+  return unparseRefFormula(ref, state).map(unlexToken(state)).join('');
 };

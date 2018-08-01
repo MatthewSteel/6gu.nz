@@ -1,7 +1,7 @@
 import { createSelector } from 'reselect';
 import { getCellValuesById } from '../formulas/codegen';
 import { getRefsById, getSheets, getSheetsById } from '../formulas/selectors';
-import { unparseName } from '../formulas/unparser';
+import { unlexName } from '../formulas/unparser';
 
 const normaliseView = (view, sheets, sheetsById, cellValuesById) => {
   if (!sheetsById[view.sheetId]) {
@@ -68,13 +68,13 @@ export const getDisplayView = createSelector(
         });
       } else if (stackElem.name) {
         stack.push({
-          pathElem: `.${unparseName(stackElem.name)}`,
+          pathElem: `.${unlexName(stackElem.name)}`,
           value: prevValue.byName[stackElem.index].value,
         });
       } else {
         const { name } = refsById[stackElem.id];
         stack.push({
-          pathElem: `.${unparseName(name)}`,
+          pathElem: `.${unlexName(name)}`,
           value: prevValue.byId[stackElem.id].value,
         });
       }

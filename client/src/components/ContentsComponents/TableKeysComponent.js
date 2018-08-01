@@ -66,6 +66,8 @@ class TableKeysComponent extends ContentsBaseComponent {
 
   render() {
     const {
+      contextId,
+      columns,
       tableData,
       viewSelected,
       viewWidth,
@@ -87,6 +89,7 @@ class TableKeysComponent extends ContentsBaseComponent {
 
       // labels
       const nameSelected = viewSelected && selX === col;
+      const clickId = columns && columns[col] ? columns[col].id : contextId;
       if (nameSelected) {
         children.push((
           <CellSelectionComponent
@@ -101,6 +104,7 @@ class TableKeysComponent extends ContentsBaseComponent {
       }
       children.push((
         <CellNameComponent
+          id={clickId}
           x={worldCol}
           width={1}
           y={viewOffsetY}

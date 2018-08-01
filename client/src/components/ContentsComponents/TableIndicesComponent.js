@@ -63,11 +63,13 @@ class TableIndicesComponent extends ContentsBaseComponent {
 
   render() {
     const {
+      contextId,
       viewSelected,
       viewHeight,
       viewOffsetX,
       viewOffsetY,
       outerViewWidth,
+      rows,
     } = this.props;
     const children = [];
     const { selY } = this.localSelection();
@@ -83,6 +85,7 @@ class TableIndicesComponent extends ContentsBaseComponent {
 
       // labels
       const nameSelected = viewSelected && selY === row;
+      const id = rows && rows[row] ? rows[row].id : contextId;
       if (nameSelected) {
         children.push((
           <CellSelectionComponent
@@ -97,6 +100,7 @@ class TableIndicesComponent extends ContentsBaseComponent {
       }
       children.push((
         <CellNameComponent
+          id={id}
           x={viewOffsetX}
           width={1}
           y={worldRow}

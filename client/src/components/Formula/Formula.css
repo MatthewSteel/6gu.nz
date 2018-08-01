@@ -1,3 +1,64 @@
 .FormulaInput {
+  background-color: white;
+  text-align: left;
   flex-grow: 1;
+  flex-wrap: wrap;
+  padding: 4px;
+  border: thin solid #888;
+  min-height: 10px;
+  transition:min-height 0.2s ease;
+  display: flex;
+  align-items: center;
+  color: #666;
+}
+
+.FormulaInput.HasContent {
+  min-height: 40px;
+}
+
+.FormulaInput:focus {
+  min-height: 40px;
+}
+
+.ReadOnlyFormula::after {
+  content: ' ';
+  left: 0px;
+  right: 0px;
+  top: 0px;
+  bottom: 0px;
+  position: absolute;
+  z-index: 10;
+  background-color: #AAA;
+  opacity: 0.5;
+}
+
+.CellTermSurround {
+  display: grid;
+  min-width: 50px;
+  max-width: 100px;
+  text-align: center;
+  box-shadow: 1px 1px 4px 0px #000;
+  margin: 0px 2px;
+  position: relative;
+}
+
+.CellTermSurround.NameToken::after {
+  content: " ";
+  position: absolute;
+  background: linear-gradient(#FFF0, #FFF, #FFF);
+  top: 50%;
+  bottom: -4px;
+  left: -4px;
+  right: -4px;
+  z-index: 10;
+}
+
+.BigToken {
+  font-size: 40px;
+  font-weight: 100;
+  font-family: serif;
+  transform: scaleX(0.5);
+}
+
+.SmallToken {
 }

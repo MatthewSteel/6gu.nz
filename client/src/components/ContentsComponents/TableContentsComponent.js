@@ -74,6 +74,8 @@ class TableContentsComponent extends ContentsBaseComponent {
 
   render() {
     const {
+      cells,
+      contextId,
       tableData,
       viewSelected,
       viewHeight,
@@ -99,6 +101,8 @@ class TableContentsComponent extends ContentsBaseComponent {
         ++row
       ) {
         const worldRow = viewOffsetY + (row - scrollY) / 2;
+        const clickLoc = `${row},${col}`;
+        const clickId = cells && cells[clickLoc] ? cells[clickLoc].id : contextId;
 
         // labels
         const cellSelected = viewSelected && selX === col && selY === row;
@@ -113,6 +117,7 @@ class TableContentsComponent extends ContentsBaseComponent {
         }
 
         const geomProps = {
+          id: clickId,
           x: worldCol,
           y: worldRow,
           height: 0.5,

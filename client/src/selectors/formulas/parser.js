@@ -1,5 +1,5 @@
 import { ARRAY, OBJECT, SHEET, TABLE, COMPUTED_TABLE_COLUMN, TABLE_COLUMN, TABLE_ROW } from '../../redux/stateConstants';
-import { lexFormula } from './lexer';
+import { lexFormula, bareToken } from './lexer';
 
 import {
   getContextIdForRefId,
@@ -269,7 +269,8 @@ export const parseTokens = (tokens, start) => {
   //  1. name? = expression?
   //  2. expression
   if (start === tokens.length) return undefined;
-  const { term, newIndex } = parseExpression(tokens, start);
+  const bareTokens = tokens.map(bareToken);
+  const { term, newIndex } = parseExpression(bareTokens, start);
   if (newIndex !== tokens.length) {
     throw new Error('Unchomped tokens at end of forumla');
   }

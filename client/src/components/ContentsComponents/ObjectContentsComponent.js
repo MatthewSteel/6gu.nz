@@ -65,6 +65,8 @@ class ObjectContentsComponent extends ContentsBaseComponent {
 
   render() {
     const {
+      cells,
+      contextId,
       tableData,
       viewSelected,
       viewWidth,
@@ -81,6 +83,7 @@ class ObjectContentsComponent extends ContentsBaseComponent {
       col - scrollX < numVisibleCells && col < bounds.xUB;
       ++col
     ) {
+      const clickId = cells && cells[col] ? cells[col].id : contextId;
       const worldCol = viewOffsetX + (col - scrollX);
 
       // labels
@@ -99,6 +102,7 @@ class ObjectContentsComponent extends ContentsBaseComponent {
       }
       children.push((
         <CellNameComponent
+          id={clickId}
           x={worldCol}
           width={1}
           y={viewOffsetY}
@@ -113,6 +117,7 @@ class ObjectContentsComponent extends ContentsBaseComponent {
       const cellSelected = viewSelected && selY === 1 && selX === col;
       const maybeValue = tableData.byName[colsByIndex[col]];
       const geomProps = {
+        id: clickId,
         x: worldCol,
         y: viewOffsetY + 0.5,
         width: 1,

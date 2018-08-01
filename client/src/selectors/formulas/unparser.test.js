@@ -1,4 +1,4 @@
-import { unparseTerm } from './unparser';
+import { unlexToken, unparseTerm } from './unparser';
 import { translateExpr } from './selectors';
 
 describe('unparser', () => {
@@ -24,6 +24,28 @@ describe('unparser', () => {
         }],
       },
     };
-    expect(translateExpr(term, null, unparseTerm)).toEqual('called_cell(s_c: other\\ cell.field[10] * 5).field2');
+    const unparsed = translateExpr(term, null, unparseTerm);
+    expect(unparsed).toEqual([
+      { name: 'called_cell' },
+      { open: '(' },
+      { name: 's_c' },
+      { assignment: ':' },
+      { whitespace: ' ' },
+      { name: 'other cell' },
+      { lookup: '.' },
+      { name: 'field' },
+      { openBracket: '[' },
+      { value: 10 },
+      { closeBracket: ']' },
+      { whitespace: ' ' },
+      { op: '*' },
+      { whitespace: ' ' },
+      { value: 5 },
+      { close: ')' },
+      { lookup: '.' },
+      { name: 'field2' },
+    ]);
+    const unlexed = unparsed.map(unlexToken(null)).join('');
+    expect(unlexed).toEqual('called_cell(s_c: other\\ cell.field[10] * 5).field2');
   });
 });
