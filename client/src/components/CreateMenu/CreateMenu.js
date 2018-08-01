@@ -8,7 +8,7 @@ import uuidv4 from 'uuid-v4';
 import KeyboardListener from '../util/KeyboardListener';
 import { unlexName } from '../../selectors/formulas/unparser';
 import { setFormula } from '../../redux/documentEditing';
-import '../DropDown/DropDown.css';
+import './CreateMenu.css';
 
 const selectTarget = (ev) => {
   ev.target.select();
@@ -180,13 +180,7 @@ class CreateMenu extends Component {
     const { selection } = this.props;
 
     const { x, y } = selection;
-    const style = {
-      gridColumn: x + 1,
-      gridRow: `${2 * y + 1} / span 2`,
-      opacity: 0,
-      position: 'relative',
-      zIndex: 2,
-    };
+    const gridStyle = { gridColumn: x + 1, gridRow: `${2 * y + 1} / span 2` };
 
     const items = [
       { name: 'Table', buttonText: '[{}]', fn: this.newTable },
@@ -201,11 +195,14 @@ class CreateMenu extends Component {
           constraints={[{ to: 'window', attachment: 'together' }]}
           targetAttachment="bottom right"
         >
-          <div
-            style={style}
-            onMouseOver={this.enterCell}
-            onMouseLeave={this.exitCell}
-          />
+          <div className="CreateMenuDotHover" style={gridStyle}>
+            <div
+              onMouseOver={this.enterCell}
+              onMouseLeave={this.exitCell}
+            >
+              {'\u22ef' /* ellipsis */}
+            </div>
+          </div>
           {open && (
             <div
               style={{ width: '180px' }}
