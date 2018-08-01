@@ -25,18 +25,21 @@ import './Formula.css';
  */
 
 const normalisePoint = (inputRef, position, allPositions, isAnchor) => {
-  // If the point is before the formula bar, reset it to the start.
   let insidePosition = position;
+  // We want the `position.node` to be a child of `inputRef`, but sometimes
+  // it is `inputRef` itself. Fix that.
   if (position.node === inputRef) {
     const numChildren = inputRef.childNodes.length;
     if (numChildren === position.offset) {
       const lastChild = inputRef.childNodes[numChildren - 1];
-      insidePosition = { node: lastChild, offset: lastChild.length };
+      const offset = isText(lastChild) ? lastChild.length : 0;
+      insidePosition = { node: lastChild, offset };
     } else {
       const node = inputRef.childNodes[position.offset];
       insidePosition = { node, offset: 0 };
     }
   }
+  // If the point is before the formula bar, reset it to the start.
   const firstNode = allPositions[0].node;
   const leftCompare = insidePosition.node.compareDocumentPosition(firstNode);
   if ((leftCompare & 4) === 4) return allPositions[0];
