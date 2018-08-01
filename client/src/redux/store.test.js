@@ -297,4 +297,29 @@ describe('actions/the store', () => {
       override: false,
     });
   });
+
+  it('is forgiving about bad names in cells', () => {
+    const [sheet] = getSheets(store.getState());
+    store.dispatch(setFormula({ context: sheet.id, y: 0, x: 0 }, 't: [{}]'));
+    const table = find(({ name }) => name === 't');
+    store.dispatch(setFormula(
+      {
+        context: table.id,
+        y: 0,
+        x: 0,
+        locationSelected: { index: 0, type: TABLE_COLUMN },
+      },
+      'x',
+    ));
+    // Makes a column with that name.
+    const column = find(({ name }) => name === 'x');
+    expect(column.type).toBe(TABLE_COLUMN);
+    store.dispatch(setFormula({ context: table.id, y: 0, x: 0 }, 'y'));
+
+    const yByName = find(({ name }) => name === 'y');
+    expect(yByName).toBe(undefined); // nothing by that name
+
+    const tableCell = find(({ type }) => type === TABLE_CELL);
+    expect(tableCell.formula).toEqual({ value: 'y' });
+  });
 });

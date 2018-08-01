@@ -1,4 +1,5 @@
 import uuidv4 from 'uuid-v4';
+import { lexFormula } from '../selectors/formulas/lexer';
 import {
   getChildrenOfRef,
   getFormulaGraphs,
@@ -400,26 +401,34 @@ export const documentReducer = (state, action) => {
 
     const contextRef = getRefsById(state)[selection.context];
 
+    const formulaIsRef = newFormula.formula && newFormula.formula.ref;
+    const lexed = lexFormula(formulaStr);
+    const badName = lexed.length === 1 && lexed[0].name && !formulaIsRef;
+
     const { baseCell, children } = selection.cellId
-      ? {
-        baseCell: state.openDocument.data.cells
-          .find(({ id }) => id === selection.cellId),
-        children: [],
-      }
+      ? { baseCell: getRefsById(state)[selection.cellId], children: [] }
       : defaultCellForLocation(
         contextRef,
         selection.y,
         selection.x,
         selection.locationSelected,
-        newFormula.formula,
+        !badName && newFormula.formula,
         state,
       );
 
+    // Get rid of things that don't belong
     if (!baseCell.name) {
       delete newFormula.name;
     }
     if (!baseCell.formula) {
       delete newFormula.formula;
+    }
+
+    if (badName && baseCell.name) {
+      newFormula.name = lexed[0].name;
+      delete newFormula.formula;
+    } else if (badName && baseCell.formula) {
+      newFormula.formula = { value: lexed[0].name };
     }
 
     if (!newFormula.name && !newFormula.formula && selection.cellId) {
