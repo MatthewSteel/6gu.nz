@@ -25,30 +25,39 @@ import './Formula.css';
  */
 
 const normalisePoint = (inputRef, position, allPositions, isAnchor) => {
-  // If the point is before the formula bar, reset it to the start.
+  // isAnchor is just used to decide whether to move the selection point to
+  // before or after a "token" div node if it has landed inside it.
+
   let insidePosition = position;
+  // We want the `position.node` to be a child of `inputRef`, but sometimes
+  // it is `inputRef` itself. Fix that.
   if (position.node === inputRef) {
     const numChildren = inputRef.childNodes.length;
     if (numChildren === position.offset) {
       const lastChild = inputRef.childNodes[numChildren - 1];
-      insidePosition = { node: lastChild, offset: lastChild.length };
+      const offset = isText(lastChild) ? lastChild.length : 0;
+      insidePosition = { node: lastChild, offset };
     } else {
       const node = inputRef.childNodes[position.offset];
       insidePosition = { node, offset: 0 };
     }
   }
+  // If the point is before the formula bar, reset it to the start.
   const firstNode = allPositions[0].node;
   const leftCompare = insidePosition.node.compareDocumentPosition(firstNode);
-  if ((leftCompare & 4) === 4) return allPositions[0];
+  if ((leftCompare & 4) === 4) { // "before". WTF.
+    return allPositions[0];
+  }
 
   // If the point is after the formula bar, reset it to the start.
   const lastNode = allPositions[allPositions.length - 1].node;
   const rightCompare = insidePosition.node.compareDocumentPosition(lastNode);
-  if ((rightCompare & 2) === 2) {
+  if ((rightCompare & 2) === 2) { // "after". WTF.
     return allPositions[allPositions.length - 1];
   }
 
   // If the point is in a text node, make sure it is in a valid location.
+  // (Mostly "not right up against a div")
   let selectedNode = insidePosition.node;
   if (selectedNode.parentNode === inputRef && isText(selectedNode)) {
     // In a text node, thank goodness. Return a close "ok" position.
@@ -63,7 +72,8 @@ const normalisePoint = (inputRef, position, allPositions, isAnchor) => {
     return sameNodePositions[0]; // !!!
   }
 
-  // If the point is in a token, move it rightwards.
+  // If the point is in a (div) token node, move it rightwards. There should
+  // be a text node after it.
   while (selectedNode.parentNode !== inputRef) {
     selectedNode = selectedNode.parentNode;
   }
