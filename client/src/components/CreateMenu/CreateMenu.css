@@ -1,0 +1,35 @@
+.CreateMenuHeader {
+  font-size: 0.8em;
+  width: 100%;
+  border: none;
+  color: #F8F8F8;
+  margin: 1px 1px 0px 0px;
+  text-align: left;
+  background-color: #444;
+  z-index: 11;
+  padding: 2px;
+}
+.CreateMenuHeader:hover {
+  background-color: #4A4A4A;
+}
+
+.CreateMenuDotHover {
+  background-color: rgba(0, 0, 0, 0);
+  position: relative;
+  z-index: 2;
+}
+
+.CreateMenuDotHover > div {
+  opacity: 0;
+  font-size: 0.8em;
+  position: absolute;
+  right: 0px;
+  bottom: 0px;
+  margin-right: 4px;
+  color: #888;
+  cursor: default;
+}
+
+.CreateMenuDotHover:hover > div {
+  opacity: 1;
+}

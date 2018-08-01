@@ -230,7 +230,6 @@ class SheetContentsComponent extends ContentsBaseComponent {
           && cy + scrollY === selection.y
           && cx + scrollX === selection.x;
         if (cellSelected) {
-          emptyCells.push((<CreateMenu key="menu" selection={selection} />));
           emptyCells.push((
             <CellSelectionComponent
               key={screenPlace}
@@ -241,6 +240,7 @@ class SheetContentsComponent extends ContentsBaseComponent {
               selection={selection}
             />
           ));
+          emptyCells.push((<CreateMenu key="menu" selection={selection} />));
         }
         emptyCells.push((
           <EmptyCellComponent
