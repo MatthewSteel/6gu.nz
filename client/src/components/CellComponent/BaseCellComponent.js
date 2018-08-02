@@ -1,12 +1,18 @@
 import React, { PureComponent } from 'react';
 import './CellComponent.css';
 
-const preventDefault = (ev) => { ev.preventDefault(); };
-
 class BaseCellComponent extends PureComponent {
   constructor(props) {
     super(props);
     this.onClick = this.onClick.bind(this);
+    this.maybePreventClick = this.maybePreventClick.bind(this);
+  }
+
+  maybePreventClick(ev) {
+    // not draggable when the formula has focus
+    // preventing default here stops the formula box from blurring when we do
+    // click-to-write-formula actions.
+    if (!this.props.onDragStart) ev.preventDefault();
   }
 
   onClick(ev) {
@@ -37,9 +43,9 @@ class BaseCellComponent extends PureComponent {
         className={className}
         style={style}
         onClick={this.onClick}
-        onMouseDown={preventDefault}
-        onDragStart={onDragStart}
-        onDragEnd={onDragEnd}
+        onMouseDown={this.maybePreventClick}
+        onDragStart={onDragStart || undefined}
+        onDragEnd={onDragEnd || undefined}
         title={title}
         draggable={!!(onDragStart && onDragEnd)}
       >

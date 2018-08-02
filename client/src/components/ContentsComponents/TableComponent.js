@@ -11,6 +11,7 @@ import ResizeHandleComponent from '../DragComponents/ResizeHandleComponent';
 
 import { getRefsById } from '../../selectors/formulas/selectors';
 import { DRAG_MOVE } from '../../selectors/geom/dragGeom';
+import { formulaHasFocus } from '../../selectors/uistate/uistate';
 
 
 class TableComponent extends ContentsBaseComponent {
@@ -32,8 +33,8 @@ class TableComponent extends ContentsBaseComponent {
 
   onNameDragStart(ev) {
     ev.dataTransfer.setData('text/plain', ' ');
-    const { id, startDragCallback } = this.props;
-    startDragCallback(id, DRAG_MOVE);
+    const { id, startDragProp } = this.props;
+    startDragProp(id, DRAG_MOVE);
   }
 
   maybeSelectedCell() {
@@ -73,8 +74,9 @@ class TableComponent extends ContentsBaseComponent {
       table,
       id,
       tableData,
-      startDragCallback,
-      endDragCallback,
+      draggable,
+      startDragProp,
+      clearDragProp,
       pushViewStack,
       readOnly,
       toggleElementSize,
@@ -127,8 +129,8 @@ class TableComponent extends ContentsBaseComponent {
           x={viewOffsetX + viewWidth - 1}
           resizeRefId={id}
           selected={viewSelected}
-          startDragCallback={startDragCallback}
-          endDragCallback={endDragCallback}
+          startDragCallback={startDragProp}
+          endDragCallback={clearDragProp}
           onClick={toggleElementSize}
         >
           <CellNameComponent
@@ -139,8 +141,8 @@ class TableComponent extends ContentsBaseComponent {
             width={1}
             height={0.5}
             setSelection={this.setViewSelection}
-            onDragStart={this.onNameDragStart}
-            onDragEnd={endDragCallback}
+            onDragStart={!readOnly && draggable && this.onNameDragStart}
+            onDragEnd={clearDragProp}
           />
           <TableContentsComponent
             {...commonChildProps}
@@ -183,6 +185,7 @@ class TableComponent extends ContentsBaseComponent {
 
 const mapStateToProps = (state, ownProps) => ({
   table: getRefsById(state)[ownProps.id],
+  draggable: !formulaHasFocus(state),
 });
 
 export default connect(

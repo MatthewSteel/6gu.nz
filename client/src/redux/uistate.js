@@ -29,6 +29,10 @@ export const updateSelection = newSelection => ({
   type: 'UPDATE_SELECTION', payload: { newSelection },
 });
 
+export const setFormulaFocus = newFocus => ({
+  type: 'SET_FORMULA_FOCUS', payload: newFocus,
+});
+
 export const uistateReducer = (state, action) => {
   if (action.type === 'START_DRAG') {
     return digMut(state, path('dragState'), action.payload);
@@ -57,6 +61,10 @@ export const uistateReducer = (state, action) => {
     const { newSelection } = action.payload;
     if (equal(newSelection, state.selection)) return state;
     return digMut(state, ['selection'], newSelection);
+  }
+
+  if (action.type === 'SET_FORMULA_FOCUS') {
+    return digMut(state, ['formulaFocus'], action.payload);
   }
 
   return state;

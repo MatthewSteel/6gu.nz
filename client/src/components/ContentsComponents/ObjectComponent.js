@@ -9,6 +9,7 @@ import ResizeHandleComponent from '../DragComponents/ResizeHandleComponent';
 
 import { getRefsById } from '../../selectors/formulas/selectors';
 import { DRAG_MOVE } from '../../selectors/geom/dragGeom';
+import { formulaHasFocus } from '../../selectors/uistate/uistate';
 
 
 class ObjectComponent extends ContentsBaseComponent {
@@ -19,8 +20,8 @@ class ObjectComponent extends ContentsBaseComponent {
 
   onNameDragStart(ev) {
     ev.dataTransfer.setData('text/plain', ' ');
-    const { id, startDragCallback } = this.props;
-    startDragCallback(id, DRAG_MOVE);
+    const { id, startDragProp } = this.props;
+    startDragProp(id, DRAG_MOVE);
   }
 
   maybeSelectedCell() {
@@ -53,8 +54,9 @@ class ObjectComponent extends ContentsBaseComponent {
       object,
       id,
       tableData,
-      startDragCallback,
-      endDragCallback,
+      draggable,
+      startDragProp,
+      clearDragProp,
       pushViewStack,
       readOnly,
       viewSelected,
@@ -86,8 +88,8 @@ class ObjectComponent extends ContentsBaseComponent {
           x={viewOffsetX + viewWidth - 1}
           resizeRefId={id}
           selected={viewSelected}
-          startDragCallback={startDragCallback}
-          endDragCallback={endDragCallback}
+          startDragCallback={startDragProp}
+          endDragCallback={clearDragProp}
           onClick={toggleElementSize}
         >
           <CellNameComponent
@@ -98,8 +100,8 @@ class ObjectComponent extends ContentsBaseComponent {
             width={1}
             height={1}
             setSelection={this.setViewSelection}
-            onDragStart={this.onNameDragStart}
-            onDragEnd={endDragCallback}
+            onDragStart={!readOnly && draggable && this.onNameDragStart}
+            onDragEnd={clearDragProp}
           />
           <ObjectContentsComponent
             ref={contentsSelected && this.setChildSelectionTableRef}
@@ -127,6 +129,7 @@ class ObjectComponent extends ContentsBaseComponent {
 
 const mapStateToProps = (state, ownProps) => ({
   object: getRefsById(state)[ownProps.id],
+  draggable: !formulaHasFocus(state),
 });
 
 export default connect(
