@@ -106,3 +106,5 @@ export const dropDownDocuments = createSelector(
     ...documents.filter(({ id }) => id !== openDoc.id),
   ],
 );
+
+export const formulaHasFocus = state => state.formulaFocus;

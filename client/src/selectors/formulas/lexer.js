@@ -188,7 +188,6 @@ export const lexFormula = (input, includeWhitespace = false) => {
   // EOF might result in a dangling token getting returned :-)
   [null, ...input, null].forEach((c) => {
     const next = gen.next(c);
-    // console.log(next);
     next.value.forEach((token) => {
       if (includeWhitespace || !token.whitespace) ret.push(token);
     });

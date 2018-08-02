@@ -21,6 +21,7 @@ import getDragGeom, {
   getDragRefId,
   getDragState,
 } from '../../selectors/geom/dragGeom';
+import { formulaHasFocus } from '../../selectors/uistate/uistate';
 import { getType } from '../../selectors/formulas/tables';
 import { TABLE } from '../../redux/stateConstants';
 
@@ -110,6 +111,7 @@ class SheetContentsComponent extends ContentsBaseComponent {
       viewSelY,
       viewSelX,
       setViewSelection,
+      formulaHasFocusProp,
       dragRefId: dragInProgress,
       dragGeom,
       toggleElementSize,
@@ -150,8 +152,6 @@ class SheetContentsComponent extends ContentsBaseComponent {
         key: id,
         id,
         pushViewStack,
-        startDragCallback: !readOnly ? this.startDragForRef : undefined,
-        endDragCallback: !readOnly ? this.finishDrag : undefined,
       };
 
       const commonComplexChildProps = {
@@ -200,6 +200,7 @@ class SheetContentsComponent extends ContentsBaseComponent {
           );
         }
       }
+      const draggable = !readOnly && !formulaHasFocusProp;
       return (
         <SheetCellComponent
           {...commonChildProps}
@@ -212,6 +213,8 @@ class SheetContentsComponent extends ContentsBaseComponent {
           selected={cellSelected && selection}
           setSelection={this.setViewSelection}
           toggleElementSize={toggleElementSize}
+          startDragCallback={draggable ? this.startDragForRef : undefined}
+          endDragCallback={draggable ? this.finishDrag : undefined}
         />
       );
     }).filter(Boolean);
@@ -316,6 +319,7 @@ const mapStateToProps = (state, ownProps) => ({
     getRefsById(state),
     ownProps.contextId,
   ),
+  formulaHasFocusProp: formulaHasFocus(state),
   placedCellLocs: sheetPlacedCellLocs(state)[ownProps.contextId],
   viewOffsetX: 0,
   viewOffsetY: 0,

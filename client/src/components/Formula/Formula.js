@@ -7,6 +7,7 @@ import KeyboardListener, { FALL_THROUGH, CAPTURE } from '../util/KeyboardListene
 import { getRefsById } from '../../selectors/formulas/selectors';
 import { unparseFormula } from '../../selectors/formulas/unparser';
 import { deleteLoc, deleteThing, setFormula } from '../../redux/documentEditing';
+import { setFormulaFocus } from '../../redux/uistate';
 import {
   inputFromFormula,
   inputFromDom,
@@ -271,10 +272,12 @@ class Formula extends Component {
 
   handleOnBlur() {
     this.hasFocus = false;
+    this.props.setFormulaFocusProp(false);
   }
 
   handleOnFocus() {
     this.hasFocus = true;
+    this.props.setFormulaFocusProp(true);
   }
 
   keys(ev) {
@@ -434,6 +437,7 @@ const mapDispatchToProps = dispatch => ({
   deleteCell: cellId => dispatch(deleteThing(cellId)),
   deleteLocation: (context, y, x) => dispatch(deleteLoc(context, y, x)),
   setCellFormula: (context, cellId, formula) => dispatch(setFormula(context, cellId, formula)),
+  setFormulaFocusProp: hasFocus => dispatch(setFormulaFocus(hasFocus)),
 });
 
 export default connect(

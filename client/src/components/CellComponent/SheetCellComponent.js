@@ -65,7 +65,7 @@ class SheetCellComponent extends PureComponent {
             width={width}
             height={0.5}
             setSelection={setSelection}
-            onDragStart={this.onNameDragStart}
+            onDragStart={startDragCallback && this.onNameDragStart}
             onDragEnd={endDragCallback}
           />
           <CellValueComponent

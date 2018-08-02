@@ -36,6 +36,7 @@ export const initialState = {
   undoStack: [],
   redoStack: [],
   selection: null,
+  formulaFocus: false,
 };
 
 export const path = terminalName => ({
