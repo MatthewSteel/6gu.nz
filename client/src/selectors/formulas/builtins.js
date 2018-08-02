@@ -132,6 +132,8 @@ export const binarySymbolToName = {
   '&': 'arithmeticAnd',
   '|': 'arithmeticOr',
   '^': 'arithmeticXor',
+  '::': 'index',
+  ':::': 'indices',
 };
 
 export const unarySymbolToName = {
@@ -163,6 +165,8 @@ export const binaryPrecedences = {
   '&': 9,
   '|': 7,
   '^': 8,
+  '::': 12, // ???
+  ':::': 12,
 };
 
 export const assocRight = new Set(['**']);
@@ -530,7 +534,7 @@ const stringLen = (thing) => {
   return thing.length;
 };
 
-const toRaw1 = (thing) => {
+export const toRaw1 = (thing) => {
   const objRet = {};
   switch (classify(thing)) {
     case ARRAY_T:
@@ -565,6 +569,48 @@ const fromRaw1 = (thing) => {
 };
 export const fromJson1 = thing => fromRaw1(JSON.parse(thing));
 
+const makeIndex = (array) => {
+  if (classify(array) !== ARRAY_T) {
+    throw new Error('Can only index arrays');
+  }
+  const { arr } = array;
+  const ret = new Map();
+  for (let i = 0; i < arr.length; ++i) {
+    const item = arr[i];
+    if (item.error) continue;
+    const current = ret.get(item.value);
+    if (!current) {
+      ret.set(item.value, [{ value: i }]);
+    } else {
+      current.push({ value: i });
+    }
+  }
+  return ret;
+};
+
+const indexFn = (left, right, multiple) => {
+  const idx = makeIndex(left);
+  const useIdx = (elem) => {
+    const type = classify(elem);
+    if (type === ARRAY_T) {
+      const { arr } = elem;
+      const ret = [];
+      for (let i = 0; i < arr.length; ++i) {
+        const item = arr[i];
+        ret.push(item.error ? item : { value: useIdx(item.value) });
+      }
+      return new TableArray(ret);
+    }
+    const lookupIndices = idx.get(elem);
+    if (multiple) return new TableArray(lookupIndices || []);
+    if (!lookupIndices) return null;
+    return lookupIndices[0].value;
+  };
+  return useIdx(right);
+};
+
+const index = (left, right) => indexFn(left, right, false);
+const indices = (left, right) => indexFn(left, right, true);
 
 const sin = trig(Math.sin, 'sin');
 const cos = trig(Math.cos, 'sin');
@@ -668,6 +714,8 @@ export default {
   arithmeticAnd,
   arithmeticOr,
   arithmeticXor,
+  index,
+  indices,
   uplus,
   uminus,
   unot,

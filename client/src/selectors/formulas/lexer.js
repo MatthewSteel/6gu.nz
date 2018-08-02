@@ -119,6 +119,24 @@ function* lexOp(prevLeftOverTokens, firstChar) {
   return { nextChar: secondChar, leftOverTokens: [token] };
 }
 
+function* lexColons(prevLeftOverTokens) {
+  const secondChar = yield prevLeftOverTokens;
+  if (secondChar !== ':') {
+    return {
+      nextChar: secondChar,
+      leftOverTokens: [{ assignment: ':', inputLength: 1 }],
+    };
+  }
+  const thirdChar = yield [];
+  if (thirdChar !== ':') {
+    return {
+      nextChar: thirdChar,
+      leftOverTokens: [{ op: '::', inputLength: 2 }],
+    };
+  }
+  const nextChar = yield [{ op: ':::', inputLength: 3 }];
+  return { nextChar, leftOverTokens: [] };
+}
 
 export function* generatorLex() {
   const singleCharTokens = {
@@ -128,7 +146,6 @@ export function* generatorLex() {
     ']': 'closeBracket',
     '{': 'openBrace',
     '}': 'closeBrace',
-    ':': 'assignment',
     '.': 'lookup',
     ',': 'comma',
   };
@@ -138,6 +155,7 @@ export function* generatorLex() {
     { pattern: /^"$/, chomp: lexString },
     { pattern: /^\s$/, chomp: chompWhitespace },
     { pattern: /^[=<>+\-*/%&|^!~]$/, chomp: lexOp },
+    { pattern: /^:$/, chomp: lexColons },
   ];
 
   let next = yield [];

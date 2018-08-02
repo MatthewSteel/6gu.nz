@@ -116,4 +116,30 @@ describe('lexFormula', () => {
       expect(gen.next(input).value).toEqual(output);
     });
   });
+
+  it('parses assignments and lookups appropriately', () => {
+    expect(lexFormula('a:b')).toEqual([
+      { name: 'a', inputLength: 1 },
+      { assignment: ':', inputLength: 1 },
+      { name: 'b', inputLength: 1 },
+    ]);
+    expect(lexFormula('a::')).toEqual([
+      { name: 'a', inputLength: 1 },
+      { op: '::', inputLength: 2 },
+    ]);
+    expect(lexFormula('a::b')).toEqual([
+      { name: 'a', inputLength: 1 },
+      { op: '::', inputLength: 2 },
+      { name: 'b', inputLength: 1 },
+    ]);
+    expect(lexFormula('a:::b')).toEqual([
+      { name: 'a', inputLength: 1 },
+      { op: ':::', inputLength: 3 },
+      { name: 'b', inputLength: 1 },
+    ]);
+    expect(lexFormula('a:::')).toEqual([
+      { name: 'a', inputLength: 1 },
+      { op: ':::', inputLength: 3 },
+    ]);
+  });
 });
