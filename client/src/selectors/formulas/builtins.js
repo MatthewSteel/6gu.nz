@@ -10,9 +10,9 @@ const OBJECT_T = 5;
 export const classify = (o) => {
   const t = typeof o;
   if (t === 'object') {
+    if (!o) return NULL_T;
     if (o.byName) return OBJECT_T;
     if (o.arr) return ARRAY_T;
-    if (!o) return NULL_T;
     throw new Error('bad type');
   }
   return {
