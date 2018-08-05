@@ -1,20 +1,36 @@
 import React, { Component, Fragment } from 'react';
-import { connect } from 'react-redux';
 import classNames from 'classnames';
-import equal from 'fast-deep-equal';
 import TetherComponent from 'react-tether';
 import uuidv4 from 'uuid-v4';
 
 import KeyboardListener from '../util/KeyboardListener';
-import { unlexName } from '../../selectors/formulas/unparser';
-import { setFormula } from '../../redux/documentEditing';
-import './CreateMenu.css';
+import './ContextMenu.css';
 
 const selectTarget = (ev) => {
   ev.target.select();
 };
 
-class CreateMenuItem extends Component {
+export class MenuItem extends Component {
+  constructor(props) {
+    super(props);
+    this.submit = this.submit.bind(this);
+  }
+
+  submit(ev) {
+    ev.preventDefault();
+    this.props.fn();
+  }
+
+  render() {
+    return (
+      <div className="DropDownRow" onClick={this.submit}>
+        {this.props.contents}
+      </div>
+    );
+  }
+}
+
+export class NameMenuItem extends Component {
   constructor(props) {
     super(props);
     this.reset = this.reset.bind(this);
@@ -24,7 +40,7 @@ class CreateMenuItem extends Component {
     this.startRename = this.startRename.bind(this);
     this.setName = this.setName.bind(this);
 
-    this.state = { state: 'blank', name: props.initialName };
+    this.state = { state: 'blank', name: props.contents };
   }
 
   setName(ev) {
@@ -32,7 +48,7 @@ class CreateMenuItem extends Component {
   }
 
   reset() {
-    this.setState({ state: 'blank', name: this.props.initialName });
+    this.setState({ state: 'blank', name: this.props.contents });
   }
 
   keys(ev) {
@@ -46,12 +62,11 @@ class CreateMenuItem extends Component {
 
   submit(ev) {
     ev.preventDefault();
-    const name = this.state.name || this.props.initialName;
+    const name = this.state.name || this.props.contents;
     this.props.fn(name);
   }
 
   render() {
-    const { buttonText } = this.props;
     const { state, name } = this.state;
 
     const renaming = state === 'renaming';
@@ -82,21 +97,12 @@ class CreateMenuItem extends Component {
             </form>
           ) : name}
         </div>
-        <div className="Spacer" />
-        <button
-          className="DropDownButton"
-          title={buttonText}
-          onClick={this.submit}
-          type="button"
-        >
-          &#x2714;
-        </button>
       </div>
     );
   }
 }
 
-class CreateMenu extends Component {
+export default class ContextMenu extends Component {
   constructor(props) {
     super(props);
     this.unmounting = false;
@@ -104,10 +110,6 @@ class CreateMenu extends Component {
     this.exitCell = this.exitCell.bind(this);
     this.enterMenu = this.enterMenu.bind(this);
     this.exitMenu = this.exitMenu.bind(this);
-
-    this.newTable = this.newThing.bind(this, '[{}]');
-    this.newObject = this.newThing.bind(this, '{}');
-    this.newArray = this.newThing.bind(this, '[]');
 
     this.state = {
       open: false,
@@ -117,21 +119,14 @@ class CreateMenu extends Component {
     };
   }
 
-  componentDidUpdate(prevProps) {
+  componentDidUpdate(prev) {
     if (!this.state.open) return;
-    if (!equal(this.props.selection, prevProps.selection)) {
-      // Don't care about another render, there should only be one of these
-      // things and it's small. We _could_ make the `inCell` state member
-      // the actual selection, though, and do an equality check in `render`.
+    if (prev.x !== this.props.x || prev.y !== this.props.y) {
+      // Close the menu if we move the selection. Will cause a re-render,
+      // nobody cares.
       // eslint-disable-next-line react/no-did-update-set-state
       this.setState({ open: false });
     }
-  }
-
-  newThing(str, name) {
-    const { selection, setFormulaProp } = this.props;
-    const formula = `${unlexName(name)}: ${str}`;
-    setFormulaProp(selection, formula);
   }
 
   enterCell() {
@@ -177,16 +172,12 @@ class CreateMenu extends Component {
 
   render() {
     const { open } = this.state;
-    const { selection } = this.props;
+    const { x, y, width, height, title, children } = this.props;
 
-    const { x, y } = selection;
-    const gridStyle = { gridColumn: x + 1, gridRow: `${2 * y + 1} / span 2` };
-
-    const items = [
-      { name: 'Table', buttonText: '[{}]', fn: this.newTable },
-      { name: 'Object', buttonText: '{}', fn: this.newObject },
-      { name: 'Array', buttonText: '[]', fn: this.newArray },
-    ];
+    const gridStyle = {
+      gridColumn: `${x + 1} / span ${width}`,
+      gridRow: `${2 * y + 1} / span ${2 * height}`,
+    };
 
     return (
       <Fragment>
@@ -209,17 +200,12 @@ class CreateMenu extends Component {
               onMouseEnter={this.enterMenu}
               onMouseLeave={this.exitMenu}
             >
-              <div className="CreateMenuHeader">
-                New
-              </div>
-              {items.map(({ name, buttonText, fn }) => (
-                <CreateMenuItem
-                  initialName={name}
-                  key={name}
-                  buttonText={buttonText}
-                  fn={fn}
-                />
-              ))}
+              {title && (
+                <div className="CreateMenuHeader">
+                  {title}
+                </div>
+              )}
+              {children}
             </div>
           )}
         </TetherComponent>
@@ -227,9 +213,3 @@ class CreateMenu extends Component {
     );
   }
 }
-
-const mapDispatchToProps = dispatch => ({
-  setFormulaProp: (sel, str) => dispatch(setFormula(sel, str)),
-});
-
-export default connect(null, mapDispatchToProps)(CreateMenu);
