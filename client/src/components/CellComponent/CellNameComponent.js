@@ -1,10 +1,19 @@
-import React, { PureComponent } from 'react';
+import React, { Component } from 'react';
+import deepEq from 'fast-deep-equal';
+import shallowEq from 'is-equal-shallow';
 import BaseCellComponent from './BaseCellComponent';
 
-class CellNameComponent extends PureComponent {
+class CellNameComponent extends Component {
+  shouldComponentUpdate(nextProps) {
+    const { clickExpr: oldClickExpr, ...oldShallowProps } = this.props;
+    const { clickExpr: newClickExpr, ...newShallowProps } = nextProps;
+    if (!deepEq(oldClickExpr, newClickExpr)) return true;
+    return !shallowEq(oldShallowProps, newShallowProps);
+  }
+
   render() {
     const {
-      id,
+      clickExpr,
       x,
       y,
       width,
@@ -16,7 +25,7 @@ class CellNameComponent extends PureComponent {
     } = this.props;
     return (
       <BaseCellComponent
-        id={id}
+        clickExpr={clickExpr}
         x={x}
         y={y}
         width={width}

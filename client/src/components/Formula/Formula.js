@@ -224,14 +224,14 @@ class Formula extends Component {
     }
   }
 
-  maybeInsertRefIntoFormula(ref) {
+  maybeInsertExprIntoFormula(expr) {
     if (!this.hasFocus) return false;
     this.normaliseSelection();
     const selection = window.getSelection();
     if (selection.rangeCount === 0) return false;
     const { renderFormula } = this.props;
     const range = selection.getRangeAt(0);
-    const newHtml = renderFormula({ ref });
+    const newHtml = renderFormula(expr);
     const newNode = document.createRange().createContextualFragment(newHtml);
     range.insertNode(newNode);
     this.normaliseSelection(); // ?

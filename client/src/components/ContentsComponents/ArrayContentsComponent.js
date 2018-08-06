@@ -80,7 +80,9 @@ class ArrayContentsComponent extends ContentsBaseComponent {
     ) {
       const worldRow = viewOffsetY + (row - scrollY) / 2;
 
-      const clickId = cells && cells[row] ? cells[row].id : contextId;
+      const clickExpr = cells && cells[row]
+        ? { ref: cells[row].id }
+        : { lookupIndex: { value: row }, on: { ref: contextId } };
       // labels
       if (scrollX === 0) {
         const cellSelected = viewSelected && selX === 0 && selY === row;
@@ -102,7 +104,7 @@ class ArrayContentsComponent extends ContentsBaseComponent {
             width={1}
             y={worldRow}
             height={0.5}
-            id={clickId}
+            clickExpr={clickExpr}
             name={`${row}`}
             setSelection={this.setViewSelection}
             key={`name-${row}`}
@@ -116,7 +118,6 @@ class ArrayContentsComponent extends ContentsBaseComponent {
       const cellSelected = viewSelected && selX === 1 && selY === row;
       const maybeValue = tableData.arr[row];
       const geomProps = {
-        id: clickId,
         x: viewOffsetX + contentsX,
         width: 1,
         y: worldRow,
@@ -135,6 +136,7 @@ class ArrayContentsComponent extends ContentsBaseComponent {
       children.push(maybeValue ? (
         <CellValueComponent
           {...geomProps}
+          clickExpr={clickExpr}
           value={maybeValue}
           setSelection={this.setViewSelection}
           key={`cell-${row}`}
@@ -142,6 +144,7 @@ class ArrayContentsComponent extends ContentsBaseComponent {
       ) : (
         <EmptyCellComponent
           {...geomProps}
+          clickExpr={clickExpr}
           setSelection={this.setViewSelection}
           key={`cell-${row}`}
         />

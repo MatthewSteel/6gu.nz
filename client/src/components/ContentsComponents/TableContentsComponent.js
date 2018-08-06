@@ -102,7 +102,13 @@ class TableContentsComponent extends ContentsBaseComponent {
       ) {
         const worldRow = viewOffsetY + (row - scrollY) / 2;
         const clickLoc = `${row},${col}`;
-        const clickId = cells && cells[clickLoc] ? cells[clickLoc].id : contextId;
+        const columnName = tableData.keys[col];
+        const explicitLookup = {
+          lookup: columnName,
+          on: { lookupIndex: { value: row }, on: { ref: contextId } },
+        };
+        const clickExpr = cells && cells[clickLoc]
+          ? { ref: cells[clickLoc].id } : explicitLookup;
 
         // labels
         const cellSelected = viewSelected && selX === col && selY === row;
@@ -112,12 +118,11 @@ class TableContentsComponent extends ContentsBaseComponent {
           if (maybeRowData.error) {
             maybeCellData = maybeRowData;
           } else {
-            maybeCellData = maybeRowData.value.byName[tableData.keys[col]];
+            maybeCellData = maybeRowData.value.byName[columnName];
           }
         }
 
         const geomProps = {
-          id: clickId,
           x: worldCol,
           y: worldRow,
           height: 0.5,
@@ -135,6 +140,7 @@ class TableContentsComponent extends ContentsBaseComponent {
         children.push(maybeCellData ? (
           <CellValueComponent
             {...geomProps}
+            clickExpr={clickExpr}
             value={maybeCellData}
             setSelection={this.setViewSelection}
             key={`name-${col},${row}`}
@@ -142,6 +148,7 @@ class TableContentsComponent extends ContentsBaseComponent {
         ) : (
           <EmptyCellComponent
             {...geomProps}
+            clickExpr={clickExpr}
             setSelection={this.setViewSelection}
             key={`name-${col},${row}`}
           />

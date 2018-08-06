@@ -1,5 +1,7 @@
-import React, { PureComponent } from 'react';
+import React, { Component } from 'react';
 import classNames from 'classnames';
+import deepEq from 'fast-deep-equal';
+import shallowEq from 'is-equal-shallow';
 import BaseCellComponent from './BaseCellComponent';
 import { getType } from '../../selectors/formulas/tables';
 import './CellComponent.css';
@@ -39,7 +41,7 @@ const defaultFormatter = (value, pushStack) => {
   return JSON.stringify(value);
 };
 
-class CellValueComponent extends PureComponent {
+class CellValueComponent extends Component {
   constructor(props) {
     super(props);
     this.pushStack = this.pushStack.bind(this);
@@ -64,8 +66,15 @@ class CellValueComponent extends PureComponent {
     ev.preventDefault();
   }
 
+  shouldComponentUpdate(nextProps) {
+    const { clickExpr: oldClickExpr, ...oldShallowProps } = this.props;
+    const { clickExpr: newClickExpr, ...newShallowProps } = nextProps;
+    if (!deepEq(oldClickExpr, newClickExpr)) return true;
+    return !shallowEq(oldShallowProps, newShallowProps);
+  }
+
   render() {
-    const { id, x, y, width, height, setSelection, extraClasses } = this.props;
+    const { clickExpr, x, y, width, height, setSelection, extraClasses } = this.props;
     const { error, formattedValue, override } = this.getCellContents();
     const className = classNames(
       'CellValue',
@@ -80,7 +89,7 @@ class CellValueComponent extends PureComponent {
       <BaseCellComponent
         x={x}
         y={y}
-        id={id}
+        clickExpr={clickExpr}
         width={width}
         height={height}
         className={className}
