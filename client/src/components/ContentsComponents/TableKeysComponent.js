@@ -89,7 +89,10 @@ class TableKeysComponent extends ContentsBaseComponent {
 
       // labels
       const nameSelected = viewSelected && selX === col;
-      const clickId = columns && columns[col] ? columns[col].id : contextId;
+      const name = tableData.keys[col];
+      const clickExpr = columns && columns[col]
+        ? { ref: columns[col].id }
+        : { lookup: name, on: { ref: contextId } };
       if (nameSelected) {
         children.push((
           <CellSelectionComponent
@@ -104,12 +107,12 @@ class TableKeysComponent extends ContentsBaseComponent {
       }
       children.push((
         <CellNameComponent
-          id={clickId}
+          clickExpr={clickExpr}
           x={worldCol}
           width={1}
           y={viewOffsetY}
           height={0.5}
-          name={tableData.keys[col]}
+          name={name}
           setSelection={this.setViewSelection}
           key={`name-${col}`}
         />

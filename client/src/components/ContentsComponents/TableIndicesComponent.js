@@ -100,7 +100,7 @@ class TableIndicesComponent extends ContentsBaseComponent {
       }
       children.push((
         <CellNameComponent
-          id={id}
+          clickExpr={{ ref: id }}
           x={viewOffsetX}
           width={1}
           y={worldRow}

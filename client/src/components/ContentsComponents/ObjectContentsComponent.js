@@ -20,10 +20,10 @@ class ObjectContentsComponent extends ContentsBaseComponent {
 
   static getDerivedStateFromProps(nextProps) {
     const { cells, tableData } = nextProps;
-    if (cells) return { colsByIndex: cells.map(({ name }) => name) };
-    const colsByIndex = [];
-    Object.keys(tableData.byName).forEach((key) => { colsByIndex.push(key); });
-    return { colsByIndex };
+    if (cells) return { colNamesByIndex: cells.map(({ name }) => name) };
+    const colNamesByIndex = [];
+    Object.keys(tableData.byName).forEach((key) => { colNamesByIndex.push(key); });
+    return { colNamesByIndex };
   }
 
   maybeSelectedCell() {
@@ -75,7 +75,7 @@ class ObjectContentsComponent extends ContentsBaseComponent {
     } = this.props;
     const children = [];
     const { selY, selX } = this.localSelection();
-    const { colsByIndex, scrollX } = this.state;
+    const { colNamesByIndex, scrollX } = this.state;
     const bounds = this.bounds();
     const numVisibleCells = viewWidth;
     for (
@@ -83,7 +83,10 @@ class ObjectContentsComponent extends ContentsBaseComponent {
       col - scrollX < numVisibleCells && col < bounds.xUB;
       ++col
     ) {
-      const clickId = cells && cells[col] ? cells[col].id : contextId;
+      const colName = colNamesByIndex[col];
+      const clickExpr = cells && cells[col]
+        ? { ref: cells[col].id }
+        : { lookup: colName, on: { ref: contextId } };
       const worldCol = viewOffsetX + (col - scrollX);
 
       // labels
@@ -102,12 +105,12 @@ class ObjectContentsComponent extends ContentsBaseComponent {
       }
       children.push((
         <CellNameComponent
-          id={clickId}
+          clickExpr={clickExpr}
           x={worldCol}
           width={1}
           y={viewOffsetY}
           height={0.5}
-          name={colsByIndex[col]}
+          name={colName}
           setSelection={this.setViewSelection}
           key={`name-${col}`}
         />
@@ -115,9 +118,8 @@ class ObjectContentsComponent extends ContentsBaseComponent {
 
       // values + blanks
       const cellSelected = viewSelected && selY === 1 && selX === col;
-      const maybeValue = tableData.byName[colsByIndex[col]];
+      const maybeValue = tableData.byName[colName];
       const geomProps = {
-        id: clickId,
         x: worldCol,
         y: viewOffsetY + 0.5,
         width: 1,
@@ -136,6 +138,7 @@ class ObjectContentsComponent extends ContentsBaseComponent {
       children.push(maybeValue ? (
         <CellValueComponent
           {...geomProps}
+          clickExpr={clickExpr}
           value={maybeValue}
           setSelection={this.setViewSelection}
           key={`cell-${col}`}
@@ -143,6 +146,7 @@ class ObjectContentsComponent extends ContentsBaseComponent {
       ) : (
         <EmptyCellComponent
           {...geomProps}
+          clickExpr={clickExpr}
           setSelection={this.setViewSelection}
           key={`cell-${col}`}
         />

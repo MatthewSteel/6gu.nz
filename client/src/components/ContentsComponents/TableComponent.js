@@ -134,7 +134,7 @@ class TableComponent extends ContentsBaseComponent {
           onClick={toggleElementSize}
         >
           <CellNameComponent
-            id={id}
+            clickExpr={{ ref: id }}
             name={table.name}
             x={viewOffsetX}
             y={viewOffsetY}

@@ -58,7 +58,7 @@ class SheetCellComponent extends PureComponent {
           onClick={toggleElementSize}
         >
           <CellNameComponent
-            id={id}
+            clickExpr={{ ref: id }}
             name={name}
             x={x}
             y={y}
@@ -76,7 +76,7 @@ class SheetCellComponent extends PureComponent {
             setSelection={setSelection}
             value={value}
             pushViewStack={pushViewStack}
-            id={id}
+            clickExpr={{ ref: id }}
           />
         </ResizeHandleComponent>
       </Fragment>

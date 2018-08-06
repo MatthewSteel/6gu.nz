@@ -1,10 +1,14 @@
-import React, { PureComponent } from 'react';
-import BaseCellComponent from './BaseCellComponent';
+import React, { Component } from 'react';
+import BaseCellComponent, { shouldCellComponentUpdate } from './BaseCellComponent';
 
-class CellNameComponent extends PureComponent {
+class CellNameComponent extends Component {
+  shouldComponentUpdate(nextProps) {
+    return shouldCellComponentUpdate(this.props, nextProps);
+  }
+
   render() {
     const {
-      id,
+      clickExpr,
       x,
       y,
       width,
@@ -16,7 +20,7 @@ class CellNameComponent extends PureComponent {
     } = this.props;
     return (
       <BaseCellComponent
-        id={id}
+        clickExpr={clickExpr}
         x={x}
         y={y}
         width={width}

@@ -1,12 +1,17 @@
-import React, { PureComponent } from 'react';
+import React, { Component } from 'react';
 import './CellComponent.css';
-import BaseCellComponent from './BaseCellComponent';
+import BaseCellComponent, { shouldCellComponentUpdate } from './BaseCellComponent';
 
-class EmptyCellComponent extends PureComponent {
+class EmptyCellComponent extends Component {
+  shouldComponentUpdate(nextProps) {
+    return shouldCellComponentUpdate(this.props, nextProps);
+  }
+
   render() {
-    const { x, y, width, height, setSelection } = this.props;
+    const { clickExpr, x, y, width, height, setSelection } = this.props;
     return (
       <BaseCellComponent
+        clickExpr={clickExpr}
         x={x}
         y={y}
         width={width}

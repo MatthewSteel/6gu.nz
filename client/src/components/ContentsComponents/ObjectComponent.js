@@ -93,7 +93,7 @@ class ObjectComponent extends ContentsBaseComponent {
           onClick={toggleElementSize}
         >
           <CellNameComponent
-            id={id}
+            clickExpr={{ ref: id }}
             name={object.name}
             x={viewOffsetX}
             y={viewOffsetY}

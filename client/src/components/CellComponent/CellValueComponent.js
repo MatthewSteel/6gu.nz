@@ -1,6 +1,6 @@
-import React, { PureComponent } from 'react';
+import React, { Component } from 'react';
 import classNames from 'classnames';
-import BaseCellComponent from './BaseCellComponent';
+import BaseCellComponent, { shouldCellComponentUpdate } from './BaseCellComponent';
 import { getType } from '../../selectors/formulas/tables';
 import './CellComponent.css';
 
@@ -39,7 +39,7 @@ const defaultFormatter = (value, pushStack) => {
   return JSON.stringify(value);
 };
 
-class CellValueComponent extends PureComponent {
+class CellValueComponent extends Component {
   constructor(props) {
     super(props);
     this.pushStack = this.pushStack.bind(this);
@@ -64,8 +64,12 @@ class CellValueComponent extends PureComponent {
     ev.preventDefault();
   }
 
+  shouldComponentUpdate(nextProps) {
+    return shouldCellComponentUpdate(this.props, nextProps);
+  }
+
   render() {
-    const { id, x, y, width, height, setSelection, extraClasses } = this.props;
+    const { clickExpr, x, y, width, height, setSelection, extraClasses } = this.props;
     const { error, formattedValue, override } = this.getCellContents();
     const className = classNames(
       'CellValue',
@@ -80,7 +84,7 @@ class CellValueComponent extends PureComponent {
       <BaseCellComponent
         x={x}
         y={y}
-        id={id}
+        clickExpr={clickExpr}
         width={width}
         height={height}
         className={className}

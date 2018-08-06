@@ -1,11 +1,24 @@
-import React, { PureComponent } from 'react';
+import React, { Component } from 'react';
+import deepEq from 'fast-deep-equal';
+import shallowEq from 'is-equal-shallow';
 import './CellComponent.css';
 
-class BaseCellComponent extends PureComponent {
+export const shouldCellComponentUpdate = (oldProps, nextProps) => {
+  const { clickExpr: oldClickExpr, ...oldShallowProps } = oldProps;
+  const { clickExpr: newClickExpr, ...newShallowProps } = nextProps;
+  if (!deepEq(oldClickExpr, newClickExpr)) return true;
+  return !shallowEq(oldShallowProps, newShallowProps);
+};
+
+class BaseCellComponent extends Component {
   constructor(props) {
     super(props);
     this.onClick = this.onClick.bind(this);
     this.maybePreventClick = this.maybePreventClick.bind(this);
+  }
+
+  shouldComponentUpdate(nextProps) {
+    return shouldCellComponentUpdate(this.props, nextProps);
   }
 
   maybePreventClick(ev) {
@@ -17,8 +30,8 @@ class BaseCellComponent extends PureComponent {
 
   onClick(ev) {
     ev.preventDefault();
-    const { x, y, id, setSelection } = this.props;
-    setSelection(y, x, id);
+    const { x, y, clickExpr, setSelection } = this.props;
+    setSelection(y, x, clickExpr);
   }
 
   bounds() {

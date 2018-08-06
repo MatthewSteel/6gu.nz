@@ -39,12 +39,12 @@ export default class ContentsBaseComponent extends Component {
     this.childSelectionTableRef = ref;
   }
 
-  setViewSelection(worldY, worldX, maybeId) {
+  setViewSelection(worldY, worldX, maybeClickExpr) {
     const { x: selX, y: selY } = this.worldToLocal({ y: worldY, x: worldX });
-    this.setSelection(selY, selX, maybeId);
+    this.setSelection(selY, selX, maybeClickExpr);
   }
 
-  setSelection(selY, selX, maybeId) {
+  setSelection(selY, selX, maybeClickExpr) {
     const { scrollX, scrollY } = this.state;
     const { setViewSelection, viewWidth, viewHeight } = this.props;
 
@@ -55,7 +55,7 @@ export default class ContentsBaseComponent extends Component {
     const newScrollX = clampOverlap(scrollX, localViewWidth, selX, selX + 0.5);
     this.scroll({ scrollY: newScrollY, scrollX: newScrollX });
     const worldCoords = this.localToWorld({ y: selY, x: selX });
-    setViewSelection(worldCoords.y, worldCoords.x, maybeId);
+    setViewSelection(worldCoords.y, worldCoords.x, maybeClickExpr);
   }
 
   onScroll(pxOffset) {
