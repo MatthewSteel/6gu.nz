@@ -3,6 +3,13 @@ import deepEq from 'fast-deep-equal';
 import shallowEq from 'is-equal-shallow';
 import './CellComponent.css';
 
+export const shouldCellComponentUpdate = (oldProps, nextProps) => {
+  const { clickExpr: oldClickExpr, ...oldShallowProps } = oldProps;
+  const { clickExpr: newClickExpr, ...newShallowProps } = nextProps;
+  if (!deepEq(oldClickExpr, newClickExpr)) return true;
+  return !shallowEq(oldShallowProps, newShallowProps);
+};
+
 class BaseCellComponent extends Component {
   constructor(props) {
     super(props);
@@ -11,10 +18,7 @@ class BaseCellComponent extends Component {
   }
 
   shouldComponentUpdate(nextProps) {
-    const { clickExpr: oldClickExpr, ...oldShallowProps } = this.props;
-    const { clickExpr: newClickExpr, ...newShallowProps } = nextProps;
-    if (!deepEq(oldClickExpr, newClickExpr)) return true;
-    return !shallowEq(oldShallowProps, newShallowProps);
+    return shouldCellComponentUpdate(this.props, nextProps);
   }
 
   maybePreventClick(ev) {
