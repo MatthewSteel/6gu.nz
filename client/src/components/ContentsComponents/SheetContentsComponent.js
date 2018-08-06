@@ -12,7 +12,7 @@ import ContentsBaseComponent, { mapDispatchToProps } from './ContentsBaseCompone
 import ArrayComponent from './ArrayComponent';
 import ObjectComponent from './ObjectComponent';
 import TableComponent from './TableComponent';
-import CreateMenu from '../CreateMenu/CreateMenu';
+import CreateMenu from '../ContextMenu/CreateMenu';
 
 import { getChildrenOfRef, getRefsById, sheetPlacedCellLocs } from '../../selectors/formulas/selectors';
 import { overlaps, truncateOverlap } from '../../selectors/geom/geom';
