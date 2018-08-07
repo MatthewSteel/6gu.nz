@@ -1,7 +1,18 @@
 import React, { Component } from 'react';
 import deepEq from 'fast-deep-equal';
-import shallowEq from 'is-equal-shallow';
 import './CellComponent.css';
+
+const shallowEq = (left, right) => {
+  const leftKeys = Object.keys(left);
+  const rightKeys = Object.keys(right);
+  if (leftKeys.length !== rightKeys.length) return false;
+  for (let i = 0; i < leftKeys.length; ++i) {
+    const leftKey = leftKeys[i];
+    if (!(leftKey in right)) return false;
+    if (left[leftKey] !== right[leftKey]) return false;
+  }
+  return true;
+};
 
 export const shouldCellComponentUpdate = (oldProps, nextProps) => {
   const { clickExpr: oldClickExpr, ...oldShallowProps } = oldProps;
