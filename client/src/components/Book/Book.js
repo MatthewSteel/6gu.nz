@@ -38,6 +38,7 @@ class Book extends PureComponent {
 
     this.setFormulaRef = this.setFormulaRef.bind(this);
     this.maybeInsertExprIntoFormula = this.maybeInsertExprIntoFormula.bind(this);
+    this.writeForeignKey = this.writeForeignKey.bind(this);
     this.formulaRef = null;
   }
 
@@ -49,6 +50,11 @@ class Book extends PureComponent {
     if (!this.formulaRef) return false;
     return this.formulaRef.getWrappedInstance()
       .maybeInsertExprIntoFormula(expr);
+  }
+
+  writeForeignKey(column) {
+    if (!this.formulaRef) return false;
+    return this.formulaRef.getWrappedInstance().writeForeignKey(column);
   }
 
   changeSheetViewSheet(targetSheetId) {
@@ -111,6 +117,7 @@ class Book extends PureComponent {
           selected={i === displayView.length - 1}
           deleteSheet={this.deleteSelectedSheet}
           maybeInsertExprIntoFormula={this.maybeInsertExprIntoFormula}
+          writeForeignKey={this.writeForeignKey}
           popViewStack={this.popStack}
           pushViewStack={this.pushStack}
         />

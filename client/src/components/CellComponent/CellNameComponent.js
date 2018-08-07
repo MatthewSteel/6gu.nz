@@ -1,6 +1,13 @@
 import React, { Component } from 'react';
 import BaseCellComponent, { shouldCellComponentUpdate } from './BaseCellComponent';
 
+const lookupNameStyle = { fontStyle: 'italic' };
+const lookupBraceStyle = { fontWeight: 'bold' };
+const lookupText = name => [
+  <span key="react" style={lookupBraceStyle}>&rarr;</span>,
+  <span key="smells" style={lookupNameStyle}>{name}</span>,
+];
+
 class CellNameComponent extends Component {
   shouldComponentUpdate(nextProps) {
     return shouldCellComponentUpdate(this.props, nextProps);
@@ -17,7 +24,9 @@ class CellNameComponent extends Component {
       setSelection,
       onDragStart,
       onDragEnd,
+      isLookup,
     } = this.props;
+    const contents = isLookup ? lookupText(name) : name;
     return (
       <BaseCellComponent
         clickExpr={clickExpr}
@@ -30,7 +39,7 @@ class CellNameComponent extends Component {
         onDragStart={onDragStart}
         onDragEnd={onDragEnd}
       >
-        {name}
+        {contents}
       </BaseCellComponent>
     );
   }

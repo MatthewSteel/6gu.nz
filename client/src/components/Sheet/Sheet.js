@@ -43,6 +43,7 @@ class Sheet extends Component {
       selected,
       size,
       sheetId,
+      writeForeignKey,
     } = this.props;
     const {
       selY,
@@ -69,6 +70,7 @@ class Sheet extends Component {
           viewSelX={selX}
           viewSelY={selY}
           setViewSelection={this.setWindowSelection}
+          writeForeignKey={writeForeignKey}
         />
       </div>
     );

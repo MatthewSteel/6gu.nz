@@ -4,8 +4,9 @@ import { connect } from 'react-redux';
 import CellNameComponent from '../CellComponent/CellNameComponent';
 import CellSelectionComponent from '../CellComponent/CellSelectionComponent';
 import ContentsBaseComponent, { mapDispatchToProps } from './ContentsBaseComponent';
+import ColumnMenu from '../ContextMenu/ColumnMenu';
 
-import { getRefsById, refsAtPosition } from '../../selectors/formulas/selectors';
+import { getRefsById, refParentId, refsAtPosition } from '../../selectors/formulas/selectors';
 import scrollHelper from '../util/ScrollHelper';
 import { TABLE_COLUMN } from '../../redux/stateConstants';
 
@@ -68,12 +69,16 @@ class TableKeysComponent extends ContentsBaseComponent {
     const {
       contextId,
       columns,
+      readOnly,
       tableData,
       viewSelected,
       viewWidth,
       viewOffsetX,
       viewOffsetY,
       outerViewHeight,
+      fkTables,
+      hiddenForeignKeyColumnIds,
+      writeForeignKey,
     } = this.props;
     const children = [];
     const { selX } = this.localSelection();
@@ -90,9 +95,6 @@ class TableKeysComponent extends ContentsBaseComponent {
       // labels
       const nameSelected = viewSelected && selX === col;
       const name = tableData.keys[col];
-      const clickExpr = columns && columns[col]
-        ? { ref: columns[col].id }
-        : { lookup: name, on: { ref: contextId } };
       if (nameSelected) {
         children.push((
           <CellSelectionComponent
@@ -104,6 +106,33 @@ class TableKeysComponent extends ContentsBaseComponent {
             selection={this.selectedCellId()}
           />
         ));
+        if (!readOnly && columns && columns[col]) {
+          children.push((
+            <ColumnMenu
+              column={columns[col]}
+              x={worldCol}
+              y={viewOffsetY}
+              writeForeignKey={writeForeignKey}
+              key="shut-up-react"
+            />
+          ));
+        }
+      }
+      const showForeignKey = columns && columns[col]
+        && columns[col].foreignKey
+        && !hiddenForeignKeyColumnIds[columns[col].id];
+      let clickExpr = { ref: contextId };
+      if (name) clickExpr = { lookup: name, on: { ref: contextId } };
+      if (columns && columns[col]) clickExpr = { ref: columns[col].id };
+      if (showForeignKey) {
+        clickExpr = {
+          lookupIndex: {
+            binary: '::',
+            left: { ref: columns[col].foreignKey },
+            right: { ref: columns[col].id },
+          },
+          on: { ref: fkTables[columns[col].foreignKey] },
+        };
       }
       children.push((
         <CellNameComponent
@@ -115,6 +144,7 @@ class TableKeysComponent extends ContentsBaseComponent {
           name={name}
           setSelection={this.setViewSelection}
           key={`name-${col}`}
+          isLookup={showForeignKey}
         />
       ));
     }
@@ -129,9 +159,20 @@ class TableKeysComponent extends ContentsBaseComponent {
 }
 
 const mapStateToProps = (state, ownProps) => {
-  const context = getRefsById(state)[ownProps.contextId];
+  const refsById = getRefsById(state);
+  const context = refsById[ownProps.contextId];
   const { columns } = !context.formula && refsAtPosition(state)[ownProps.contextId];
-  return { context, columns };
+  const { hiddenForeignKeyColumnIds } = state;
+  const fkTables = {};
+  if (columns) {
+    columns.forEach((column) => {
+      const { foreignKey } = column;
+      if (foreignKey) {
+        fkTables[foreignKey] = refParentId(refsById[foreignKey]);
+      }
+    });
+  }
+  return { context, columns, fkTables, hiddenForeignKeyColumnIds };
 };
 
 export default connect(

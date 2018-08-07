@@ -6,7 +6,7 @@ import equal from 'fast-deep-equal';
 import KeyboardListener, { FALL_THROUGH, CAPTURE } from '../util/KeyboardListener';
 import { getRefsById } from '../../selectors/formulas/selectors';
 import { unparseFormula } from '../../selectors/formulas/unparser';
-import { deleteLoc, deleteThing, setFormula } from '../../redux/documentEditing';
+import { deleteLoc, deleteThing, setFormula, updateForeignKey } from '../../redux/documentEditing';
 import { setFormulaFocus } from '../../redux/uistate';
 import {
   inputFromFormula,
@@ -188,11 +188,12 @@ class Formula extends Component {
     this.onClick = this.onClick.bind(this);
     this.onInput = this.onInput.bind(this);
     this.submit = this.submit.bind(this);
-    this.setFormula = this.setFormula.bind(this);
     this.setRef = this.setRef.bind(this);
     this.keys = this.keys.bind(this);
+    this.writeForeignKey = this.writeForeignKey.bind(this);
 
     this.hasFocus = false; // Not for display, just for keeping track.
+    this.state = { foreignKeyCol: undefined };
   }
 
   componentWillReceiveProps(next) {
@@ -200,6 +201,9 @@ class Formula extends Component {
     const selectionChanged = !equal(next.selection, this.props.selection);
     if (this.inputRef && (formulaChanged || selectionChanged)) {
       this.inputRef.innerHTML = next.initialValue || nbsp;
+      if (this.state.foreignKeyCol) {
+        this.setState({ foreignKeyCol: undefined });
+      }
     }
   }
 
@@ -209,12 +213,21 @@ class Formula extends Component {
   }
 
   setFormula(formulaStr) {
-    const { deleteCell, selection, setCellFormula } = this.props;
+    const { deleteCell, selection, setCellFormula, updateFk } = this.props;
+    const { foreignKeyCol } = this.state;
     if (selection.readOnly) return;
     if (formulaStr.replace(/\s/g, '') !== '') {
-      setCellFormula(selection, formulaStr);
+      if (foreignKeyCol) {
+        updateFk(foreignKeyCol, formulaStr);
+      } else {
+        setCellFormula(selection, formulaStr);
+      }
     } else if (selection.cellId) {
-      deleteCell(selection.cellId);
+      if (foreignKeyCol) {
+        updateFk(foreignKeyCol, undefined);
+      } else {
+        deleteCell(selection.cellId);
+      }
     }
   }
 
@@ -271,6 +284,10 @@ class Formula extends Component {
   }
 
   handleOnBlur() {
+    if (this.state.foreignKeyCol) {
+      this.setState({ foreignKeyCol: undefined });
+    }
+    this.inputRef.innerHTML = this.props.initialValue; // !?
     this.hasFocus = false;
     this.props.setFormulaFocusProp(false);
   }
@@ -390,12 +407,32 @@ class Formula extends Component {
     }
   }
 
+  writeForeignKey(column) {
+    this.setState({ foreignKeyCol: column.id });
+    this.inputRef.innerHTML = nbsp;
+    this.focus();
+  }
+
   render() {
-    const { selection } = this.props;
+    const { renderFormula, selection } = this.props;
     const readOnly = !selection || selection.readOnly;
     const notEmpty = selection && selection.cellId;
+    const { foreignKeyCol } = this.state;
+    let fkPrompt;
+    if (foreignKeyCol) {
+      const fkHtml = renderFormula({ ref: foreignKeyCol });
+      const fkElem = <div dangerouslySetInnerHTML={{ __html: fkHtml }} />;
+      fkPrompt = (
+        <div
+          className={classNames('HasContent', 'FormulaInput', 'FakeFormula')}
+        >
+          Column that&ensp;{fkElem}&ensp;refers to:
+        </div>
+      );
+    }
     return (
       <Fragment>
+        {fkPrompt}
         <div
           type="text"
           className={classNames(
@@ -438,6 +475,7 @@ const mapDispatchToProps = dispatch => ({
   deleteLocation: (context, y, x) => dispatch(deleteLoc(context, y, x)),
   setCellFormula: (context, cellId, formula) => dispatch(setFormula(context, cellId, formula)),
   setFormulaFocusProp: hasFocus => dispatch(setFormulaFocus(hasFocus)),
+  updateFk: (fkCol, formula) => dispatch(updateForeignKey(fkCol, formula)),
 });
 
 export default connect(
