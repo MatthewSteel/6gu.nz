@@ -88,6 +88,7 @@ class TableComponent extends ContentsBaseComponent {
       viewSelX,
       viewSelY,
       setViewSelection,
+      writeForeignKey,
     } = this.props;
     const { linkedScrollX, linkedScrollY } = this.state;
     const selectedCell = this.maybeSelectedCell();
@@ -165,6 +166,7 @@ class TableComponent extends ContentsBaseComponent {
             viewSelected={keysSelected}
             linkedScrollX={linkedScrollX}
             outerViewHeight={viewHeight}
+            writeForeignKey={writeForeignKey}
           />
           <TableIndicesComponent
             {...commonChildProps}

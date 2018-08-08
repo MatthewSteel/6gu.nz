@@ -24,6 +24,7 @@ module.exports = {
     'one-var': 0,
     'one-var-declaration-per-line': 0,
     'react/no-array-index-key': 0,
+    'react/no-danger': 0,
     'react/no-multi-comp': 0,
     'react/jsx-filename-extension': 0,
     'react/jsx-one-expression-per-line': 0,

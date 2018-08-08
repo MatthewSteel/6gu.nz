@@ -84,9 +84,10 @@ class ObjectContentsComponent extends ContentsBaseComponent {
       ++col
     ) {
       const colName = colNamesByIndex[col];
-      const clickExpr = cells && cells[col]
-        ? { ref: cells[col].id }
-        : { lookup: colName, on: { ref: contextId } };
+      let clickExpr = { ref: contextId };
+      if (colName) clickExpr = { lookup: colName, on: { ref: contextId } };
+      if (cells && cells[col]) clickExpr = { ref: cells[col].id };
+
       const worldCol = viewOffsetX + (col - scrollX);
 
       // labels

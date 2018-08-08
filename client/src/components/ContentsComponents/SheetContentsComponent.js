@@ -115,6 +115,7 @@ class SheetContentsComponent extends ContentsBaseComponent {
       dragRefId: dragInProgress,
       dragGeom,
       toggleElementSize,
+      writeForeignKey,
     } = this.props;
     const {
       scrollY,
@@ -179,6 +180,7 @@ class SheetContentsComponent extends ContentsBaseComponent {
           if (cell.type === TABLE && !cellContents.override) {
             return (
               <TableComponent
+                writeForeignKey={writeForeignKey}
                 {...commonChildProps}
                 {...commonComplexChildProps}
               />

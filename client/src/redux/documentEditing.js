@@ -87,6 +87,13 @@ export const toggleMaximiseSheetElem = (dispatch, refId) => {
 export const undo = () => ({ type: 'UNDO' });
 export const redo = () => ({ type: 'REDO' });
 
+export const updateForeignKey = (fkColId, formula) => ({
+  type: 'UPDATE_FOREIGN_KEY', payload: { fkColId, formula },
+});
+export const toggleForeignKey = fkColId => ({
+  type: 'TOGGLE_FOREIGN_KEY', payload: fkColId,
+});
+
 const defaultArrayCell = (contextId, index, formula = DEFAULT_FORMULA) => ({
   id: uuidv4(),
   arrayId: contextId,
@@ -352,11 +359,15 @@ const translateDeletions = (oldState, newState, deletedRefIds) => {
 
   return digMut(newState, path('cells'), cells => (
     cells.map((cell) => {
-      if (!refIdsToRewrite.has(cell.id)) return cell;
+      let ret = cell;
+      if (ret.foreignKey && deletedRefIds.has(ret.foreignKey)) {
+        ret = { ...ret, foreignKey: undefined };
+      }
+      if (!refIdsToRewrite.has(ret.id)) return ret;
       return {
-        ...cell,
+        ...ret,
         formula: translateExpr(
-          cell.formula,
+          ret.formula,
           undefined,
           translateTermForDeletions(oldState, deletedRefIds),
         ),
@@ -604,6 +615,44 @@ export const documentReducer = (state, action) => {
         openDocument: newDoc,
       },
       false, // scheduleSave should not mess with the stacks.
+    );
+  }
+
+  if (action.type === 'UPDATE_FOREIGN_KEY') {
+    const { fkColId, formula } = action.payload;
+    const refsById = getRefsById(state);
+    const fkCol = refsById[fkColId];
+    if (!fkCol || !TABLE_COLUMN_TYPES.includes(fkCol.type)) return state;
+
+    let pkColId;
+    if (formula) {
+      try {
+        const parsedFormula = parseFormula(formula, fkCol.tableId, state);
+        pkColId = parsedFormula.formula.ref;
+      } catch (e) {
+        // maybe no .formula, maybe a bad formula... lots can happen.
+        return state;
+      }
+      const pkCol = refsById[pkColId];
+      if (!pkCol || !TABLE_COLUMN_TYPES.includes(pkCol.type)) return state;
+    }
+
+    return scheduleSave(
+      state,
+      digMut(state, path('cells'), cells => [
+        ...cells.filter(({ id }) => id !== fkColId),
+        { ...fkCol, foreignKey: pkColId },
+      ]),
+    );
+  }
+
+  if (action.type === 'TOGGLE_FOREIGN_KEY') {
+    const fkColId = action.payload;
+    const alreadyHidden = state.hiddenForeignKeyColumnIds[fkColId];
+    return digMut(
+      state,
+      ['hiddenForeignKeyColumnIds', fkColId],
+      !alreadyHidden,
     );
   }
 
