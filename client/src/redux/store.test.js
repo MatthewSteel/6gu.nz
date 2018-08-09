@@ -376,5 +376,67 @@ describe('actions/the store', () => {
       const x = find(({ name }) => name === 'x');
       expect(rawValue(x)).toEqual([6, 6, 7]);
     });
+
+    it('is conservative about column dependencies', () => {
+      const [sheet] = getSheets(store.getState());
+      // pkTable is [{id: 1, value: "a"}, {id: 2, value: "ba"}]
+      store.dispatch(setFormula(
+        { context: sheet.id, y: 0, x: 5 },
+        'pkTable2: [{id2: "ba", fk:1, val: 7}, {id2: "a", fk: 1, val: 8}]',
+      ));
+      // pkTable.value refers to pkTable2.id2
+      const fkCol1 = find(({ name }) => name === 'value');
+      store.dispatch(updateForeignKey(fkCol1.id, 'pkTable2.id2'));
+
+      // pkTable2.fk refers to pkTable.id
+      const fkCol2 = find(({ name }) => name === 'fk');
+      store.dispatch(updateForeignKey(fkCol2.id, 'pkTable.id'));
+
+      // Try to add a computed column to each table to chase through
+      // the references. Results should be ids from the same tables.
+      const pkTable = find(({ name }) => name === 'pkTable');
+      store.dispatch(setFormula(
+        {
+          context: pkTable.id,
+          y: 0,
+          x: 2,
+          locationSelected: { index: 2, type: TABLE_COLUMN },
+        },
+        // The important thing in this test is that the translated
+        // lookups only depend on the used columns. Naively translated,
+        // this formula first turns into
+        //   pkTable2[pkTable2.id2 :: pkTable.value]->fk.id
+        // and then into
+        //   pkTable[pkTable.id :: pkTable2[pkTable2.id2 :: pkTable.value].fk].id
+        // and there are two with this:
+        //  1. It looks like it depends on the whole pkTable (at the start), and
+        //  2. It looks like it depends on the whole pkTable2 (in the middle).
+        // In actual fact, though, that first lookup just uses pkTable.id,
+        // and the second lookup just uses pkTable2.fk. We do some magical
+        // translation to transform this formula into
+        //   pkTable.id[pkTable.id :: pkTable2.fk[pkTable2.id2 :: pkTable.value]]
+        'pkTableCousins: pkTable->value->fk.id',
+      ));
+      const pkTable2 = find(({ name }) => name === 'pkTable2');
+      store.dispatch(setFormula(
+        {
+          context: pkTable2.id,
+          y: 0,
+          x: 3,
+          locationSelected: { index: 3, type: TABLE_COLUMN },
+        },
+        // Very similar thing to the above explanation happens here. Making
+        // these mutual dependencies just makes triply sure the optmisation
+        // happens :-).
+        'pkTable2Cousins: pkTable2->fk->value.val',
+      ));
+
+      // Check out the values of these columns after both are there
+      const cousins = find(({ name }) => name === 'pkTableCousins');
+      expect(rawValue(cousins)).toEqual([1, 1]);
+
+      const cousins2 = find(({ name }) => name === 'pkTable2Cousins');
+      expect(rawValue(cousins2)).toEqual([8, 8]);
+    });
   });
 });

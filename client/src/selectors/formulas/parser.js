@@ -368,9 +368,37 @@ const subNamesForRefsInName = (term, contextId, state) => {
 };
 
 const subNamesForRefsInLookup = (term, state) => {
-  // This turns "tableRef.cellName" into "cellRef" etc.
+  // This turns formulas like `tableRef.colName` and `tableRef[?].collName`
+  // into `colRef` and `colRef[?]` etc.
+  // The latter transformation is quite important to cut down dependencies
+  // for formulas like `T->fK.col`, where we want to depend on just the `col`
+  // column in the other table (not the _whole_ table).
 
-  if (!term.on.ref) return term;
+  // If a formula is like "something[?].name (and we haven't been able to
+  // resolve `something[?]` down to a reference) we'll likely have better
+  // luck if we rephrase the formula as `something.name[?]`.
+  // (Erm, this looks very similar to an arrow function below, maybe we can
+  // do them the same way/at the same time?)
+  const rearrangeLookups = (innerTerm) => {
+    if (innerTerm.lookupIndex) {
+      const colLookup = { ...innerTerm, on: rearrangeLookups(innerTerm.on) };
+      return subNamesForRefsInLookupIndex(colLookup, state);
+    }
+    if (!innerTerm.ref) return innerTerm;
+    return subNamesForRefsInRefLookup(
+      {
+        lookup: term.lookup,
+        lookupType: term.lookupType,
+        on: innerTerm,
+      },
+      state,
+    );
+  };
+  return rearrangeLookups(term.on);
+};
+
+const subNamesForRefsInRefLookup = (term, state) => {
+  // This turns "tableRef.cellName" into "cellRef" etc.
   const refsById = getRefsById(state);
   const { ref: refId } = term.on;
   const ref = refsById[refId];
