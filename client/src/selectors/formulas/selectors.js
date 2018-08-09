@@ -373,7 +373,8 @@ export const translateExpr = (...fnArgs) => {
 
   const doLookup = (term, contextId) => {
     const on = doExpr(term.on, contextId);
-    return f({ lookup: term.lookup, on }, contextId, state);
+    const { lookup, lookupType } = term;
+    return f({ lookup, lookupType, on }, contextId, state);
   };
 
   const doLookupIndex = (term, contextId) => {

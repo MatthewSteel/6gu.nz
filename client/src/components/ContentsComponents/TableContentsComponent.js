@@ -105,6 +105,7 @@ class TableContentsComponent extends ContentsBaseComponent {
         const columnName = tableData.keys[col];
         const explicitLookup = {
           lookup: columnName,
+          lookupType: '.',
           on: { lookupIndex: { value: row }, on: { ref: contextId } },
         };
         const clickExpr = cells && cells[clickLoc]
