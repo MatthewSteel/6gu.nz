@@ -384,7 +384,7 @@ const subNamesForRefsInLookup = (term, state) => {
       const colLookup = { ...innerTerm, on: rearrangeLookups(innerTerm.on) };
       return subNamesForRefsInLookupIndex(colLookup, state);
     }
-    if (!innerTerm.ref) return innerTerm;
+    if (!innerTerm.ref) return { ...term, on: innerTerm };
     return subNamesForRefsInRefLookup(
       {
         lookup: term.lookup,

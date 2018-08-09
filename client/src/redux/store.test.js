@@ -439,4 +439,16 @@ describe('actions/the store', () => {
       expect(rawValue(cousins2)).toEqual([8, 8]);
     });
   });
+
+  it('doesn\'t mess up "bad" lookups when trying to simplify arrows', () => {
+    const [sheet] = getSheets(store.getState());
+    store.dispatch(setFormula({ context: sheet.id, y: 0, x: 0 }, 'o: ({a: {b: "hi" }})'));
+    store.dispatch(setFormula({ context: sheet.id, y: 0, x: 0 }, 'v: o.a.b'));
+    store.dispatch(setFormula({ context: sheet.id, y: 0, x: 0 }, 'v2: ((o).b).a'));
+    const v = find(({ name }) => name === 'v');
+    expect(rawValue(v)).toEqual('hi');
+
+    const v2 = find(({ name }) => name === 'v');
+    expect(rawValue(v2)).toEqual('hi');
+  });
 });
