@@ -138,6 +138,15 @@ function* lexColons(prevLeftOverTokens) {
   return { nextChar, leftOverTokens: [] };
 }
 
+function* lexFromDash(prevLeftOverTokens) {
+  const secondChar = yield prevLeftOverTokens;
+  if (secondChar === '>') {
+    const nextChar = yield [{ lookup: '->', inputLength: 2 }];
+    return { nextChar, leftOverTokens: [] };
+  }
+  return { nextChar: secondChar, leftOverTokens: [{ op: '-' }] };
+}
+
 export function* generatorLex() {
   const singleCharTokens = {
     '(': 'open',
@@ -154,8 +163,9 @@ export function* generatorLex() {
     { pattern: /^[0-9]$/, chomp: lexNumber },
     { pattern: /^"$/, chomp: lexString },
     { pattern: /^\s$/, chomp: chompWhitespace },
-    { pattern: /^[=<>+\-*/%&|^!~]$/, chomp: lexOp },
+    { pattern: /^[=<>+*/%&|^!~]$/, chomp: lexOp },
     { pattern: /^:$/, chomp: lexColons },
+    { pattern: /^-$/, chomp: lexFromDash },
   ];
 
   let next = yield [];

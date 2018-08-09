@@ -122,7 +122,9 @@ class TableKeysComponent extends ContentsBaseComponent {
         && columns[col].foreignKey
         && !hiddenForeignKeyColumnIds[columns[col].id];
       let clickExpr = { ref: contextId };
-      if (name) clickExpr = { lookup: name, on: { ref: contextId } };
+      if (name) {
+        clickExpr = { lookup: name, lookupType: '.', on: { ref: contextId } };
+      }
       if (columns && columns[col]) clickExpr = { ref: columns[col].id };
       if (showForeignKey) {
         clickExpr = {

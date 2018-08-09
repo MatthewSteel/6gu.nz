@@ -1,14 +1,16 @@
 import store from './store';
 import { ARRAY, CELL, OBJECT, TABLE, TABLE_CELL, TABLE_COLUMN, TABLE_ROW, LOGIN_STATES } from './stateConstants';
-import { deleteLoc, deleteThing, setFormula } from './documentEditing';
+import { deleteLoc, deleteThing, setFormula, updateForeignKey } from './documentEditing';
 import { getCells, getSheets } from '../selectors/formulas/selectors';
 import { getCellValuesById } from '../selectors/formulas/codegen';
 import { stringFormula } from '../selectors/formulas/unparser';
 import { blankDocument } from './backend';
+import { toRaw1 } from '../selectors/formulas/builtins';
 
 const allCells = () => getCells(store.getState());
 const find = f => allCells().find(f);
 const getCellValue = cell => getCellValuesById(store.getState())[cell.id];
+const rawValue = cell => toRaw1(getCellValue(cell).value);
 const getStr = id => stringFormula(store.getState(), id);
 
 describe('actions/the store', () => {
@@ -321,5 +323,58 @@ describe('actions/the store', () => {
 
     const tableCell = find(({ type }) => type === TABLE_CELL);
     expect(tableCell.formula).toEqual({ value: 'y' });
+  });
+
+  describe('with foreign keys', () => {
+    beforeEach(() => {
+      const [sheet] = getSheets(store.getState());
+      store.dispatch(setFormula(
+        { context: sheet.id, y: 0, x: 0 },
+        'pkTable: [{id: 1, value: "a"}, {id: 2, value: "ba"}]',
+      ));
+      store.dispatch(setFormula(
+        { context: sheet.id, y: 5, x: 0 },
+        'fkTable: [{p: 2}, {p: 2}, {p: 1}]',
+      ));
+      const fkCol = find(({ name }) => name === 'p');
+      store.dispatch(updateForeignKey(fkCol.id, 'pkTable.id'));
+    });
+
+    it('parses a simple arrow formula appropriately', () => {
+      const [sheet] = getSheets(store.getState());
+      store.dispatch(setFormula(
+        { context: sheet.id, y: 0, x: 5 }, 'x: fkTable->p.value',
+      ));
+      const x = find(({ name }) => name === 'x');
+      expect(rawValue(x)).toEqual(['ba', 'ba', 'a']);
+    });
+
+    it('parses a row-lookup arrow formula', () => {
+      const [sheet] = getSheets(store.getState());
+      store.dispatch(setFormula(
+        { context: sheet.id, y: 0, x: 5 }, 'x: fkTable[1]->p',
+      ));
+      const x = find(({ name }) => name === 'x');
+      expect(rawValue(x)).toEqual({ value: 'ba', id: 2 });
+    });
+
+    it('parses arrow-after-arrow', () => {
+      const [sheet] = getSheets(store.getState());
+      // Set up a table referred to by pkTable.id
+      store.dispatch(setFormula(
+        { context: sheet.id, y: 0, x: 5 },
+        'pkTable2: [{id2: "ba", v:6}, {id2: "a", v: 7}]',
+      ));
+      // Set up a foreign key relation
+      const fkCol2 = find(({ name }) => name === 'value');
+      store.dispatch(updateForeignKey(fkCol2.id, 'pkTable2.id2'));
+
+      // Test the foreign key relation
+      store.dispatch(setFormula(
+        { context: sheet.id, y: 0, x: 10 }, 'x: fkTable->p->value.v',
+      ));
+      const x = find(({ name }) => name === 'x');
+      expect(rawValue(x)).toEqual([6, 6, 7]);
+    });
   });
 });

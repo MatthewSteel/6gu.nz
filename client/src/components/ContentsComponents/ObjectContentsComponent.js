@@ -85,7 +85,9 @@ class ObjectContentsComponent extends ContentsBaseComponent {
     ) {
       const colName = colNamesByIndex[col];
       let clickExpr = { ref: contextId };
-      if (colName) clickExpr = { lookup: colName, on: { ref: contextId } };
+      if (colName) {
+        clickExpr = { lookup: colName, lookupType: '.', on: { ref: contextId } };
+      }
       if (cells && cells[col]) clickExpr = { ref: cells[col].id };
 
       const worldCol = viewOffsetX + (col - scrollX);
