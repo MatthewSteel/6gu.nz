@@ -200,7 +200,7 @@ class Formula extends Component {
     const formulaChanged = next.initialValue !== this.props.initialValue;
     const selectionChanged = !equal(next.selection, this.props.selection);
     if (this.inputRef && (formulaChanged || selectionChanged)) {
-      this.inputRef.innerHTML = next.initialValue || nbsp;
+      this.inputRef.innerHTML = next.initialValue;
       if (this.state.foreignKeyCol) {
         this.setState({ foreignKeyCol: undefined });
       }
@@ -233,7 +233,7 @@ class Formula extends Component {
 
   resetValue() {
     if (this.inputRef) {
-      this.inputRef.innerHTML = this.props.initialValue || nbsp;
+      this.inputRef.innerHTML = this.props.initialValue;
     }
   }
 
@@ -287,7 +287,7 @@ class Formula extends Component {
     if (this.state.foreignKeyCol) {
       this.setState({ foreignKeyCol: undefined });
     }
-    this.inputRef.innerHTML = this.props.initialValue; // !?
+    this.inputRef.innerHTML = this.props.initialValue;
     this.hasFocus = false;
     this.props.setFormulaFocusProp(false);
   }
@@ -462,11 +462,14 @@ const mapStateToProps = (state) => {
   const renderFormula = formula => (
     htmlFromInput(unparseFormula(formula, selection.context, state), state));
   if (!selectedCellId) {
-    return { formulaStrFromElem, selection, initialValue: '', renderFormula };
+    return {
+      formulaStrFromElem, selection, initialValue: nbsp, renderFormula,
+    };
   }
 
   const ref = getRefsById(state)[selectedCellId];
-  const initialValue = htmlFromInput(inputFromFormula(ref, state), state);
+  const initialValue = htmlFromInput(inputFromFormula(ref, state), state)
+    || nbsp;
   return { formulaStrFromElem, selection, initialValue, renderFormula };
 };
 
