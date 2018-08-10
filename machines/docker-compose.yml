@@ -1,4 +1,6 @@
 version: "3.4"
+volumes:
+  pg-data:
 services:
   traefik:
     image: traefik
@@ -70,5 +72,6 @@ services:
     env_file:
       - .env.db
     volumes:
+      # use a named-volume for data persistency
       - '../postgres/init:/docker-entrypoint-initdb.d'
-      - '/var/lib/postgresql/data'
+      - 'pg-data:/var/lib/postgresql/data'
