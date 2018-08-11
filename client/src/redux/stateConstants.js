@@ -37,7 +37,6 @@ export const initialState = {
   redoStack: [],
   selection: null,
   formulaFocus: false,
-  hiddenForeignKeyColumnIds: {}, // user-local, do not want to save it
 };
 
 export const path = terminalName => ({

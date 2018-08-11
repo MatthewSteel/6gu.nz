@@ -40,7 +40,6 @@
 .CellTermSurround {
   display: grid;
   min-width: 50px;
-  max-width: 100px;
   text-align: center;
   box-shadow: 1px 1px 4px 0px #000;
   margin: 0px 2px;

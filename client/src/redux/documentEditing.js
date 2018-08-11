@@ -90,9 +90,6 @@ export const redo = () => ({ type: 'REDO' });
 export const updateForeignKey = (fkColId, formula) => ({
   type: 'UPDATE_FOREIGN_KEY', payload: { fkColId, formula },
 });
-export const toggleForeignKey = fkColId => ({
-  type: 'TOGGLE_FOREIGN_KEY', payload: fkColId,
-});
 
 const defaultArrayCell = (contextId, index, formula = DEFAULT_FORMULA) => ({
   id: uuidv4(),
@@ -643,16 +640,6 @@ export const documentReducer = (state, action) => {
         ...cells.filter(({ id }) => id !== fkColId),
         { ...fkCol, foreignKey: pkColId },
       ]),
-    );
-  }
-
-  if (action.type === 'TOGGLE_FOREIGN_KEY') {
-    const fkColId = action.payload;
-    const alreadyHidden = state.hiddenForeignKeyColumnIds[fkColId];
-    return digMut(
-      state,
-      ['hiddenForeignKeyColumnIds', fkColId],
-      !alreadyHidden,
     );
   }
 

@@ -2,9 +2,8 @@ import React, { Component } from 'react';
 import BaseCellComponent, { shouldCellComponentUpdate } from './BaseCellComponent';
 
 const lookupNameStyle = { fontStyle: 'italic' };
-const lookupBraceStyle = { fontWeight: 'bold' };
 const lookupText = name => [
-  <span key="react" style={lookupBraceStyle}>&rarr;</span>,
+  '\u21e8 ', // fat arrow, space
   <span key="smells" style={lookupNameStyle}>{name}</span>,
 ];
 

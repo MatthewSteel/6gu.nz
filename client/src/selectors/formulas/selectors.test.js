@@ -33,6 +33,7 @@ describe('formula selectors', () => {
     expect(lookupExpression(refsById, s1.id, xId)).toEqual({ ref: xId });
     expect(lookupExpression(refsById, s2.id, xId)).toEqual({
       lookup: 'x',
+      lookupType: '.',
       on: { ref: s1.id },
     });
 
