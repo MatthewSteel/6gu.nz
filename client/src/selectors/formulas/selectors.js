@@ -224,18 +224,22 @@ export const rewriteRefTermToParentLookup = (
     return { lookupIndex: { value: ref.index }, on: { ref: ref.arrayId } };
   }
   if (ref.type === OBJECT_CELL) {
-    return { lookup: ref.name, on: { ref: ref.objectId } };
+    return { lookup: ref.name, lookupType: '.', on: { ref: ref.objectId } };
   }
   if (ref.type === TABLE_ROW) {
     return { lookupIndex: { value: ref.index }, on: { ref: ref.tableId } };
   }
   if (ref.type === TABLE_COLUMN || ref.type === COMPUTED_TABLE_COLUMN) {
-    return { lookup: ref.name, on: { ref: ref.tableId } };
+    return { lookup: ref.name, lookupType: '.', on: { ref: ref.tableId } };
   }
   if (ref.type === TABLE_CELL) {
     if (directionHint === TABLE_ROW) {
       const arrayParent = refsById[ref.arrayId];
-      return { lookup: arrayParent.name, on: { ref: ref.objectId } };
+      return {
+        lookup: arrayParent.name,
+        lookupType: '.',
+        on: { ref: ref.objectId },
+      };
     }
     const objectParent = refsById[ref.objectId];
     return {
@@ -246,7 +250,7 @@ export const rewriteRefTermToParentLookup = (
   if (![CELL, ARRAY, OBJECT, TABLE].includes(ref.type)) {
     throw new Error(`unknown parent type for ${ref.type}`);
   }
-  return { lookup: ref.name, on: { ref: ref.sheetId } };
+  return { lookup: ref.name, lookupType: '.', on: { ref: ref.sheetId } };
 };
 
 
@@ -477,7 +481,7 @@ export const refError = (refsById, term, contextId) => {
     }
     return { str: refErrorMessage(term.name) };
   }
-  if (term.lookup && term.on.ref) {
+  if (term.lookupType === '.' && term.on.ref) {
     // Unresolved lookups are bad on sheets and "static" objects, but fine
     // on computed cells etc.
     const ref = refsById[term.on.ref];

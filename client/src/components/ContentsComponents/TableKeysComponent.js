@@ -77,7 +77,6 @@ class TableKeysComponent extends ContentsBaseComponent {
       viewOffsetY,
       outerViewHeight,
       fkTables,
-      hiddenForeignKeyColumnIds,
       writeForeignKey,
     } = this.props;
     const children = [];
@@ -118,15 +117,14 @@ class TableKeysComponent extends ContentsBaseComponent {
           ));
         }
       }
-      const showForeignKey = columns && columns[col]
-        && columns[col].foreignKey
-        && !hiddenForeignKeyColumnIds[columns[col].id];
+      const hasForeignKey = columns && columns[col]
+        && columns[col].foreignKey;
       let clickExpr = { ref: contextId };
       if (name) {
         clickExpr = { lookup: name, lookupType: '.', on: { ref: contextId } };
       }
       if (columns && columns[col]) clickExpr = { ref: columns[col].id };
-      if (showForeignKey) {
+      if (hasForeignKey) {
         clickExpr = {
           lookupIndex: {
             binary: '::',
@@ -146,7 +144,7 @@ class TableKeysComponent extends ContentsBaseComponent {
           name={name}
           setSelection={this.setViewSelection}
           key={`name-${col}`}
-          isLookup={showForeignKey}
+          isLookup={hasForeignKey}
         />
       ));
     }
@@ -164,7 +162,6 @@ const mapStateToProps = (state, ownProps) => {
   const refsById = getRefsById(state);
   const context = refsById[ownProps.contextId];
   const { columns } = !context.formula && refsAtPosition(state)[ownProps.contextId];
-  const { hiddenForeignKeyColumnIds } = state;
   const fkTables = {};
   if (columns) {
     columns.forEach((column) => {
@@ -174,7 +171,7 @@ const mapStateToProps = (state, ownProps) => {
       }
     });
   }
-  return { context, columns, fkTables, hiddenForeignKeyColumnIds };
+  return { context, columns, fkTables };
 };
 
 export default connect(

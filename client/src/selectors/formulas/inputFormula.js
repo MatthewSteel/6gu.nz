@@ -101,7 +101,11 @@ const renderToken = (state, token, blankOutRefValue) => {
   const big = key.startsWith('open')
     || key.startsWith('close');
   if (opStrings[token.op]) value = opStrings[token.op];
-  if (token.lookup) value = '\u2022'; // bullet
+  if (token.lookup) {
+    value = (token.lookup === '->')
+      ? '\u21e8' // fat right-arrow
+      : '\u2022'; // bullet
+  }
   return <div className={big ? 'BigToken' : 'SmallToken'}>{value}</div>;
 };
 

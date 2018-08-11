@@ -1,4 +1,5 @@
 import { canStartName, isNameChar } from './lexer';
+import { TABLE_CELL, TABLE_COLUMN_TYPES } from '../../redux/stateConstants';
 import {
   getRefsById,
   getContextIdForRefId,
@@ -73,6 +74,75 @@ const unparseLookupIndex = term => [
   { closeBracket: ']' },
 ];
 
+const maybeArrowFromMaybeColumn = (term, state, pkCol) => {
+  const refsById = getRefsById(state);
+  let lookupName;
+  const recurse = (innerTerm) => {
+    // Given a term like `colRef[?][?]`, see if we can translate it into
+    // tableRef[?][?]->colName if pkColId matches the column's FK.
+    // Also: If we get `something[?]->colName.otherColName`, translate it into
+    // `something->colName->otherColName`.
+    if (innerTerm.lookupIndex) {
+      return { ...innerTerm, on: recurse(innerTerm.on) };
+    }
+    let col, refWithoutLookup;
+    if (innerTerm.fakeColRef) {
+      // From an earlier arrow-translation
+      col = refsById[innerTerm.fakeColRef];
+      refWithoutLookup = innerTerm.on;
+    } else if (innerTerm.ref) {
+      const ref = refsById[innerTerm.ref];
+      if (ref.type === TABLE_CELL) {
+        col = refsById[ref.arrayId];
+        refWithoutLookup = { ref: ref.objectId };
+      } else if (TABLE_COLUMN_TYPES.includes(ref.type)) {
+        col = ref;
+        refWithoutLookup = { ref: ref.tableId };
+      } else {
+        return innerTerm;
+      }
+    } else {
+      return innerTerm;
+    }
+    if (col.foreignKey !== pkCol.id) return innerTerm;
+    lookupName = col.name;
+    return refWithoutLookup;
+  };
+  const innerTerm = recurse(term.lookupIndex.right);
+  if (!lookupName) return term;
+  const arrowLookup = {
+    lookup: lookupName,
+    on: innerTerm,
+    lookupType: '->',
+  };
+  if (term.on.ref === pkCol.tableId) return arrowLookup;
+  const onRef = refsById[term.on.ref];
+  return {
+    lookup: onRef.name,
+    lookupType: '.',
+    on: arrowLookup,
+    fakeColRef: term.on.ref,
+  };
+};
+
+const makeArrows = (term, contextId, state) => {
+  if (!term.lookupIndex) return term;
+  if (term.lookupIndex.binary !== '::') return term;
+  const { on } = term;
+  const { left } = term.lookupIndex;
+  if (!on.ref || !left.ref) return term;
+
+  const refsById = getRefsById(state);
+  const leftRef = refsById[left.ref];
+  const onRef = refsById[on.ref];
+  if (!TABLE_COLUMN_TYPES.includes(leftRef.type)) return term;
+  if (![onRef.id, onRef.tableId].includes(leftRef.tableId)) return term;
+  // OK! we know we have a table (or table-column) lookup. Finally. Now we
+  // just need to make sure the RHS has an appropriate foreign-key relation
+  // and then we can rewrite it as an arrow.
+  return maybeArrowFromMaybeColumn(term, state, leftRef);
+};
+
 const unparseIndexLookup = term => [
   ...term.on,
   { openBracket: '[' },
@@ -124,8 +194,10 @@ const unparseArray = term => [
 ];
 
 export const unparseTerm = (term, contextId, state) => {
-  if (term.lookup) return [...term.on, { lookup: '.' }, { name: term.lookup }];
-  if (term.lookupIndex) return unparseLookupIndex(term);
+  if (term.lookup) {
+    return [...term.on, { lookup: term.lookupType }, { name: term.lookup }];
+  }
+  if (term.lookupIndex) return unparseLookupIndex(term, state);
   if (term.indexLookup) return unparseIndexLookup(term);
   if (term.call) return unparseCall(term);
   if (term.expression) {
@@ -180,6 +252,7 @@ const undoTranslateIndexLookups = (term) => {
   if (term.indexLookup && term.on.expanded.lookup) {
     return {
       lookup: term.on.expanded.lookup,
+      lookupType: '.',
       on: translateIndexLookupKeyCol({ ...term, on: term.on.expanded.on }),
     };
   }
@@ -190,6 +263,7 @@ const undoTranslateIndexLookups = (term) => {
 export const unparseFormula = (formula, context, state) => {
   if (!formula) return [];
   const translations = [
+    makeArrows,
     subRefsForLookupsInTerm,
     undoTranslateIndexLookups,
     unparseTerm,
