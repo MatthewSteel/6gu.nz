@@ -95,6 +95,8 @@ const uminus = deepOpFixed(r => -r);
 const unot = deepOpFixed(r => !r);
 const ucomplement = deepOpFixed(r => ~r);
 
+const brokenArrow = () => { throw new Error('Bad arrow formula.'); };
+
 const boundOp = deepOp((lb, x, ub) => {
   if (x < lb) return lb;
   if (x > ub) return ub;
@@ -132,6 +134,7 @@ export const binarySymbolToName = {
   '&': 'arithmeticAnd',
   '|': 'arithmeticOr',
   '^': 'arithmeticXor',
+  '->': 'brokenArrow',
   '::': 'index',
   ':::': 'indices',
 };
@@ -165,6 +168,7 @@ export const binaryPrecedences = {
   '&': 9,
   '|': 7,
   '^': 8,
+  '->': 16, // very high priority. Like a '.' lookup.
   '::': 12, // ???
   ':::': 12,
 };
@@ -716,6 +720,7 @@ export default {
   arithmeticXor,
   index,
   indices,
+  brokenArrow,
   uplus,
   uminus,
   unot,

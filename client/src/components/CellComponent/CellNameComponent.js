@@ -3,8 +3,8 @@ import BaseCellComponent, { shouldCellComponentUpdate } from './BaseCellComponen
 
 const lookupNameStyle = { fontStyle: 'italic' };
 const lookupText = name => [
+  <span key="react smells" style={lookupNameStyle}>{name}</span>,
   '\u21e8 ', // fat arrow, space
-  <span key="smells" style={lookupNameStyle}>{name}</span>,
 ];
 
 class CellNameComponent extends Component {

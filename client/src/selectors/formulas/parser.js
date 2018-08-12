@@ -1,4 +1,4 @@
-import { ARRAY, OBJECT, SHEET, TABLE, COMPUTED_TABLE_COLUMN, TABLE_COLUMN, TABLE_ROW, TABLE_COLUMN_TYPES } from '../../redux/stateConstants';
+import { ARRAY, OBJECT, SHEET, TABLE, COMPUTED_TABLE_COLUMN, TABLE_COLUMN, TABLE_ROW, TABLE_COLUMN_TYPES, TABLE_CELL } from '../../redux/stateConstants';
 import { lexFormula, bareToken } from './lexer';
 
 import {
@@ -21,39 +21,15 @@ const parseLookups = (tokens, i, lookupObj) => {
       if (!tokens[i + 1] || !tokens[i + 1].name) {
         throw new Error('Expected name to be looked up');
       }
-      const termSoFar = {
-        lookup: tokens[i + 1].name,
-        lookupType: nextToken.lookup,
-        on: lookupObj,
-      };
+      const termSoFar = { lookup: tokens[i + 1].name, on: lookupObj };
       return parseLookups(tokens, i + 2, termSoFar);
     }
     if (nextToken.openBracket) {
-      let termSoFar;
-      let nextIndex;
-      if (tokens[i + 2] && tokens[i + 1].name && tokens[i + 2].assignment) {
-        const {
-          term: expression,
-          newIndex: expressionIndex,
-        } = parseExpression(tokens, i + 3);
-        termSoFar = {
-          indexLookup: expression,
-          keyCol: {
-            lookup: tokens[i + 1].name,
-            on: lookupObj,
-            lookupType: '.',
-          },
-          on: lookupObj,
-        };
-        nextIndex = expressionIndex + 1;
-      } else {
-        const {
-          term: expression,
-          newIndex: expressionIndex,
-        } = parseExpression(tokens, i + 1);
-        termSoFar = { lookupIndex: expression, on: lookupObj };
-        nextIndex = expressionIndex + 1;
-      }
+      const {
+        term: expression, newIndex: expressionIndex,
+      } = parseExpression(tokens, i + 1);
+      const termSoFar = { lookupIndex: expression, on: lookupObj };
+      const nextIndex = expressionIndex + 1;
       if (!tokens[nextIndex - 1].closeBracket) {
         throw new Error('Missing close bracket after index expression');
       }
@@ -364,41 +340,12 @@ const subNamesForRefsInName = (term, contextId, state) => {
   }
 
   // Bad ref. Assume it's local so we can try to rewire it in the future.
-  return { lookup: term.name, lookupType: '.', on: { ref: contextId } };
+  return { lookup: term.name, on: { ref: contextId } };
 };
 
 const subNamesForRefsInLookup = (term, state) => {
-  // This turns formulas like `tableRef.colName` and `tableRef[?].collName`
-  // into `colRef` and `colRef[?]` etc.
-  // The latter transformation is quite important to cut down dependencies
-  // for formulas like `T->fK.col`, where we want to depend on just the `col`
-  // column in the other table (not the _whole_ table).
-
-  // If a formula is like "something[?].name (and we haven't been able to
-  // resolve `something[?]` down to a reference) we'll likely have better
-  // luck if we rephrase the formula as `something.name[?]`.
-  // (Erm, this looks very similar to an arrow function below, maybe we can
-  // do them the same way/at the same time?)
-  const rearrangeLookups = (innerTerm) => {
-    if (innerTerm.lookupIndex) {
-      const colLookup = { ...innerTerm, on: rearrangeLookups(innerTerm.on) };
-      return subNamesForRefsInLookupIndex(colLookup, state);
-    }
-    if (!innerTerm.ref) return { ...term, on: innerTerm };
-    return subNamesForRefsInRefLookup(
-      {
-        lookup: term.lookup,
-        lookupType: term.lookupType,
-        on: innerTerm,
-      },
-      state,
-    );
-  };
-  return rearrangeLookups(term.on);
-};
-
-const subNamesForRefsInRefLookup = (term, state) => {
-  // This turns "tableRef.cellName" into "cellRef" etc.
+  // This turns "tableRef.columnName" into "columnRef" etc.
+  if (!term.on.ref) return term;
   const refsById = getRefsById(state);
   const { ref: refId } = term.on;
   const ref = refsById[refId];
@@ -423,73 +370,29 @@ const subNamesForRefsInRefLookup = (term, state) => {
   return term;
 };
 
-const untranslateRowLookup = (term, state) => {
-  // Translating arrow lookups is easier if we phrase `row->fkCol` like
-  // `Table[rowIndex]->fkCol`. We need to handle `table[?]` anyway, and it's
-  // easier to just have two possibilities (table or table[?]) than three
-  // (table, table[?] and row.)
-  if (!term.on.ref) return term;
-  const refsById = getRefsById(state);
-  const ref = refsById[term.on.ref];
-  if (ref.type !== TABLE_ROW) return term;
-  return {
-    ...term,
-    on: { lookupIndex: { value: ref.index }, on: { ref: ref.tableId } },
-  };
+export const pkColIdForExpr = (term, state) => {
+  if (term.ref) {
+    const ref = getRefsById(state)[term.ref];
+    if (ref.type === TABLE_CELL) {
+      return getRefsById(state)[ref.arrayId].foreignKey;
+    }
+    if (TABLE_COLUMN_TYPES.includes(ref.type)) return ref.foreignKey;
+    return undefined;
+  }
+  if (term.binary === '->') return pkColIdForExpr(term.right, state);
+  if (term.lookupIndex) return pkColIdForExpr(term.on, state);
+  return undefined;
 };
 
-const arrowColumnLookup = (term, state) => {
-  // LHS of arrows can only be tables inside zero or more nested lookupIndex
-  // objects. Like `Table0[rowExpr]->fKeyCol.`
-  // This function returns,
-  //  1. The referenced table target of the fKeyCol lookup,
-  //  2. The referenced primary key column of the fKeyCol lookup,
-  //  3. An expression for `Table0.fKeyCol[rowExpr]`.
-  // We use these to write an expression like `#1[#2 :: #3]`.
-  const refsById = getRefsById(state);
-  let pkColId;
-  let lookupTableId;
-  const getColumnLookup = (innerTerm) => {
-    if (innerTerm.lookupIndex) {
-      const colLookup = { ...innerTerm, on: getColumnLookup(innerTerm.on) };
-      return subNamesForRefsInLookupIndex(colLookup, state);
-    }
-    if (!innerTerm.ref) {
-      throw new Error('Arrow not valid on non-ref, non-[] term.');
-    }
-
-    const table = refsById[innerTerm.ref];
-    if (table.type !== TABLE) {
-      throw new Error('Arrows are only valid on tables and table rows.');
-    }
-    const col = getRefsByNameForContextId(state, table.id)[term.lookup];
-    if (!col
-      || !TABLE_COLUMN_TYPES.includes(col.type)
-      || !col.foreignKey
-    ) throw new Error('Arrow lookup column not found');
-
-    const pKeyCol = refsById[col.foreignKey];
-    if (!pKeyCol || !TABLE_COLUMN_TYPES.includes(pKeyCol.type)) {
-      throw new Error('Arrow lookup target invalid.');
-    }
-    pkColId = pKeyCol.id;
-    lookupTableId = pKeyCol.tableId;
-    return { ref: col.id };
-  };
-  const columnLookup = getColumnLookup(term.on);
-  return { columnLookup, pkColId, lookupTableId };
-};
-
-const subNamesForRefsInArrow = (term, state) => {
-  const tableLookupExpr = untranslateRowLookup(term, state);
-  const { columnLookup, pkColId, lookupTableId } = arrowColumnLookup(
-    tableLookupExpr, state,
-  );
+const translateArrows = (term, contextId, state) => {
+  // Turns `A -> B` into `B[pkColId :: A]` if possible.
+  if (term.binary !== '->') return term;
+  const { left, right } = term;
+  const pkColId = pkColIdForExpr(left, state);
+  if (!pkColId) return term;
   return {
-    lookupIndex: {
-      binary: '::', left: { ref: pkColId }, right: columnLookup,
-    },
-    on: { ref: lookupTableId },
+    lookupIndex: { binary: '::', left: { ref: pkColId }, right: left },
+    on: right,
   };
 };
 
@@ -512,12 +415,7 @@ const subNamesForRefsInLookupIndex = (term, state) => {
 
 export const subNamesForRefsInTerm = (term, contextId, state) => {
   if (term.name) return subNamesForRefsInName(term, contextId, state);
-  if (term.lookup && term.lookupType === '->') {
-    return subNamesForRefsInArrow(term, state);
-  }
-  if (term.lookup && term.lookupType === '.') {
-    return subNamesForRefsInLookup(term, state);
-  }
+  if (term.lookup) return subNamesForRefsInLookup(term, state);
   if (term.lookupIndex) return subNamesForRefsInLookupIndex(term, state);
   if (term.call) {
     const argRefs = term.kwargs.map(({ ref }) => ref);
@@ -541,41 +439,11 @@ const fixPrecedence = (term) => {
   return { ...other, left: fixPrecedence({ ...term, right: other.left }) };
 };
 
-const translateIndexLookups = (term) => {
-  // User types in `table[name: "Fred"].age` and it comes out of the
-  // parser like
-  //
-  //   lookup: "age"
-  //   on: {
-  //     indexLookup: { value: "Fred" },
-  //     on: { ref: table.id },
-  //     keyCol: { lookup: "name", on: { ref: table.id } },
-  //   }
-  //
-  // This function translates that to
-  //
-  //   indexLookup: { value: "Fred" },
-  //   on: { lookup: "age", on: { ref: table.id } },
-  //   keyCol: { lookup: "name", on: { ref: table.id } },
-  //
-  // In a later step we (hopefully) resolve the lookups into direct refs.
-  // (We also do an inverse step in the unparser)
-  if (term.lookup && term.on.indexLookup) {
-    return { ...term.on, on: { ...term, on: term.on.on } };
-  }
-  return term;
-};
-
 const postProcessFormula = (nameFormula, contextId, state) => {
   if (!nameFormula) return {};
-  return {
-    formula: runTranslations(
-      nameFormula,
-      contextId,
-      state,
-      [translateIndexLookups, subNamesForRefsInTerm, fixPrecedence],
-    ),
-  };
+  const transforms = [subNamesForRefsInTerm, fixPrecedence, translateArrows];
+  const formula = runTranslations(nameFormula, contextId, state, transforms);
+  return { formula };
 };
 
 const parseFormulaExpr = (tokens, formulaStart, contextId, s, state) => {

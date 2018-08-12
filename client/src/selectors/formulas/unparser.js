@@ -1,5 +1,5 @@
 import { canStartName, isNameChar } from './lexer';
-import { TABLE_CELL, TABLE_COLUMN_TYPES } from '../../redux/stateConstants';
+import { pkColIdForExpr } from './parser';
 import {
   getRefsById,
   getContextIdForRefId,
@@ -74,84 +74,16 @@ const unparseLookupIndex = term => [
   { closeBracket: ']' },
 ];
 
-const maybeArrowFromMaybeColumn = (term, state, pkCol) => {
-  const refsById = getRefsById(state);
-  let lookupName;
-  const recurse = (innerTerm) => {
-    // Given a term like `colRef[?][?]`, see if we can translate it into
-    // tableRef[?][?]->colName if pkColId matches the column's FK.
-    // Also: If we get `something[?]->colName.otherColName`, translate it into
-    // `something->colName->otherColName`.
-    if (innerTerm.lookupIndex) {
-      return { ...innerTerm, on: recurse(innerTerm.on) };
-    }
-    let col, refWithoutLookup;
-    if (innerTerm.fakeColRef) {
-      // From an earlier arrow-translation
-      col = refsById[innerTerm.fakeColRef];
-      refWithoutLookup = innerTerm.on;
-    } else if (innerTerm.ref) {
-      const ref = refsById[innerTerm.ref];
-      if (ref.type === TABLE_CELL) {
-        col = refsById[ref.arrayId];
-        refWithoutLookup = { ref: ref.objectId };
-      } else if (TABLE_COLUMN_TYPES.includes(ref.type)) {
-        col = ref;
-        refWithoutLookup = { ref: ref.tableId };
-      } else {
-        return innerTerm;
-      }
-    } else {
-      return innerTerm;
-    }
-    if (col.foreignKey !== pkCol.id) return innerTerm;
-    lookupName = col.name;
-    return refWithoutLookup;
-  };
-  const innerTerm = recurse(term.lookupIndex.right);
-  if (!lookupName) return term;
-  const arrowLookup = {
-    lookup: lookupName,
-    on: innerTerm,
-    lookupType: '->',
-  };
-  if (term.on.ref === pkCol.tableId) return arrowLookup;
-  const onRef = refsById[term.on.ref];
-  return {
-    lookup: onRef.name,
-    lookupType: '.',
-    on: arrowLookup,
-    fakeColRef: term.on.ref,
-  };
-};
-
 const makeArrows = (term, contextId, state) => {
-  if (!term.lookupIndex) return term;
-  if (term.lookupIndex.binary !== '::') return term;
-  const { on } = term;
-  const { left } = term.lookupIndex;
-  if (!on.ref || !left.ref) return term;
-
-  const refsById = getRefsById(state);
-  const leftRef = refsById[left.ref];
-  const onRef = refsById[on.ref];
-  if (!TABLE_COLUMN_TYPES.includes(leftRef.type)) return term;
-  if (![onRef.id, onRef.tableId].includes(leftRef.tableId)) return term;
-  // OK! we know we have a table (or table-column) lookup. Finally. Now we
-  // just need to make sure the RHS has an appropriate foreign-key relation
-  // and then we can rewrite it as an arrow.
-  return maybeArrowFromMaybeColumn(term, state, leftRef);
+  // Turns A[pkCol :: B] into B->A.
+  const { lookupIndex, on } = term;
+  if (!lookupIndex) return term;
+  const { left, right, binary } = lookupIndex;
+  if (binary !== '::') return term;
+  const pkColId = pkColIdForExpr(right, state);
+  if (!pkColId || left.ref !== pkColId) return term;
+  return { binary: '->', right: on, left: right };
 };
-
-const unparseIndexLookup = term => [
-  ...term.on,
-  { openBracket: '[' },
-  ...term.keyCol,
-  { assignment: ':' },
-  { whitespace: ' ' },
-  ...term.indexLookup,
-  { closeBracket: ']' },
-];
 
 const join = (seq) => {
   const ret = [];
@@ -179,13 +111,18 @@ const unparseCall = (term) => {
   ];
 };
 
-const unparseBinary = term => [
-  ...term.left,
-  { whitespace: ' ' },
-  { op: term.binary },
-  { whitespace: ' ' },
-  ...term.right,
-];
+const unparseBinary = (term) => {
+  if (term.binary === '->') {
+    return [...term.left, { op: term.binary }, ...term.right];
+  }
+  return [
+    ...term.left,
+    { whitespace: (term.binary === '->') ? '' : ' ' },
+    { op: term.binary },
+    { whitespace: (term.binary === '->') ? '' : ' ' },
+    ...term.right,
+  ];
+};
 
 const unparseArray = term => [
   { openBracket: '[' },
@@ -194,11 +131,8 @@ const unparseArray = term => [
 ];
 
 export const unparseTerm = (term, contextId, state) => {
-  if (term.lookup) {
-    return [...term.on, { lookup: term.lookupType }, { name: term.lookup }];
-  }
+  if (term.lookup) return [...term.on, { lookup: '.' }, { name: term.lookup }];
   if (term.lookupIndex) return unparseLookupIndex(term, state);
-  if (term.indexLookup) return unparseIndexLookup(term);
   if (term.call) return unparseCall(term);
   if (term.expression) {
     return [{ open: '(' }, ...term.expression, { close: ')' }];
@@ -221,58 +155,13 @@ const subRefsForLookupsInTerm = (term, contextId, state) => {
   return { ...term, expanded };
 };
 
-const translateIndexLookupKeyCol = term => (
-  // For a formula like Table[age: "Fred"].name
-  // Turns
-  //   indexLookup: { value: "Fred" },
-  //   on: { lookup: "age", on: { ref: table.id } },
-  //   keyCol: { lookup: "name", on: { ref: table.id } },
-  // into
-  //   indexLookup: { value: "Fred" },
-  //   on: { lookup: "age", on: { ref: table.id } },
-  //   keyCol: { name: "name" },
-  { ...term, keyCol: { name: term.keyCol.expanded.lookup } });
-
-const undoTranslateIndexLookups = (term) => {
-  // For a formula like Table[name: "Fred"].age
-  // Turns
-  //   indexLookup: { value: "Fred" },
-  //   keyCol: { lookup: "name", on: { ref: table.id } },
-  //   on: { lookup: "age", on: { ref: table.id } },
-  // into
-  //   lookup: "age",
-  //   on: {
-  //     indexLookup: { value: "Fred" },
-  //     keyCol: { lookup: "name", on: { ref: table.id } },
-  //     on: { ref: table.id },
-  //   },
-  //  TODO: Consider just having formulas like
-  //    Table.age[Table.name: "Fred"]
-  //  instead. It's shorter now that we have a fancy formula box...
-  if (term.indexLookup && term.on.expanded.lookup) {
-    return {
-      lookup: term.on.expanded.lookup,
-      lookupType: '.',
-      on: translateIndexLookupKeyCol({ ...term, on: term.on.expanded.on }),
-    };
-  }
-  if (term.indexLookup) return translateIndexLookupKeyCol(term);
-  return term;
-};
-
 export const unparseFormula = (formula, context, state) => {
   if (!formula) return [];
-  const translations = [
-    makeArrows,
-    subRefsForLookupsInTerm,
-    undoTranslateIndexLookups,
-    unparseTerm,
-  ];
   return runTranslations(
     formula,
     getContextIdForRefId(getRefsById(state), context, context),
     state,
-    translations,
+    [makeArrows, subRefsForLookupsInTerm, unparseTerm],
   );
 };
 

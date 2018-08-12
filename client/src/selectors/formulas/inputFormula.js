@@ -63,14 +63,15 @@ const tokenRenderable = token => !('value' in token)
   && !token.badFormula;
 
 const opStrings = {
-  '<<': '\u226A',
-  '>>': '\u226B',
-  '<=': '\u2264',
-  '>=': '\u2265',
-  '!=': '\u2260',
-  '-': '\u2212',
-  '*': '\u00D7',
-  '/': '\u2044',
+  '<<': '\u226A', // left double-chevrons
+  '>>': '\u226B', // right double-chevrons
+  '<=': '\u2264', // combined LE symbol
+  '>=': '\u2265', // combined GE symbol
+  '!=': '\u2260', // struck-through not-equals symbol
+  '-': '\u2212', // special minus sign
+  '*': '\u00D7', // multiplication sign
+  '/': '\u2044', // special slash
+  '->': '\u21e8', // fat right arrow
 };
 
 const renderCell = (name, value, isName) => (
@@ -101,11 +102,7 @@ const renderToken = (state, token, blankOutRefValue) => {
   const big = key.startsWith('open')
     || key.startsWith('close');
   if (opStrings[token.op]) value = opStrings[token.op];
-  if (token.lookup) {
-    value = (token.lookup === '->')
-      ? '\u21e8' // fat right-arrow
-      : '\u2022'; // bullet
-  }
+  if (token.lookup) value = '\u2022'; // bullet
   return <div className={big ? 'BigToken' : 'SmallToken'}>{value}</div>;
 };
 

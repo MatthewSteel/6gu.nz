@@ -103,13 +103,14 @@ class TableContentsComponent extends ContentsBaseComponent {
         const worldRow = viewOffsetY + (row - scrollY) / 2;
         const clickLoc = `${row},${col}`;
         const columnName = tableData.keys[col];
-        const explicitLookup = {
-          lookup: columnName,
-          lookupType: '.',
-          on: { lookupIndex: { value: row }, on: { ref: contextId } },
-        };
-        const clickExpr = cells && cells[clickLoc]
-          ? { ref: cells[clickLoc].id } : explicitLookup;
+        let clickExpr = { ref: contextId };
+        if (columnName) {
+          clickExpr = {
+            lookup: columnName,
+            on: { lookupIndex: { value: row }, on: { ref: contextId } },
+          };
+        }
+        if (cells && cells[clickLoc]) clickExpr = { ref: cells[clickLoc].id };
 
         // labels
         const cellSelected = viewSelected && selX === col && selY === row;

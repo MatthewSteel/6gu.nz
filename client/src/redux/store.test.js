@@ -342,7 +342,7 @@ describe('actions/the store', () => {
 
     it('parses a simple arrow formula appropriately', () => {
       const [sheet] = getSheets(store.getState());
-      const xFormula = 'x: fkTable->p.value';
+      const xFormula = 'x: fkTable.p->pkTable.value';
       store.dispatch(setFormula(
         { context: sheet.id, y: 0, x: 5 }, xFormula,
       ));
@@ -353,7 +353,7 @@ describe('actions/the store', () => {
 
     it('parses a row-lookup arrow formula', () => {
       const [sheet] = getSheets(store.getState());
-      const xFormula = 'x: fkTable[1]->p';
+      const xFormula = 'x: fkTable[1].p->pkTable';
       store.dispatch(setFormula(
         { context: sheet.id, y: 0, x: 5 }, xFormula,
       ));
@@ -374,7 +374,7 @@ describe('actions/the store', () => {
       store.dispatch(updateForeignKey(fkCol2.id, 'pkTable2.id2'));
 
       // Test the foreign key relation
-      const xFormula = 'x: fkTable->p->value.v';
+      const xFormula = 'x: fkTable.p->pkTable.value->pkTable2.v';
       store.dispatch(setFormula(
         { context: sheet.id, y: 0, x: 10 }, xFormula,
       ));
@@ -414,7 +414,7 @@ describe('actions/the store', () => {
       // and the second lookup just uses pkTable2.fk. We do some magical
       // translation to transform this formula into
       //   pkTable.id[pkTable.id :: pkTable2.fk[pkTable2.id2 :: pkTable.value]]
-      const cousinsFormula = 'pkTableCousins: pkTable->value->fk.id';
+      const cousinsFormula = 'pkTableCousins: pkTable.value->pkTable2.fk->pkTable.id';
       const pkTable = find(({ name }) => name === 'pkTable');
       store.dispatch(setFormula(
         {
@@ -425,7 +425,7 @@ describe('actions/the store', () => {
         },
         cousinsFormula,
       ));
-      const cousins2Formula = 'pkTable2Cousins: pkTable2->fk->value.val';
+      const cousins2Formula = 'pkTable2Cousins: pkTable2.fk->pkTable.value->pkTable2.val';
       const pkTable2 = find(({ name }) => name === 'pkTable2');
       store.dispatch(setFormula(
         {

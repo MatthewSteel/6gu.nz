@@ -32,9 +32,7 @@ describe('formula selectors', () => {
     const refsById = getRefsById(store.getState());
     expect(lookupExpression(refsById, s1.id, xId)).toEqual({ ref: xId });
     expect(lookupExpression(refsById, s2.id, xId)).toEqual({
-      lookup: 'x',
-      lookupType: '.',
-      on: { ref: s1.id },
+      lookup: 'x', on: { ref: s1.id },
     });
 
     expect(lookupExpression(refsById, s2.id, s1.id)).toEqual({ ref: s1.id });
