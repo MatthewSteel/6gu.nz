@@ -63,6 +63,21 @@ export const getChildrenOfRef = (state, parentId) => {
   return childIds.map(id => refsById[id]);
 };
 
+export const foreignKeyClickTargets = createSelector(
+  getRefs,
+  getRefsById,
+  (refs, refsById) => {
+    const ret = {}; // tableId -> columnId -> pkTableId
+    refs.forEach((ref) => { ret[ref.id] = {}; });
+    refs.forEach((ref) => {
+      if (!ref.foreignKey) return;
+      const { foreignKey, id, tableId } = ref;
+      ret[tableId][id] = refsById[foreignKey].tableId;
+    });
+    return ret;
+  },
+);
+
 export const transitiveChildren = (state, refId) => {
   // Sheet -> table -> cell etc. Not formula references.
   const childrenByParentId = getChildIdsByParentId(state);
