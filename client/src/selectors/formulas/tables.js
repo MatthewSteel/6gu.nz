@@ -3,6 +3,7 @@ export class TableArray {
     this.arr = rows;
     this.keys = null;
     this.memoizedCols = null;
+    this.lookupMemo = null;
   }
 
   initKeys() {
@@ -18,6 +19,10 @@ export class TableArray {
     this.keys = Object.keys(byName);
     this.keys.sort().reverse(); // reverse alpha for now because it looks dumb.
     this.memoizedCols = {};
+  }
+
+  setLookupMemo(memo) {
+    this.lookupMemo = memo;
   }
 
   isTable() {

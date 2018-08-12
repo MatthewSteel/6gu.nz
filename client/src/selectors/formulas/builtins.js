@@ -577,7 +577,8 @@ const makeIndex = (array) => {
   if (classify(array) !== ARRAY_T) {
     throw new Error('Can only index arrays');
   }
-  const { arr } = array;
+  const { arr, lookupMemo } = array;
+  if (lookupMemo) return lookupMemo;
   const ret = new Map();
   for (let i = 0; i < arr.length; ++i) {
     const item = arr[i];
@@ -589,6 +590,7 @@ const makeIndex = (array) => {
       current.push({ value: i });
     }
   }
+  array.setLookupMemo(ret);
   return ret;
 };
 
