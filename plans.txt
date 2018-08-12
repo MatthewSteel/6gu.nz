@@ -1,7 +1,120 @@
-More short term work:
- - Talk to the guys,
- - Cut, copy, paste,
- - Browse into more things,
+ - Special cell rendering and input?
+ - Click on cells inside?
+  For sure, got to.
+
+## Cells in columns
+ - Click in cells adds [::] or ->,
+ - Render cells "specially" when lookups succeed/fail,
+ - Drop-down?
+
+
+- Put the lookup map onto the table object to memoize between calls.
+
+## Display:
+  - Validate:
+    - If it isn't valid, italicise it. (And colour it reddish?)
+    - If it is valid, put {braces} around it for now. (Don't italicise braces)
+
+  - Don't mess with the selection.
+
+
+ Later (because "ugh, editing actions"):
+  - Datalist rendered in the header,
+  - Drop-down in the cell itself,
+
+
+- Watch airtable fk vids,
+- Long formula columns extend the table (bug),
+
+- Fancy relational stuff? One-to-many relationships, editing etc?
+
+Little bits and pieces:
+ - Fade-in on the formula as it pops up,
+ - Make it "pop up" instead of growing?
+
+
+Things we probably won't get to soon:
+ - Tokenify-as-you-type,
+ - Tab-completion,
+ - Automatic quote/bracket insertion,
+ - Bracket-highlighting.
+
+Update the site...
+
+Later (probably after "relational stuff"):
+ - Write a blog post and update the site.
+
+
+What's after this?
+ - Browse into objects/arrays,
+ - Pop-over tab,
+ - Charts...
+ - browsing/scrolling while writing formulas.
+
+
+Or:
+ - Cut/paste. Just top-level first, with preview icon maybe, with <esc> cancel
+ - Pop-over book stuff. Ctrl-click, I think. Prettty important.
+ - Charts v0.
+
+
+Cut, copy and paste:
+- First up: cut and paste sheet-level things.
+  - New redux state: copy-state: { type: 'CUT', location: { ref: $FOO } }
+  - Move the thing (possibly resizing it?)
+  - Blank out the copy-state,
+  - Fix up refs and save.
+- Make the selection thing grey if it's not a good place to paste.
+- Make a copy-selection preview?
+  - The cell in the bottom-right, with a shadow. 1x1.
+- Shortcuts to cut, paste, clear copy-state (esc, make it take priority over closing the pop-over menu maybe.)
+
+- Copy:
+  - Same as before, except:
+    - Instead of moving, we copy the thing (and its children),
+    - Pasting doesn't clear the selection.
+
+- More things:
+  - Array cells, object cells, table cells, table cols, table rows.
+
+Then:
+ - Pasting into other places :-(((((
+What will this entail?
+ - Pasting complex values into table cells etc. (Paste as values?)
+ - Pasting things into table rows...
+   - If it's a struct, merge the thing and make new cols as needed.
+   - If it's not, you can't paste it.
+ - Pasting things into table cols:
+   - If it's an array, merge the thing and make new rows as needed.
+   - Maybe sometimes make it a formula-col? When/not?
+     - Maybe do for everything except formulas that are just arrays?
+
+Then:
+ - Pasting over the top of things :o
+
+
+Quite a bit of work, it seems. Oh well, need to start somewhere.
+
+ - "When can we not paste?"
+   - Mostly just "A row but not an object"?
+   - Or, actually, "A row but not an object literal" I think.
+     Slightly annoying...
+ Should we figure out "computed rows"?
+
+  Anyway, that's kinda nice regardless.
+  And... maybe we can't paste things without formulas into table cells etc at first? That might save us from circular references...
+
+  - Maybe copy-paste always pastes values? Hmm, that's pretty interesting...
+    And cut moves? Hmm...
+
+So maybe you can copy/paste in more places than you can cut?
+  That's pretty crap, tbh.
+
+
+
+OK, what if we have computed rows, and they "come before" computed columns?
+  I think that's doable?
+
 
 Little jobs:
  - [index] on objects,
@@ -15,22 +128,19 @@ Little jobs:
 
 
 The longer-term list:
- - V2 Cut/copy/paste
- - V2 Overridden deep values look special? Hrm... "parent overridden" prop?
- - V2 browse into more things -- arrays etc, complex table elements.
- - V2 Multi-select,
  - V2 "each" or "depth" or "height", maybe [i, j] indexing?
+ - V2 browse into more things -- arrays etc, complex table elements.
  - V2 "native" map/for etc?
    - Concatenate/map/zip tables/arrays
- - V2 better formula box:
-     - terms look like cells,
-     - "click to write",
-     - tab completion
+ - V2 Cut/copy/paste
+ - V2 Overridden deep values look special? Hrm... "parent overridden" prop?
+ - V2 Multi-select,
  - V3 Date, time, random functions.
  - V3 "actions" (xhr etc),
      - mutation story (redux?),
      - conditional evaluation, HOF or first-class cell references,
  - V3 js interop, in (npm) and out (export to js)
+ - Tab completion etc,
  - V4 collaboration,
  - ?? custom cell formatting incl charts-in-cells (user react components).
      - input modes for rich text?
@@ -70,7 +180,6 @@ Dunno... Doesn't seem powerful enough? I don't think it can transpose...
 
 
 Possible projects after/during MVP work:
- - Clicking on cells while editing formulas.
  - Drag select to make arrays/objects/tables? In a formula?
    - shift/ctrl + click could also make an array, or add to one :-)
    - Maybe "drag to select, makes an array. Hit 'tab' to turn it into an object/table". Seems reasonable?
