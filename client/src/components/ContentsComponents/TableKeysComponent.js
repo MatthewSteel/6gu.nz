@@ -6,7 +6,7 @@ import CellSelectionComponent from '../CellComponent/CellSelectionComponent';
 import ContentsBaseComponent, { mapDispatchToProps } from './ContentsBaseComponent';
 import ColumnMenu from '../ContextMenu/ColumnMenu';
 
-import { getRefsById, refsAtPosition } from '../../selectors/formulas/selectors';
+import { foreignKeyClickTargets, getRefsById, refsAtPosition } from '../../selectors/formulas/selectors';
 import scrollHelper from '../util/ScrollHelper';
 import { TABLE_COLUMN } from '../../redux/stateConstants';
 
@@ -69,6 +69,7 @@ class TableKeysComponent extends ContentsBaseComponent {
     const {
       contextId,
       columns,
+      foreignKeyTargets,
       readOnly,
       tableData,
       viewSelected,
@@ -122,7 +123,7 @@ class TableKeysComponent extends ContentsBaseComponent {
       if (name) clickExpr = { lookup: name, on: { ref: contextId } };
       if (columns && columns[col]) clickExpr = { ref: columns[col].id };
       if (hasForeignKey) {
-        const tableRef = { ref: contextId };
+        const tableRef = { ref: foreignKeyTargets[columns[col].id] };
         clickExpr = { binary: '->', left: clickExpr, right: tableRef };
       }
       children.push((
@@ -151,9 +152,11 @@ class TableKeysComponent extends ContentsBaseComponent {
 
 const mapStateToProps = (state, ownProps) => {
   const refsById = getRefsById(state);
-  const context = refsById[ownProps.contextId];
-  const { columns } = !context.formula && refsAtPosition(state)[ownProps.contextId];
-  return { context, columns };
+  const { contextId } = ownProps;
+  const context = refsById[contextId];
+  const { columns } = !context.formula && refsAtPosition(state)[contextId];
+  const foreignKeyTargets = foreignKeyClickTargets(state)[contextId];
+  return { context, columns, foreignKeyTargets };
 };
 
 export default connect(

@@ -239,6 +239,10 @@ class Formula extends Component {
 
   maybeInsertExprIntoFormula(expr) {
     if (!this.hasFocus) return false;
+    if (!expr) {
+      this.blur();
+      return false;
+    }
     this.normaliseSelection();
     const selection = window.getSelection();
     if (selection.rangeCount === 0) return false;

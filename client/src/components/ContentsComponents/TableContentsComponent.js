@@ -7,7 +7,7 @@ import CellSelectionComponent from '../CellComponent/CellSelectionComponent';
 import ContentsBaseComponent, { mapDispatchToProps } from './ContentsBaseComponent';
 import scrollHelper from '../util/ScrollHelper';
 
-import { getRefsById, refsAtPosition } from '../../selectors/formulas/selectors';
+import { foreignKeyClickTargets, getRefsById, refsAtPosition } from '../../selectors/formulas/selectors';
 import { COMPUTED_TABLE_COLUMN } from '../../redux/stateConstants';
 
 
@@ -75,7 +75,9 @@ class TableContentsComponent extends ContentsBaseComponent {
   render() {
     const {
       cells,
+      columns,
       contextId,
+      foreignKeyTargets,
       tableData,
       viewSelected,
       viewHeight,
@@ -110,7 +112,18 @@ class TableContentsComponent extends ContentsBaseComponent {
             on: { lookupIndex: { value: row }, on: { ref: contextId } },
           };
         }
-        if (cells && cells[clickLoc]) clickExpr = { ref: cells[clickLoc].id };
+        if (columns && columns[col]) {
+          const on = { ref: columns[col].id };
+          clickExpr = { lookupIndex: { value: row }, on };
+        }
+        if (cells && cells[clickLoc]) {
+          const cell = cells[clickLoc];
+          clickExpr = { ref: cell.id };
+          if (foreignKeyTargets[cell.arrayId]) {
+            const right = { ref: foreignKeyTargets[cell.arrayId] };
+            clickExpr = { binary: '->', left: clickExpr, right };
+          }
+        }
 
         // labels
         const cellSelected = viewSelected && selX === col && selY === row;
@@ -168,9 +181,11 @@ class TableContentsComponent extends ContentsBaseComponent {
 }
 
 const mapStateToProps = (state, ownProps) => {
-  const context = getRefsById(state)[ownProps.contextId];
-  const { cells, columns } = !context.formula && refsAtPosition(state)[ownProps.contextId];
-  return { context, cells, columns };
+  const { contextId } = ownProps;
+  const context = getRefsById(state)[contextId];
+  const { cells, columns } = !context.formula && refsAtPosition(state)[contextId];
+  const foreignKeyTargets = foreignKeyClickTargets(state)[contextId];
+  return { context, cells, columns, foreignKeyTargets };
 };
 
 export default connect(
