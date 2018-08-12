@@ -1,21 +1,7 @@
- - Special cell rendering and input?
- - Click on cells inside?
-  For sure, got to.
-
-## Cells in columns
- - Click in cells adds [::] or ->,
- - Render cells "specially" when lookups succeed/fail,
- - Drop-down?
-
-
-- Put the lookup map onto the table object to memoize between calls.
+ - Put the lookup map onto the table object to memoize between calls.
 
 ## Display:
-  - Validate:
-    - If it isn't valid, italicise it. (And colour it reddish?)
-    - If it is valid, put {braces} around it for now. (Don't italicise braces)
-
-  - Don't mess with the selection.
+  - Validate cells: If j lookup fails, italicise the key?
 
 
  Later (because "ugh, editing actions"):
@@ -23,9 +9,7 @@
   - Drop-down in the cell itself,
 
 
-- Watch airtable fk vids,
 - Long formula columns extend the table (bug),
-
 - Fancy relational stuff? One-to-many relationships, editing etc?
 
 Little bits and pieces:
