@@ -16,7 +16,7 @@ class Sheet extends Component {
 
   setWindowSelection(y, x, maybeClickExpr) {
     const { maybeInsertExprIntoFormula } = this.props;
-    if (maybeClickExpr && maybeInsertExprIntoFormula(maybeClickExpr)) return;
+    if (maybeInsertExprIntoFormula(maybeClickExpr)) return;
 
     const { selX, selY } = this.state;
     if (y === selY && x === selX) return;
