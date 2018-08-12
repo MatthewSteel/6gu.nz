@@ -75,6 +75,7 @@ class TableContentsComponent extends ContentsBaseComponent {
   render() {
     const {
       cells,
+      columns,
       contextId,
       foreignKeyTargets,
       tableData,
@@ -110,6 +111,10 @@ class TableContentsComponent extends ContentsBaseComponent {
             lookup: columnName,
             on: { lookupIndex: { value: row }, on: { ref: contextId } },
           };
+        }
+        if (columns && columns[col]) {
+          const on = { ref: columns[col].id };
+          clickExpr = { lookupIndex: { value: row }, on };
         }
         if (cells && cells[clickLoc]) {
           const cell = cells[clickLoc];
