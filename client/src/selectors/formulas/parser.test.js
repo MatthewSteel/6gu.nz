@@ -48,9 +48,8 @@ describe('parser', () => {
     ];
     const expectedOutput = {
       lookup: 'fi eld',
-      lookupType: '.',
       on: {
-        call: { lookup: 'b', lookupType: '.', on: { name: 'a' } },
+        call: { lookup: 'b', on: { name: 'a' } },
         args: [],
         kwargs: [{
           ref: { name: 'foo' },
@@ -58,10 +57,8 @@ describe('parser', () => {
             lookupIndex: { value: 10 },
             on: {
               lookup: 'arf',
-              lookupType: '.',
               on: {
                 lookup: 'baz',
-                lookupType: '.',
                 on: { name: 'bar' },
               },
             },
@@ -84,7 +81,7 @@ describe('parser', () => {
     expect(parse('foo :')).toEqual({ name: 'foo' });
     expect(parse('foo : bar', s1.id)).toEqual({
       name: 'foo',
-      formula: { lookup: 'bar', lookupType: '.', on: { ref: s1.id } },
+      formula: { lookup: 'bar', on: { ref: s1.id } },
     });
     expect(parse('foo : bar +')).toEqual({
       name: 'foo',
@@ -223,7 +220,7 @@ describe('parser', () => {
       value: { value: 10 },
     }, {
       key: 'quux',
-      value: { lookup: 'quux', lookupType: '.', on: { name: 'baz' } },
+      value: { lookup: 'quux', on: { name: 'baz' } },
     }] };
     expect(parseTokens(lexFormula(formula), 0)).toEqual(expectedOutput);
   });

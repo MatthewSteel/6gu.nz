@@ -5,7 +5,6 @@ describe('unparser', () => {
   it('unparses a complicated call', () => {
     const term = {
       lookup: 'field2',
-      lookupType: '.',
       on: {
         call: { name: 'called_cell' },
         args: [],
@@ -17,7 +16,6 @@ describe('unparser', () => {
               lookupIndex: { value: 10 },
               on: {
                 lookup: 'field',
-                lookupType: '.',
                 on: { name: 'other cell' },
               },
             },

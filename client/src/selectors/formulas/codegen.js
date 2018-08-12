@@ -25,7 +25,7 @@ import {
   TABLE_COLUMN,
   TABLE_ROW,
 } from '../../redux/stateConstants';
-import { getNamedMember, getNumberedMember, getIndexLookup, TableArray } from './tables';
+import { getNamedMember, getNumberedMember, TableArray } from './tables';
 import builtins, { ARRAY_T, classify, globalFunctions, globalFunctionArgs, binarySymbolToName, unarySymbolToName } from './builtins';
 
 // Functions to translate into formulas into code to be evaluated
@@ -119,14 +119,6 @@ const expandLookupIndex = (term) => {
   return `globals.getNumberedMember(${expandedOn}, ${expandedIndex})`;
 };
 
-const expandIndexLookup = (term) => {
-  const indexLookup = expandExpr(term.indexLookup);
-  const on = expandExpr(term.on);
-  const keyCol = expandExpr(term.keyCol);
-  const lookupExpr = `globals.getIndexLookup(${keyCol}, ${indexLookup})`;
-  return `globals.getNumberedMember(${on}, ${lookupExpr})`;
-};
-
 const expandUnary = (term) => {
   const func = `globals.${unarySymbolToName[term.unary]}`;
   return `${func}(${expandExpr(term.on)})`;
@@ -154,7 +146,6 @@ const expandObject = (term) => {
 const expandExpr = (term) => {
   if (term.lookup) return expandLookup(term);
   if (term.lookupIndex) return expandLookupIndex(term);
-  if (term.indexLookup) return expandIndexLookup(term);
   if (term.ref) return expandRef(term);
   if (term.call) return expandCall(term);
   if (term.op) return term.op;
@@ -360,7 +351,6 @@ export const getCellValuesById = createSelector(
   (refs, refExpressions, sortedRefIds) => {
     const globals = {
       arrayValue,
-      getIndexLookup,
       getNamedMember,
       getNumberedMember,
       formulaRef,

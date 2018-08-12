@@ -3,7 +3,6 @@ export class TableArray {
     this.arr = rows;
     this.keys = null;
     this.memoizedCols = null;
-    this.memoizedIndex = null; // { value: index } when initialized
   }
 
   initKeys() {
@@ -27,37 +26,6 @@ export class TableArray {
     // array of undefined values -- no proper type checking.
     this.initKeys();
     return !!this.keys;
-  }
-
-  indexLookup(key) {
-    // table[colName: key]
-    if (typeof key === 'object') {
-      if (key.byName) throw new Error('Can\'t "find" objects in tables');
-      if (key.arr) {
-        const contents = key.arr.map((elem) => {
-          if (elem.error) return elem;
-          try {
-            return { value: this.indexLookup(elem.value) };
-          } catch (e) {
-            return { error: e.toString() };
-          }
-        });
-        return new TableArray(contents);
-      }
-    }
-    if (!this.memoizedIndex) {
-      const index = {};
-      this.arr.forEach((elem, i) => {
-        if (elem.error) return;
-        if (elem.value === null || typeof elem.value !== 'object') {
-          index[elem.value] = i;
-        }
-      });
-      this.memoizedIndex = index;
-    }
-    const ret = this.memoizedIndex[key];
-    if (ret === undefined) return null;
-    return ret;
   }
 
   getColumn(colName) {
@@ -124,11 +92,4 @@ export const getNumberedMember = (value, index) => {
     throw new Error(`Index ${index} out of bounds`);
   }
   throw new Error('Indexing[] not allowed on this value');
-};
-
-export const getIndexLookup = (maybeArr, key) => {
-  if (!(typeof maybeArr === 'object') || !maybeArr.arr) {
-    throw new Error('Must have an array to look things up on');
-  }
-  return maybeArr.indexLookup(key);
 };

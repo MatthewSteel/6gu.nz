@@ -224,22 +224,18 @@ export const rewriteRefTermToParentLookup = (
     return { lookupIndex: { value: ref.index }, on: { ref: ref.arrayId } };
   }
   if (ref.type === OBJECT_CELL) {
-    return { lookup: ref.name, lookupType: '.', on: { ref: ref.objectId } };
+    return { lookup: ref.name, on: { ref: ref.objectId } };
   }
   if (ref.type === TABLE_ROW) {
     return { lookupIndex: { value: ref.index }, on: { ref: ref.tableId } };
   }
   if (ref.type === TABLE_COLUMN || ref.type === COMPUTED_TABLE_COLUMN) {
-    return { lookup: ref.name, lookupType: '.', on: { ref: ref.tableId } };
+    return { lookup: ref.name, on: { ref: ref.tableId } };
   }
   if (ref.type === TABLE_CELL) {
     if (directionHint === TABLE_ROW) {
       const arrayParent = refsById[ref.arrayId];
-      return {
-        lookup: arrayParent.name,
-        lookupType: '.',
-        on: { ref: ref.objectId },
-      };
+      return { lookup: arrayParent.name, on: { ref: ref.objectId } };
     }
     const objectParent = refsById[ref.objectId];
     return {
@@ -250,7 +246,7 @@ export const rewriteRefTermToParentLookup = (
   if (![CELL, ARRAY, OBJECT, TABLE].includes(ref.type)) {
     throw new Error(`unknown parent type for ${ref.type}`);
   }
-  return { lookup: ref.name, lookupType: '.', on: { ref: ref.sheetId } };
+  return { lookup: ref.name, on: { ref: ref.sheetId } };
 };
 
 
@@ -377,8 +373,7 @@ export const translateExpr = (...fnArgs) => {
 
   const doLookup = (term, contextId) => {
     const on = doExpr(term.on, contextId);
-    const { lookup, lookupType } = term;
-    return f({ lookup, lookupType, on }, contextId, state);
+    return f({ ...term, on }, contextId, state);
   };
 
   const doLookupIndex = (term, contextId) => {
@@ -400,17 +395,9 @@ export const translateExpr = (...fnArgs) => {
     return f({ object }, contextId, state);
   };
 
-  const doIndexLookup = (term, contextId) => {
-    const indexLookup = doExpr(term.indexLookup, contextId);
-    const on = doExpr(term.on, contextId);
-    const keyCol = doExpr(term.keyCol, contextId);
-    return f({ indexLookup, on, keyCol }, contextId, state);
-  };
-
   const doExpr = (term, contextId) => {
     if (term.lookup) return doLookup(term, contextId);
     if ('lookupIndex' in term) return doLookupIndex(term, contextId);
-    if (term.indexLookup) return doIndexLookup(term, contextId);
     if (term.name || term.ref) return f(term, contextId, state);
     if ('value' in term || term.op) return f(term, contextId, state);
     if (term.call) return doCall(term, contextId);
@@ -481,7 +468,7 @@ export const refError = (refsById, term, contextId) => {
     }
     return { str: refErrorMessage(term.name) };
   }
-  if (term.lookupType === '.' && term.on.ref) {
+  if (term.lookup && term.on.ref) {
     // Unresolved lookups are bad on sheets and "static" objects, but fine
     // on computed cells etc.
     const ref = refsById[term.on.ref];

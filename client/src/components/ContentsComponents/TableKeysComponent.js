@@ -6,7 +6,7 @@ import CellSelectionComponent from '../CellComponent/CellSelectionComponent';
 import ContentsBaseComponent, { mapDispatchToProps } from './ContentsBaseComponent';
 import ColumnMenu from '../ContextMenu/ColumnMenu';
 
-import { getRefsById, refParentId, refsAtPosition } from '../../selectors/formulas/selectors';
+import { getRefsById, refsAtPosition } from '../../selectors/formulas/selectors';
 import scrollHelper from '../util/ScrollHelper';
 import { TABLE_COLUMN } from '../../redux/stateConstants';
 
@@ -76,7 +76,6 @@ class TableKeysComponent extends ContentsBaseComponent {
       viewOffsetX,
       viewOffsetY,
       outerViewHeight,
-      fkTables,
       writeForeignKey,
     } = this.props;
     const children = [];
@@ -120,19 +119,11 @@ class TableKeysComponent extends ContentsBaseComponent {
       const hasForeignKey = columns && columns[col]
         && columns[col].foreignKey;
       let clickExpr = { ref: contextId };
-      if (name) {
-        clickExpr = { lookup: name, lookupType: '.', on: { ref: contextId } };
-      }
+      if (name) clickExpr = { lookup: name, on: { ref: contextId } };
       if (columns && columns[col]) clickExpr = { ref: columns[col].id };
       if (hasForeignKey) {
-        clickExpr = {
-          lookupIndex: {
-            binary: '::',
-            left: { ref: columns[col].foreignKey },
-            right: { ref: columns[col].id },
-          },
-          on: { ref: fkTables[columns[col].foreignKey] },
-        };
+        const tableRef = { ref: contextId };
+        clickExpr = { binary: '->', left: clickExpr, right: tableRef };
       }
       children.push((
         <CellNameComponent
@@ -162,16 +153,7 @@ const mapStateToProps = (state, ownProps) => {
   const refsById = getRefsById(state);
   const context = refsById[ownProps.contextId];
   const { columns } = !context.formula && refsAtPosition(state)[ownProps.contextId];
-  const fkTables = {};
-  if (columns) {
-    columns.forEach((column) => {
-      const { foreignKey } = column;
-      if (foreignKey) {
-        fkTables[foreignKey] = refParentId(refsById[foreignKey]);
-      }
-    });
-  }
-  return { context, columns, fkTables };
+  return { context, columns };
 };
 
 export default connect(

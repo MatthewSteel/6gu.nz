@@ -59,12 +59,6 @@ describe('TableArray', () => {
       { value: 3 },
     ]);
     expect(table3.isTable()).toBe(false);
-
-    expect(table3.indexLookup(new TableArray([
-      { value: 2 }, { value: 2 }, { value: 1 }, { value: 4 },
-    ]))).toEqual(new TableArray([
-      { value: 1 }, { value: 1 }, { value: 0 }, { value: null },
-    ]));
   });
 });
 
