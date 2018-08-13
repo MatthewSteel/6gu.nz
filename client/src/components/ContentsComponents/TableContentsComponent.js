@@ -78,6 +78,8 @@ class TableContentsComponent extends ContentsBaseComponent {
       columns,
       contextId,
       foreignKeyTargets,
+      readOnly,
+      setCellFormula,
       tableData,
       viewSelected,
       viewHeight,
@@ -105,6 +107,7 @@ class TableContentsComponent extends ContentsBaseComponent {
         const worldRow = viewOffsetY + (row - scrollY) / 2;
         const clickLoc = `${row},${col}`;
         const columnName = tableData.keys[col];
+        let cellReadOnly = true;
         let clickExpr = { ref: contextId };
         if (columnName) {
           clickExpr = {
@@ -123,6 +126,7 @@ class TableContentsComponent extends ContentsBaseComponent {
             const right = { ref: foreignKeyTargets[cell.arrayId] };
             clickExpr = { binary: '->', left: clickExpr, right };
           }
+          cellReadOnly = readOnly;
         }
 
         // labels
@@ -156,6 +160,7 @@ class TableContentsComponent extends ContentsBaseComponent {
           <CellValueComponent
             {...geomProps}
             clickExpr={clickExpr}
+            setCellFormula={!cellReadOnly && setCellFormula}
             value={maybeCellData}
             setSelection={this.setViewSelection}
             key={`name-${col},${row}`}

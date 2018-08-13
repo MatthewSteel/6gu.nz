@@ -67,6 +67,8 @@ class ObjectContentsComponent extends ContentsBaseComponent {
     const {
       cells,
       contextId,
+      readOnly,
+      setCellFormula,
       tableData,
       viewSelected,
       viewWidth,
@@ -84,9 +86,13 @@ class ObjectContentsComponent extends ContentsBaseComponent {
       ++col
     ) {
       const colName = colNamesByIndex[col];
+      let cellReadOnly = true;
       let clickExpr = { ref: contextId };
       if (colName) clickExpr = { lookup: colName, on: { ref: contextId } };
-      if (cells && cells[col]) clickExpr = { ref: cells[col].id };
+      if (cells && cells[col]) {
+        clickExpr = { ref: cells[col].id };
+        cellReadOnly = readOnly;
+      }
 
       const worldCol = viewOffsetX + (col - scrollX);
 
@@ -140,6 +146,7 @@ class ObjectContentsComponent extends ContentsBaseComponent {
         <CellValueComponent
           {...geomProps}
           clickExpr={clickExpr}
+          setCellFormula={!cellReadOnly && setCellFormula}
           value={maybeValue}
           setSelection={this.setViewSelection}
           key={`cell-${col}`}
