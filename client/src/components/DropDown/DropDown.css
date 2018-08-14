@@ -4,14 +4,15 @@
 
 .DropDownMenu {
   position: absolute;
-  font-size: 0.8em;
   top: 100%;
   left: 0px;
-  width: 300px;
+  min-width: 200px;
   z-index: 10;
 }
 
-.Spacer {
+.DropDownLabel {
+  padding: 2px;
+  position: relative;
   flex-grow: 1;
 }
 
@@ -21,21 +22,17 @@
   color: #F8F8F8;
   display: flex;
   flex-direction: row;
-  margin: 1px 1px 0px 0px;
+  margin: 1px;
   text-align: left;
   background-color: #448;
   z-index: 11;
   min-height: 20px;
   padding: 2px;
   cursor: pointer;
-}
-.DropDownRow div {
-  display: flex;
-  flex-direction: row;
-  align-items: center;
+  position: relative;
 }
 
-.DropDownRow span.Unsaved {
+.DropDownUnsaved {
   font-style: italic;
 }
 

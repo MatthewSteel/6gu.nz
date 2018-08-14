@@ -2,43 +2,21 @@ import React, { Component } from 'react';
 import classNames from 'classnames';
 import FireWhenClickedOutside from '../util/FireWhenClickedOutside';
 import KeyboardListener from '../util/KeyboardListener';
+import EditableLabel from '../util/EditableLabel';
 import './DropDown.css';
 import copyIcon from './copyIcon.svg';
-
-const selectTarget = (ev) => {
-  ev.target.select();
-};
 
 class DropDownRow extends Component {
   constructor(props) {
     super(props);
-    this.reset = this.reset.bind(this);
-
     this.select = this.select.bind(this);
     this.copy = this.copy.bind(this);
 
     this.rename = this.rename.bind(this);
-    this.startRename = this.startRename.bind(this);
     this.delete = this.delete.bind(this);
     this.startDelete = this.startDelete.bind(this);
 
-    this.inputRef = null;
-    this.setInputRef = this.setInputRef.bind(this);
-
     this.state = { state: 'blank' };
-  }
-
-  setInputRef(ref) {
-    this.inputRef = ref;
-  }
-
-  reset() {
-    this.setState({ state: 'blank' });
-  }
-
-  startRename(ev) {
-    this.setState({ state: 'renaming' });
-    ev.stopPropagation();
   }
 
   startDelete(ev) {
@@ -51,12 +29,9 @@ class DropDownRow extends Component {
     selectItem(id);
   }
 
-  rename(ev) {
-    ev.preventDefault();
+  rename(name) {
     const { renameItem, id } = this.props;
-    const newName = this.inputRef.value;
-    renameItem(id, newName);
-    this.reset();
+    renameItem(id, name);
   }
 
   delete(ev) {
@@ -68,7 +43,6 @@ class DropDownRow extends Component {
   copy(ev) {
     const { copyItem, id } = this.props;
     copyItem(id);
-    this.reset();
     ev.stopPropagation();
   }
 
@@ -83,42 +57,16 @@ class DropDownRow extends Component {
       ? this.delete : this.startDelete;
     const rowClassName = classNames(
       'DropDownRow',
-      { DropDownHovered: highlight },
+      { DropDownHovered: highlight, DropDownUnsaved: unsaved },
     );
     return (
-      <div
-        className={rowClassName}
-        onClick={selected ? this.startRename : this.select}
-      >
-        <div>
-          {state === 'renaming' ? (
-            <form onSubmit={this.rename}>
-              <input
-                defaultValue={name}
-                autoFocus
-                onBlur={this.reset}
-                ref={this.setInputRef}
-                onFocus={selectTarget}
-              />
-            </form>
-          ) : (
-            <span className={classNames(unsaved && 'Unsaved')}>
-              {name}
-            </span>
-          )}
+      <div className={rowClassName} onClick={this.select}>
+        <div className={classNames('DropDownLabel')}>
+          {selected
+            ? <EditableLabel fn={this.rename} label={name} />
+            : <div className="FullSizeContents">{name}</div>
+          }
         </div>
-        <div className="Spacer" />
-        {this.props.renameItem && (
-          <button
-            className="DropDownButton"
-            type="button"
-            title="Rename"
-            onClick={this.startRename}
-            style={{ fontFamily: 'monospace' }}
-          >
-            I
-          </button>
-        )}
         {this.props.copyItem && (
           <button
             className="DropDownButton"
@@ -225,7 +173,7 @@ export default class DropDownMenu extends Component {
     // So let's consider the open/close button "inside" the menu :-).
     return (
       <FireWhenClickedOutside callback={this.closeMenu}>
-        <KeyboardListener callback={this.keys} priority={20} greedy />
+        <KeyboardListener callback={this.keys} priority={9} greedy />
         {ret}
       </FireWhenClickedOutside>
     );

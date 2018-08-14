@@ -1,6 +1,7 @@
 import React, { PureComponent } from 'react';
 import { connect } from 'react-redux';
-import ContextMenu, { NameMenuItem } from './ContextMenu';
+import ContextMenu, { MenuItem } from './ContextMenu';
+import EditableLabel from '../util/EditableLabel';
 import { unlexName } from '../../selectors/formulas/unparser';
 import { setFormula } from '../../redux/documentEditing';
 
@@ -22,9 +23,21 @@ class CreateMenu extends PureComponent {
     const { x, y } = this.props.selection;
     return (
       <ContextMenu title="New" x={x} y={y} width={1} height={1}>
-        <NameMenuItem contents="Table" fn={this.newTable} />
-        <NameMenuItem contents="Object" fn={this.newObject} />
-        <NameMenuItem contents="Array" fn={this.newArray} />
+        <MenuItem>
+          <div className="DropDownLabel">
+            <EditableLabel fn={this.newTable} label="Table" />
+          </div>
+        </MenuItem>
+        <MenuItem>
+          <div className="DropDownLabel">
+            <EditableLabel fn={this.newObject} label="Object" />
+          </div>
+        </MenuItem>
+        <MenuItem>
+          <div className="DropDownLabel">
+            <EditableLabel fn={this.newArray} label="Array" />
+          </div>
+        </MenuItem>
       </ContextMenu>
     );
   }
