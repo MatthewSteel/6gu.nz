@@ -11,9 +11,10 @@
   margin: 0px;
   padding: 0px;
   color: inherit;
+}
+.SingleLineInput {
   display: flex;
   align-items: center;
-  box-sizing: border-box;
 }
 .FullSizeContents::selection {
   background-color: #88CAFE;

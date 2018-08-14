@@ -62,10 +62,7 @@ class DropDownRow extends Component {
     return (
       <div className={rowClassName} onClick={this.select}>
         <div className={classNames('DropDownLabel')}>
-          {selected
-            ? <EditableLabel fn={this.rename} label={name} />
-            : <div className="FullSizeContents">{name}</div>
-          }
+          <EditableLabel fn={selected && this.rename} label={name} />
         </div>
         {this.props.copyItem && (
           <button

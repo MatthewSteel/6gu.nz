@@ -1,4 +1,5 @@
 import React, { Fragment, Component } from 'react';
+import classNames from 'classnames';
 
 import KeyboardListener from './KeyboardListener';
 import './EditableLabel.css';
@@ -34,9 +35,12 @@ export default class EditableLabel extends Component {
 
   keys(ev) {
     if (ev.key === 'Escape') this.reset();
+    const { multiline } = this.props;
+    if (multiline && ev.key === 'Enter' && !ev.shiftKey) this.submit(ev);
   }
 
   startEditing(ev) {
+    if (!this.props.fn) return;
     this.setState({ state: 'editing' });
     ev.stopPropagation();
   }
@@ -49,29 +53,38 @@ export default class EditableLabel extends Component {
   }
 
   render() {
-    const { label } = this.props;
+    const { label, multiline } = this.props;
     const { state, name } = this.state;
+    const className = classNames(
+      'FullSizeContents',
+      { SingleLineInput: !multiline },
+    );
 
     if (state !== 'editing') {
       return (
-        <div className="FullSizeContents" onClick={this.startEditing}>
+        <div className={className} onClick={this.startEditing}>
           {label}
         </div>
       );
     }
+    const formProps = {
+      className,
+      autoFocus: true,
+      onBlur: this.reset,
+      onChange: this.update,
+      onFocus: selectTarget,
+    };
+    const form = multiline
+      ? <textarea {...formProps}>{name}</textarea>
+      : (
+        <form onSubmit={this.submit}>
+          <input {...formProps} value={name} />
+        </form>
+      );
     return (
       <Fragment>
         <KeyboardListener callback={this.keys} priority={10} greedy />
-        <form onSubmit={this.submit}>
-          <input
-            className="FullSizeContents"
-            value={name}
-            autoFocus
-            onBlur={this.reset}
-            onChange={this.update}
-            onFocus={selectTarget}
-          />
-        </form>
+        {form}
       </Fragment>
     );
   }
