@@ -107,4 +107,18 @@ export const dropDownDocuments = createSelector(
   ],
 );
 
+const getRawSelection = state => state.selection;
+
+export const selectionSelector = createSelector(
+  getRefsById,
+  getRawSelection,
+  (refsById, rawSelection) => {
+    if (!rawSelection) return rawSelection;
+    const { cellId, context } = rawSelection;
+    if (cellId && !refsById[cellId]) return undefined;
+    if (context && !refsById[context]) return undefined;
+    return rawSelection;
+  },
+);
+
 export const formulaHasFocus = state => state.formulaFocus;

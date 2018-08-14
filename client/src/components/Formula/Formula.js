@@ -6,6 +6,7 @@ import equal from 'fast-deep-equal';
 import KeyboardListener, { FALL_THROUGH, CAPTURE } from '../util/KeyboardListener';
 import { getRefsById } from '../../selectors/formulas/selectors';
 import { unparseFormula } from '../../selectors/formulas/unparser';
+import { selectionSelector } from '../../selectors/uistate/uistate';
 import { deleteLoc, deleteThing, setFormula, updateForeignKey } from '../../redux/documentEditing';
 import { setFormulaFocus } from '../../redux/uistate';
 import {
@@ -459,7 +460,7 @@ class Formula extends Component {
 }
 
 const mapStateToProps = (state) => {
-  const { selection } = state;
+  const selection = selectionSelector(state);
   const selectedCellId = selection && selection.cellId;
   const formulaStrFromElem = elem => (
     formulaFromInput(inputFromDom(elem), state));
