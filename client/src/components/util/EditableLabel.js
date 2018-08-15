@@ -2,11 +2,14 @@ import React, { Fragment, Component } from 'react';
 import classNames from 'classnames';
 
 import KeyboardListener from './KeyboardListener';
+import FireWhenClickedOutside from './FireWhenClickedOutside';
 import './EditableLabel.css';
 
 const selectTarget = (ev) => {
   ev.target.select();
 };
+
+const defaultContents = ({ defaultName, label }) => defaultName || label;
 
 export default class EditableLabel extends Component {
   constructor(props) {
@@ -18,11 +21,13 @@ export default class EditableLabel extends Component {
     this.startEditing = this.startEditing.bind(this);
     this.update = this.update.bind(this);
 
-    this.state = { state: 'blank', name: this.defaultName(props) };
+    this.state = { state: 'blank', name: defaultContents(props) };
   }
 
-  defaultName(props) {
-    return props.defaultName || props.label;
+  componentDidUpdate(prevProps) {
+    if (defaultContents(prevProps) !== defaultContents(this.props)) {
+      this.reset();
+    }
   }
 
   update(ev) {
@@ -30,13 +35,11 @@ export default class EditableLabel extends Component {
   }
 
   reset() {
-    this.setState({ state: 'blank', name: this.defaultName(this.props) });
+    this.setState({ state: 'blank', name: defaultContents(this.props) });
   }
 
   keys(ev) {
     if (ev.key === 'Escape') this.reset();
-    const { multiline } = this.props;
-    if (multiline && ev.key === 'Enter' && !ev.shiftKey) this.submit(ev);
   }
 
   startEditing(ev) {
@@ -47,17 +50,20 @@ export default class EditableLabel extends Component {
 
   submit(ev) {
     ev.preventDefault();
+    const { type } = this.props;
     const { name } = this.state;
     this.reset();
-    this.props.fn(name);
+    let value = name;
+    if (type === 'number') value = (name === '') ? NaN : Number(name);
+    this.props.fn(value);
   }
 
   render() {
-    const { label, multiline } = this.props;
+    const { label, type, extraClasses } = this.props;
     const { state, name } = this.state;
     const className = classNames(
       'FullSizeContents',
-      { SingleLineInput: !multiline },
+      extraClasses,
     );
 
     if (state !== 'editing') {
@@ -67,24 +73,24 @@ export default class EditableLabel extends Component {
         </div>
       );
     }
-    const formProps = {
-      className,
-      autoFocus: true,
-      onBlur: this.reset,
-      onChange: this.update,
-      onFocus: selectTarget,
-    };
-    const form = multiline
-      ? <textarea {...formProps}>{name}</textarea>
-      : (
-        <form onSubmit={this.submit}>
-          <input {...formProps} value={name} />
-        </form>
-      );
+    const typeProps = (type === 'number')
+      ? { type: 'number', step: 'any' } : {};
     return (
       <Fragment>
         <KeyboardListener callback={this.keys} priority={10} greedy />
-        {form}
+        <FireWhenClickedOutside callback={this.reset}>
+          <form onSubmit={this.submit}>
+            <input
+              className={className}
+              autoFocus
+              onBlur={this.reset}
+              onChange={this.update}
+              onFocus={selectTarget}
+              value={name}
+              {...typeProps}
+            />
+          </form>
+        </FireWhenClickedOutside>
       </Fragment>
     );
   }

@@ -164,6 +164,7 @@ class TableContentsComponent extends ContentsBaseComponent {
             value={maybeCellData}
             setSelection={this.setViewSelection}
             key={`name-${col},${row}`}
+            writable={!cellReadOnly && cellSelected}
           />
         ) : (
           <EmptyCellComponent
@@ -171,6 +172,7 @@ class TableContentsComponent extends ContentsBaseComponent {
             clickExpr={clickExpr}
             setSelection={this.setViewSelection}
             key={`name-${col},${row}`}
+            writable={!cellReadOnly && cellSelected}
           />
         ));
       }

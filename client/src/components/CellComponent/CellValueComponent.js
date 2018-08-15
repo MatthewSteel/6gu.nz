@@ -1,27 +1,42 @@
 import React, { Component } from 'react';
 import classNames from 'classnames';
 import BaseCellComponent, { shouldCellComponentUpdate } from './BaseCellComponent';
+import EditableLabel from '../util/EditableLabel';
 import { getType } from '../../selectors/formulas/tables';
 import './CellComponent.css';
 
-const defaultFormatter = (value, pushStack, setCellValue) => {
-  if (typeof value === 'string') return value;
+const defaultFormatter = (value, pushStack, setCellValue, setCheckbox, writable) => {
+  if (typeof value === 'string') {
+    return (
+      <EditableLabel
+        label={value}
+        fn={writable ? setCellValue : undefined}
+        extraClasses="CenterContent"
+      />
+    );
+  }
   if (typeof value === 'number') {
-    const str = value.toString();
+    let str = value.toString();
     const afterDecimal = str.split('.')[1];
-    if (afterDecimal && afterDecimal.length > 6) {
-      return value.toFixed(6);
-    }
-    return str;
+    if (afterDecimal && afterDecimal.length > 6) str = value.toFixed(6);
+    return (
+      <EditableLabel
+        label={str}
+        fn={writable ? setCellValue : undefined}
+        type="number"
+        extraClasses="CenterContent"
+      />
+    );
   }
   if (typeof value === 'boolean') {
+    // "writable" is "selected and not readonly". Not relevant here.
     return (
       <input
         key={value}
         type="checkbox"
         checked={value}
         disabled={!setCellValue}
-        onChange={setCellValue}
+        onChange={setCheckbox}
       />
     );
   }
@@ -45,32 +60,39 @@ const defaultFormatter = (value, pushStack, setCellValue) => {
   return JSON.stringify(value);
 };
 
+
 export default class CellValueComponent extends Component {
   constructor(props) {
     super(props);
     this.pushStack = this.pushStack.bind(this);
-    this.setValue = props.setCellFormula
-      ? this.setValue.bind(this) : undefined;
+    this.setValue = this.setValue.bind(this);
+    this.setCheckbox = this.setCheckbox.bind(this);
   }
 
   getCellContents() {
-    const { pushViewStack, value } = this.props;
+    const { pushViewStack, value, writable } = this.props;
     if (!value) return { error: 'Value missing' }; // ???
     if (value.error) return { error: value.error };
     return {
       formattedValue: defaultFormatter(
         value.value,
         pushViewStack && this.pushStack,
-        this.setValue,
+        this.props.setCellFormula ? this.setValue : undefined,
+        this.props.setCellFormula ? this.setCheckbox : undefined,
+        writable,
       ),
       override: value.override,
     };
   }
 
-  setValue(ev) {
-    const value = ev.target.type === 'checkbox'
-      ? ev.target.checked // ev.target.value is always "on"... wtf
-      : ev.target.value;
+  setCheckbox(ev) {
+    ev.preventDefault();
+    return this.setValue(ev.target.checked);
+  }
+
+  setValue(value) {
+    if (Number.isNaN(value)) return;
+
     const { setCellFormula } = this.props;
     const { ref } = this.props.clickExpr;
     if (!ref) throw new Error('Trying to edit non-ref cell value...');

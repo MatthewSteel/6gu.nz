@@ -150,6 +150,7 @@ class ObjectContentsComponent extends ContentsBaseComponent {
           value={maybeValue}
           setSelection={this.setViewSelection}
           key={`cell-${col}`}
+          writable={!cellReadOnly && cellSelected}
         />
       ) : (
         <EmptyCellComponent
@@ -157,6 +158,7 @@ class ObjectContentsComponent extends ContentsBaseComponent {
           clickExpr={clickExpr}
           setSelection={this.setViewSelection}
           key={`cell-${col}`}
+          writable={!cellReadOnly && cellSelected}
         />
       ));
     }

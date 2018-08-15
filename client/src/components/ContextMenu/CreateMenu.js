@@ -25,17 +25,29 @@ class CreateMenu extends PureComponent {
       <ContextMenu title="New" x={x} y={y} width={1} height={1}>
         <MenuItem>
           <div className="DropDownLabel">
-            <EditableLabel fn={this.newTable} label="Table" />
+            <EditableLabel
+              fn={this.newTable}
+              label="Table"
+              extraClasses="SingleLineInput"
+            />
           </div>
         </MenuItem>
         <MenuItem>
           <div className="DropDownLabel">
-            <EditableLabel fn={this.newObject} label="Object" />
+            <EditableLabel
+              fn={this.newObject}
+              label="Object"
+              extraClasses="SingleLineInput"
+            />
           </div>
         </MenuItem>
         <MenuItem>
           <div className="DropDownLabel">
-            <EditableLabel fn={this.newArray} label="Array" />
+            <EditableLabel
+              fn={this.newArray}
+              label="Array"
+              extraClasses="SingleLineInput"
+            />
           </div>
         </MenuItem>
       </ContextMenu>

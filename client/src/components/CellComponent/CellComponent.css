@@ -6,6 +6,15 @@
   margin-bottom: -1px;
 }
 
+.CenterContent {
+  justify-content: center;
+  min-width: 0;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+  display: block;
+  overflow: hidden;
+}
+
 .CellName {
   color: #55C;
   font-family: "Trebuchet MS", "Lucida Grande", "Lucida Sans Unicode", "Lucida Sans", Tahoma, sans-serif;;
