@@ -25,25 +25,16 @@ class ColumnMenu extends PureComponent {
     const { foreignKey } = column;
     if (!foreignKey) {
       options.push(
-        <MenuItem
-          fn={this.writeFk}
-          key="WriteFK"
-        >
+        <MenuItem fn={this.writeFk} key="WriteFK">
           Create table reference
         </MenuItem>,
       );
     } else { // foreign key column exists
       options.push(
-        <MenuItem
-          fn={this.writeFk}
-          key="WriteFk"
-        >
+        <MenuItem fn={this.writeFk} key="WriteFk">
           Edit table reference
         </MenuItem>,
-        <MenuItem
-          fn={this.removeFk}
-          key="RmFk"
-        >
+        <MenuItem fn={this.removeFk} key="RmFk">
           Delete table reference
         </MenuItem>,
       );

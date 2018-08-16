@@ -8,6 +8,7 @@ import ColumnMenu from '../ContextMenu/ColumnMenu';
 
 import { foreignKeyClickTargets, getRefsById, refsAtPosition } from '../../selectors/formulas/selectors';
 import scrollHelper from '../util/ScrollHelper';
+import HoveredParent from '../util/HoveredParent';
 import { TABLE_COLUMN } from '../../redux/stateConstants';
 
 
@@ -105,17 +106,6 @@ class TableKeysComponent extends ContentsBaseComponent {
             selection={this.selectedCellId()}
           />
         ));
-        if (!readOnly && columns && columns[col]) {
-          children.push((
-            <ColumnMenu
-              column={columns[col]}
-              x={worldCol}
-              y={viewOffsetY}
-              writeForeignKey={writeForeignKey}
-              key="shut-up-react"
-            />
-          ));
-        }
       }
       const hasForeignKey = columns && columns[col]
         && columns[col].foreignKey;
@@ -126,7 +116,7 @@ class TableKeysComponent extends ContentsBaseComponent {
         const tableRef = { ref: foreignKeyTargets[columns[col].id] };
         clickExpr = { binary: '->', left: clickExpr, right: tableRef };
       }
-      children.push((
+      const child = (
         <CellNameComponent
           clickExpr={clickExpr}
           x={worldCol}
@@ -138,7 +128,22 @@ class TableKeysComponent extends ContentsBaseComponent {
           key={`name-${col}`}
           isLookup={hasForeignKey}
         />
-      ));
+      );
+      if (!readOnly && columns && columns[col]) {
+        children.push((
+          <HoveredParent key="asdf">
+            <ColumnMenu
+              column={columns[col]}
+              x={worldCol}
+              y={viewOffsetY}
+              writeForeignKey={writeForeignKey}
+            />
+            {child}
+          </HoveredParent>
+        ));
+      } else {
+        children.push(child); // haha
+      }
     }
 
     return (

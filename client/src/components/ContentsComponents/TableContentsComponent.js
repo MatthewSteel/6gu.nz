@@ -86,6 +86,7 @@ class TableContentsComponent extends ContentsBaseComponent {
       viewWidth,
       viewOffsetX,
       viewOffsetY,
+      writeLoc,
     } = this.props;
     const children = [];
     const { selY, selX } = this.localSelection();
@@ -172,7 +173,8 @@ class TableContentsComponent extends ContentsBaseComponent {
             clickExpr={clickExpr}
             setSelection={this.setViewSelection}
             key={`name-${col},${row}`}
-            writable={!cellReadOnly && cellSelected}
+            writable={!readOnly && cellSelected}
+            writeLocValue={writeLoc}
           />
         ));
       }
