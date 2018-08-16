@@ -5,13 +5,14 @@ import EditableLabel from '../util/EditableLabel';
 import { getType } from '../../selectors/formulas/tables';
 import './CellComponent.css';
 
-const defaultFormatter = (value, pushStack, setCellValue, setCheckbox, writable) => {
+const defaultFormatter = (value, pushStack, setCellValue, setCheckbox, writable, fkList) => {
   if (typeof value === 'string') {
     return (
       <EditableLabel
         label={value}
         fn={writable ? setCellValue : undefined}
         extraClasses="CenterContent"
+        fkList={fkList}
       />
     );
   }
@@ -70,7 +71,7 @@ export default class CellValueComponent extends Component {
   }
 
   getCellContents() {
-    const { pushViewStack, value, writable } = this.props;
+    const { pushViewStack, value, writable, fkList } = this.props;
     if (!value) return { error: 'Value missing' }; // ???
     if (value.error) return { error: value.error };
     return {
@@ -80,6 +81,7 @@ export default class CellValueComponent extends Component {
         this.props.setCellFormula ? this.setValue : undefined,
         this.props.setCellFormula ? this.setCheckbox : undefined,
         writable,
+        fkList,
       ),
       override: value.override,
     };
@@ -93,8 +95,8 @@ export default class CellValueComponent extends Component {
   setValue(value) {
     if (Number.isNaN(value)) return;
 
-    const { setCellFormula } = this.props;
-    const { ref } = this.props.clickExpr;
+    const { clickExpr, setCellFormula } = this.props;
+    const ref = clickExpr.binary === '->' ? clickExpr.left.ref : clickExpr.ref;
     if (!ref) throw new Error('Trying to edit non-ref cell value...');
     const selection = { cellId: ref, context: ref };
     if (!['boolean', 'string', 'number'].includes(typeof value)) {

@@ -110,6 +110,8 @@ class TableContentsComponent extends ContentsBaseComponent {
         const columnName = tableData.keys[col];
         let cellReadOnly = true;
         let clickExpr = { ref: contextId };
+        const fkList = columns && columns[col]
+          && columns[col].foreignKey || undefined;
         if (columnName) {
           clickExpr = {
             lookup: columnName,
@@ -166,6 +168,7 @@ class TableContentsComponent extends ContentsBaseComponent {
             setSelection={this.setViewSelection}
             key={`name-${col},${row}`}
             writable={!cellReadOnly && cellSelected}
+            fkList={fkList}
           />
         ) : (
           <EmptyCellComponent
@@ -175,6 +178,7 @@ class TableContentsComponent extends ContentsBaseComponent {
             key={`name-${col},${row}`}
             writable={!readOnly && cellSelected}
             writeLocValue={writeLoc}
+            fkList={fkList}
           />
         ));
       }

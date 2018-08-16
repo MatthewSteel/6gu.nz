@@ -511,3 +511,30 @@ export const createFunction = (callTerm, refExpressions) => {
   // eslint-disable-next-line no-new-func
   return Function('globals', ...argNames, functionDefinition);
 };
+
+export const columnIndexSuggestions = createSelector(
+  getRefs,
+  getCellValuesById,
+  (refs, cellValuesById) => {
+    const ret = [];
+    const targetColumnIds = new Set();
+    refs.forEach(({ foreignKey }) => {
+      if (foreignKey) targetColumnIds.add(foreignKey);
+    });
+    targetColumnIds.forEach((id) => {
+      const col = cellValuesById[id];
+      if (!(col.value instanceof TableArray)) return;
+
+      const items = [];
+      const { arr } = col.value;
+      const seenValues = new Set();
+      arr.slice(0, 200).forEach(({ value }) => {
+        if (typeof value !== 'string') return;
+        if (!seenValues.has(value)) items.push(value);
+        seenValues.add(value);
+      });
+      ret.push({ id, items });
+    });
+    return ret;
+  },
+);
