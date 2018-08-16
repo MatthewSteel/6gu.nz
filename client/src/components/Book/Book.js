@@ -12,6 +12,7 @@ import TitleBar, { PathElem } from './TitleBar';
 import DocumentMenu from '../DropDown/DocumentMenu';
 import SheetMenu from '../DropDown/SheetMenu';
 import Navigation from '../Navigation/Navigation';
+import Datalists from '../Datalists/Datalists';
 import './Book.css';
 
 const mapStateToProps = state => ({
@@ -128,6 +129,7 @@ class Book extends PureComponent {
     return (
       <div className="BookClass">
         <Navigation path={stringPathElems.join('')} />
+        <Datalists />
         <TitleBar
           pathElems={stackPathElems}
           setStackDepth={this.setStackDepth}

@@ -25,7 +25,7 @@ class EmptyCellComponent extends Component {
   }
 
   render() {
-    const { clickExpr, x, y, width, height, setSelection, writable } = this.props;
+    const { clickExpr, x, y, width, height, setSelection, writable, fkList } = this.props;
     return (
       <BaseCellComponent
         clickExpr={clickExpr}
@@ -36,7 +36,11 @@ class EmptyCellComponent extends Component {
         className="CellValue"
         setSelection={setSelection}
       >
-        <EditableLabel label="" fn={writable ? this.writeValue : undefined} />
+        <EditableLabel
+          label=""
+          fn={writable ? this.writeValue : undefined}
+          fkList={fkList}
+        />
       </BaseCellComponent>
     );
   }

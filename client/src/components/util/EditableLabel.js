@@ -60,7 +60,7 @@ export default class EditableLabel extends Component {
   }
 
   render() {
-    const { label, type, extraClasses } = this.props;
+    const { label, type, extraClasses, fkList } = this.props;
     const { state, name } = this.state;
     const className = classNames(
       'FullSizeContents',
@@ -88,6 +88,7 @@ export default class EditableLabel extends Component {
               onChange={this.update}
               onFocus={selectTarget}
               value={name}
+              list={fkList}
               {...typeProps}
             />
           </form>
