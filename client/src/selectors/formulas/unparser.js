@@ -42,6 +42,7 @@ export const unlexToken = state => (token) => {
   if (token.value) return JSON.stringify(token.value);
   const values = Object.values(token);
   if (values.length !== 1) {
+    // Just tokens like { op: '+' } and { whitespace: ' ' } etc.
     throw new Error(`Weird token ${JSON.stringify(token)}`);
   }
   return values[0];
@@ -171,7 +172,7 @@ export const unparseRefFormula = (ref, state) => {
 
   if (!ref.name) return tokens;
   return [
-    { name: unlexName(ref.name) },
+    { name: ref.name },
     { assignment: ':' },
     { whitespace: ' ' },
     ...tokens,
