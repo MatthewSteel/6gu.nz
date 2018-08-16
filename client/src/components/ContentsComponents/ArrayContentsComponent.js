@@ -61,6 +61,8 @@ class ArrayContentsComponent extends ContentsBaseComponent {
     const {
       cells,
       contextId,
+      readOnly,
+      setCellFormula,
       tableData,
       viewSelected,
       viewHeight,
@@ -80,9 +82,12 @@ class ArrayContentsComponent extends ContentsBaseComponent {
     ) {
       const worldRow = viewOffsetY + (row - scrollY) / 2;
 
-      const clickExpr = cells && cells[row]
-        ? { ref: cells[row].id }
-        : { lookupIndex: { value: row }, on: { ref: contextId } };
+      let cellReadOnly = true;
+      let clickExpr = { lookupIndex: { value: row }, on: { ref: contextId } };
+      if (cells && cells[row]) {
+        clickExpr = { ref: cells[row].id };
+        cellReadOnly = readOnly;
+      }
       // labels
       if (scrollX === 0) {
         const cellSelected = viewSelected && selX === 0 && selY === row;
@@ -137,9 +142,11 @@ class ArrayContentsComponent extends ContentsBaseComponent {
         <CellValueComponent
           {...geomProps}
           clickExpr={clickExpr}
+          setCellFormula={!cellReadOnly && setCellFormula}
           value={maybeValue}
           setSelection={this.setViewSelection}
           key={`cell-${row}`}
+          writable={!cellReadOnly && cellSelected}
         />
       ) : (
         <EmptyCellComponent
@@ -147,6 +154,7 @@ class ArrayContentsComponent extends ContentsBaseComponent {
           clickExpr={clickExpr}
           setSelection={this.setViewSelection}
           key={`cell-${row}`}
+          writable={!cellReadOnly && cellSelected}
         />
       ));
     }

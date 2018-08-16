@@ -26,23 +26,26 @@ class ColumnMenu extends PureComponent {
     if (!foreignKey) {
       options.push(
         <MenuItem
-          contents="Create table reference"
           fn={this.writeFk}
           key="WriteFK"
-        />,
+        >
+          Create table reference
+        </MenuItem>,
       );
     } else { // foreign key column exists
       options.push(
         <MenuItem
-          contents="Edit table reference"
           fn={this.writeFk}
           key="WriteFk"
-        />,
+        >
+          Edit table reference
+        </MenuItem>,
         <MenuItem
-          contents="Delete table reference"
           fn={this.removeFk}
           key="RmFk"
-        />,
+        >
+          Delete table reference
+        </MenuItem>,
       );
     }
     return (

@@ -105,6 +105,7 @@ class SheetContentsComponent extends ContentsBaseComponent {
       placedCellLocs,
       pushViewStack,
       readOnly,
+      setCellFormula,
       viewSelected,
       viewWidth,
       viewHeight,
@@ -212,6 +213,7 @@ class SheetContentsComponent extends ContentsBaseComponent {
           height={truncYLen}
           name={name}
           value={cellContents}
+          setCellFormula={!readOnly && setCellFormula}
           selected={cellSelected && selection}
           setSelection={this.setViewSelection}
           toggleElementSize={toggleElementSize}

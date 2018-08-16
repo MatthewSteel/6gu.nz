@@ -27,6 +27,7 @@ class SheetCellComponent extends PureComponent {
       name,
       x,
       y,
+      setCellFormula, // readOnly if not provided
       width,
       height,
       selected,
@@ -73,10 +74,12 @@ class SheetCellComponent extends PureComponent {
             y={y + 0.5}
             width={width}
             height={height - 0.5}
+            setCellFormula={setCellFormula}
             setSelection={setSelection}
             value={value}
             pushViewStack={pushViewStack}
             clickExpr={{ ref: id }}
+            writable={!!setCellFormula && selected}
           />
         </ResizeHandleComponent>
       </Fragment>

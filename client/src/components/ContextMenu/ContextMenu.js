@@ -1,19 +1,13 @@
 import React, { Component, Fragment } from 'react';
-import classNames from 'classnames';
 import TetherComponent from 'react-tether';
 import uuidv4 from 'uuid-v4';
 
-import KeyboardListener from '../util/KeyboardListener';
 import './ContextMenu.css';
-
-const selectTarget = (ev) => {
-  ev.target.select();
-};
 
 export class MenuItem extends Component {
   constructor(props) {
     super(props);
-    this.submit = this.submit.bind(this);
+    this.submit = this.props.fn ? this.submit.bind(this) : undefined;
   }
 
   submit(ev) {
@@ -24,79 +18,7 @@ export class MenuItem extends Component {
   render() {
     return (
       <div className="DropDownRow" onClick={this.submit}>
-        {this.props.contents}
-      </div>
-    );
-  }
-}
-
-export class NameMenuItem extends Component {
-  constructor(props) {
-    super(props);
-    this.reset = this.reset.bind(this);
-    this.keys = this.keys.bind(this);
-
-    this.submit = this.submit.bind(this);
-    this.startRename = this.startRename.bind(this);
-    this.setName = this.setName.bind(this);
-
-    this.state = { state: 'blank', name: props.contents };
-  }
-
-  setName(ev) {
-    this.setState({ name: ev.target.value });
-  }
-
-  reset() {
-    this.setState({ state: 'blank', name: this.props.contents });
-  }
-
-  keys(ev) {
-    if (ev.key === 'Escape') this.reset();
-  }
-
-  startRename(ev) {
-    this.setState({ state: 'renaming' });
-    ev.stopPropagation();
-  }
-
-  submit(ev) {
-    ev.preventDefault();
-    const name = this.state.name || this.props.contents;
-    this.props.fn(name);
-  }
-
-  render() {
-    const { state, name } = this.state;
-
-    const renaming = state === 'renaming';
-
-    const rowClassName = classNames(
-      'DropDownRow',
-      { DropDownHovered: renaming },
-    );
-    return (
-      <div
-        className={rowClassName}
-        onClick={this.startRename}
-      >
-        {renaming && (
-          <KeyboardListener callback={this.keys} priority={10} greedy />
-        )}
-        <div>
-          {state === 'renaming' ? (
-            <form onSubmit={this.submit}>
-              <input
-                defaultValue={name}
-                autoFocus
-                onBlur={this.reset}
-                onChange={this.setName}
-                onFocus={selectTarget}
-                size={12}
-              />
-            </form>
-          ) : name}
-        </div>
+        {this.props.children}
       </div>
     );
   }

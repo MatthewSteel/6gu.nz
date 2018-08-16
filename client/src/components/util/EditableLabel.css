@@ -1,0 +1,21 @@
+.FullSizeContents {
+  left: 0px;
+  right: 0px;
+  top: 0px;
+  bottom: 0px;
+  background-color: transparent;
+  border: none;
+  position: absolute;
+  outline: none;
+  font-size: inherit;
+  margin: 0px;
+  padding: 0px;
+  color: inherit;
+}
+.SingleLineInput {
+  display: flex;
+  align-items: center;
+}
+.FullSizeContents::selection {
+  background-color: #88CAFE;
+}
