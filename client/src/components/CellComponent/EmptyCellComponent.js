@@ -33,7 +33,7 @@ class EmptyCellComponent extends Component {
         y={y}
         width={width}
         height={height}
-        className="EmptyCell"
+        className="CellValue"
         setSelection={setSelection}
       >
         <EditableLabel label="" fn={writable ? this.writeValue : undefined} />

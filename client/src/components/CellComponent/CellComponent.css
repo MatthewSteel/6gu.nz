@@ -1,11 +1,3 @@
-.EmptyCell {
-  background-color: #FDFDFD;
-  position: relative;
-  border: 1px solid #EEE;
-  margin-right: -1px;
-  margin-bottom: -1px;
-}
-
 .CenterContent {
   justify-content: center;
   min-width: 0;
