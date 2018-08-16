@@ -69,6 +69,7 @@ class ArrayContentsComponent extends ContentsBaseComponent {
       viewWidth,
       viewOffsetX,
       viewOffsetY,
+      writeLoc,
     } = this.props;
     const children = [];
     const { selY, selX } = this.localSelection();
@@ -154,7 +155,8 @@ class ArrayContentsComponent extends ContentsBaseComponent {
           clickExpr={clickExpr}
           setSelection={this.setViewSelection}
           key={`cell-${row}`}
-          writable={!cellReadOnly && cellSelected}
+          writable={!readOnly && cellSelected}
+          writeLocValue={writeLoc}
         />
       ));
     }

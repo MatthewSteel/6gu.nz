@@ -2,8 +2,7 @@ import React, { PureComponent } from 'react';
 import { connect } from 'react-redux';
 import ContextMenu, { MenuItem } from './ContextMenu';
 import EditableLabel from '../util/EditableLabel';
-import { unlexName } from '../../selectors/formulas/unparser';
-import { setFormula } from '../../redux/documentEditing';
+import { writeSelection } from '../../redux/documentEditing';
 
 class CreateMenu extends PureComponent {
   constructor(props) {
@@ -14,13 +13,12 @@ class CreateMenu extends PureComponent {
   }
 
   newThing(str, name) {
-    const { selection, setFormulaProp } = this.props;
-    const formula = `${unlexName(name)}: ${str}`;
-    setFormulaProp(selection, formula);
+    const { setFormulaProp } = this.props;
+    setFormulaProp(name, str);
   }
 
   render() {
-    const { x, y } = this.props.selection;
+    const { x, y } = this.props;
     return (
       <ContextMenu title="New" x={x} y={y} width={1} height={1}>
         <MenuItem>
@@ -56,7 +54,7 @@ class CreateMenu extends PureComponent {
 }
 
 const mapDispatchToProps = dispatch => ({
-  setFormulaProp: (sel, str) => dispatch(setFormula(sel, str)),
+  setFormulaProp: (name, str) => dispatch(writeSelection(name, str)),
 });
 
 export default connect(null, mapDispatchToProps)(CreateMenu);

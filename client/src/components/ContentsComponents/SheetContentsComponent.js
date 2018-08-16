@@ -2,6 +2,7 @@ import React from 'react';
 import { connect } from 'react-redux';
 
 import KeyboardListener from '../util/KeyboardListener';
+import HoveredParent from '../util/HoveredParent';
 import scrollHelper from '../util/ScrollHelper';
 import SheetCellComponent from '../CellComponent/SheetCellComponent';
 import EmptyCellComponent from '../CellComponent/EmptyCellComponent';
@@ -117,6 +118,7 @@ class SheetContentsComponent extends ContentsBaseComponent {
       dragGeom,
       toggleElementSize,
       writeForeignKey,
+      writeLoc,
     } = this.props;
     const {
       scrollY,
@@ -247,9 +249,8 @@ class SheetContentsComponent extends ContentsBaseComponent {
               selection={selection}
             />
           ));
-          emptyCells.push((<CreateMenu key="menu" selection={selection} />));
         }
-        emptyCells.push((
+        const emptyCell = (
           <EmptyCellComponent
             key={`empty-${screenPlace}`}
             x={cx}
@@ -258,8 +259,20 @@ class SheetContentsComponent extends ContentsBaseComponent {
             height={1}
             selected={cellSelected}
             setSelection={this.setViewSelection}
+            writable={cellSelected && !readOnly}
+            writeLocValue={writeLoc}
           />
-        ));
+        );
+        if (cellSelected) {
+          emptyCells.push((
+            <HoveredParent key="menu">
+              <CreateMenu x={cx} y={cy} />
+              {emptyCell}
+            </HoveredParent>
+          ));
+        } else {
+          emptyCells.push(emptyCell);
+        }
       }
     }
 

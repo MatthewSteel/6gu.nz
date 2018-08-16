@@ -3,7 +3,7 @@ import equal from 'fast-deep-equal';
 import { CELL } from '../../redux/stateConstants';
 import { clampValue, clampOverlap, rangesOverlap, truncateOverlap } from '../../selectors/geom/geom';
 import { clearDrag, startDrag, updateDrag } from '../../redux/uistate';
-import { setFormula, moveThing, toggleMaximiseSheetElem, undo, redo } from '../../redux/documentEditing';
+import { setFormula, moveThing, toggleMaximiseSheetElem, undo, redo, writeSelection } from '../../redux/documentEditing';
 import '../CellComponent/CellComponent.css';
 
 // For moving the cursor out of a large cell
@@ -352,4 +352,5 @@ export const mapDispatchToProps = dispatch => ({
     dispatch(moveThing(cellId, sheetId, y, x, width, height))),
   setCellFormula: (sel, formula) => dispatch(setFormula(sel, formula)),
   toggleElementSize: refId => toggleMaximiseSheetElem(dispatch, refId),
+  writeLoc: (name, value) => dispatch(writeSelection(name, value)),
 });

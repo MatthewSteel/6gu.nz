@@ -12,10 +12,12 @@ import {
   translateExpr,
 } from '../selectors/formulas/selectors';
 import { copySheetContents, digMut } from '../selectors/algorithms/algorithms';
+import { selectionSelector } from '../selectors/uistate/uistate';
 import {
   parseFormula,
   translateLookups,
 } from '../selectors/formulas/parser';
+import { unlexName } from '../selectors/formulas/unparser';
 import { idealWidthAndHeight } from '../selectors/geom/dragGeom';
 import defaultCellName from '../selectors/formulas/defaultCellName';
 import { scheduleSave } from './backend';
@@ -45,6 +47,10 @@ export const createSheet = () => ({ type: 'CREATE_SHEET' });
 export const setFormula = (selection, formula) => ({
   type: 'SET_CELL_FORMULA',
   payload: { selection, formulaStr: formula },
+});
+
+export const writeSelection = (name, value) => ({
+  type: 'WRITE_SELECTION', payload: { name, value },
 });
 
 export const deleteThing = refId => ({
@@ -403,8 +409,18 @@ export const documentReducer = (state, action) => {
     );
   }
 
-  if (action.type === 'SET_CELL_FORMULA') {
-    const { selection, formulaStr } = action.payload;
+  if (['SET_CELL_FORMULA', 'WRITE_SELECTION'].includes(action.type)) {
+    let selection, formulaStr;
+    if (action.type === 'SET_CELL_FORMULA') {
+      ({ selection, formulaStr } = action.payload);
+    } else {
+      const { name, value } = action.payload;
+      if (!name && value === undefined) return state;
+      const formulaName = name ? unlexName(name) : '';
+      formulaStr = `${formulaName} : ${value}`;
+      selection = selectionSelector(state);
+      if (!selection) return state;
+    }
     const newFormula = parseFormula(formulaStr, selection.context, state);
 
     const contextRef = getRefsById(state)[selection.context];
