@@ -371,7 +371,7 @@ export const userStateReducer = (state, action) => {
 
   if (action.type === 'SAVE_COPY') {
     // Set open document and save it. Clear the undo/redo stacks.
-    return scheduleSave(replaceDoc(state, action.payload), false);
+    return scheduleSave(state, replaceDoc(state, action.payload), false);
   }
 
   if (action.type === 'RENAME_DOCUMENT') {
