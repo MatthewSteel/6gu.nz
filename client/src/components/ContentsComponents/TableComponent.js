@@ -89,6 +89,7 @@ class TableComponent extends ContentsBaseComponent {
       viewSelY,
       setViewSelection,
       writeForeignKey,
+      writeLoc,
     } = this.props;
     const { linkedScrollX, linkedScrollY } = this.state;
     const selectedCell = this.maybeSelectedCell();
@@ -144,6 +145,7 @@ class TableComponent extends ContentsBaseComponent {
             setSelection={this.setViewSelection}
             onDragStart={!readOnly && draggable && this.onNameDragStart}
             onDragEnd={clearDragProp}
+            renameFn={!readOnly && wholeTableSelected && writeLoc}
           />
           <TableContentsComponent
             {...commonChildProps}

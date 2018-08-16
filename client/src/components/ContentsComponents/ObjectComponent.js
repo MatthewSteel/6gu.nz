@@ -68,13 +68,15 @@ class ObjectComponent extends ContentsBaseComponent {
       viewSelY,
       setViewSelection,
       toggleElementSize,
+      writeLoc,
     } = this.props;
     const selectedCell = this.maybeSelectedCell();
     const contentsSelected = viewSelected && selectedCell.childSelected;
+    const nameSelected = viewSelected && !selectedCell.childSelected;
 
     return (
       <Fragment>
-        {viewSelected && !selectedCell.childSelected && (
+        {nameSelected && (
           <CellSelectionComponent
             x={viewOffsetX}
             y={viewOffsetY}
@@ -102,6 +104,7 @@ class ObjectComponent extends ContentsBaseComponent {
             setSelection={this.setViewSelection}
             onDragStart={!readOnly && draggable && this.onNameDragStart}
             onDragEnd={clearDragProp}
+            renameFn={!readOnly && nameSelected && writeLoc}
           />
           <ObjectContentsComponent
             ref={contentsSelected && this.setChildSelectionTableRef}

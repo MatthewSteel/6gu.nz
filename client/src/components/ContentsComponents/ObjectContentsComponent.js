@@ -121,6 +121,7 @@ class ObjectContentsComponent extends ContentsBaseComponent {
           name={colName}
           setSelection={this.setViewSelection}
           key={`name-${col}`}
+          renameFn={!readOnly && nameSelected && writeLoc}
         />
       ));
 
