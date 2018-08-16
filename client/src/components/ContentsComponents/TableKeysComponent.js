@@ -79,6 +79,7 @@ class TableKeysComponent extends ContentsBaseComponent {
       viewOffsetY,
       outerViewHeight,
       writeForeignKey,
+      writeLoc,
     } = this.props;
     const children = [];
     const { selX } = this.localSelection();
@@ -116,6 +117,7 @@ class TableKeysComponent extends ContentsBaseComponent {
         const tableRef = { ref: foreignKeyTargets[columns[col].id] };
         clickExpr = { binary: '->', left: clickExpr, right: tableRef };
       }
+      const key = `name-${col}`;
       const child = (
         <CellNameComponent
           clickExpr={clickExpr}
@@ -125,13 +127,14 @@ class TableKeysComponent extends ContentsBaseComponent {
           height={0.5}
           name={name}
           setSelection={this.setViewSelection}
-          key={`name-${col}`}
+          key={key}
           isLookup={hasForeignKey}
+          renameFn={!readOnly && nameSelected && writeLoc}
         />
       );
       if (!readOnly && columns && columns[col]) {
         children.push((
-          <HoveredParent key="asdf">
+          <HoveredParent key={key}>
             <ColumnMenu
               column={columns[col]}
               x={worldCol}

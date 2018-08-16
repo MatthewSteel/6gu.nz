@@ -417,7 +417,8 @@ export const documentReducer = (state, action) => {
       const { name, value } = action.payload;
       if (!name && value === undefined) return state;
       const formulaName = name ? unlexName(name) : '';
-      formulaStr = `${formulaName} : ${value}`;
+      const formulaValue = (value === undefined) ? '' : value;
+      formulaStr = `${formulaName} : ${formulaValue}`;
       selection = selectionSelector(state);
       if (!selection) return state;
     }

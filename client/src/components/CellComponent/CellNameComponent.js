@@ -1,5 +1,6 @@
 import React, { Component } from 'react';
 import BaseCellComponent, { shouldCellComponentUpdate } from './BaseCellComponent';
+import EditableLabel from '../util/EditableLabel';
 
 const lookupNameStyle = { fontStyle: 'italic' };
 const lookupText = name => [
@@ -8,8 +9,19 @@ const lookupText = name => [
 ];
 
 class CellNameComponent extends Component {
+  constructor(props) {
+    super(props);
+    this.rename = this.rename.bind(this);
+  }
+
   shouldComponentUpdate(nextProps) {
     return shouldCellComponentUpdate(this.props, nextProps);
+  }
+
+  rename(name) {
+    if (name === '') return;
+    const { renameFn } = this.props;
+    renameFn(name, undefined);
   }
 
   render() {
@@ -24,8 +36,8 @@ class CellNameComponent extends Component {
       onDragStart,
       onDragEnd,
       isLookup,
+      renameFn,
     } = this.props;
-    const contents = isLookup ? lookupText(name) : name;
     return (
       <BaseCellComponent
         clickExpr={clickExpr}
@@ -38,7 +50,11 @@ class CellNameComponent extends Component {
         onDragStart={onDragStart}
         onDragEnd={onDragEnd}
       >
-        {contents}
+        <EditableLabel
+          fn={renameFn ? this.rename : undefined}
+          label={isLookup ? lookupText(name) : name}
+          defaultName={name === undefined ? '' : name}
+        />
       </BaseCellComponent>
     );
   }

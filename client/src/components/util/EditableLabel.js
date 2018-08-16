@@ -9,7 +9,8 @@ const selectTarget = (ev) => {
   ev.target.select();
 };
 
-const defaultContents = ({ defaultName, label }) => defaultName || label;
+const defaultContents = ({ defaultName, label }) => (
+  defaultName === undefined ? label : defaultName);
 
 export default class EditableLabel extends Component {
   constructor(props) {

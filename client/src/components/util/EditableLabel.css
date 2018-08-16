@@ -12,6 +12,10 @@
   padding: 0px;
   color: inherit;
 }
+.CellTermSurround .FullSizeContents {
+  position: relative;
+}
+
 .SingleLineInput {
   display: flex;
   align-items: center;

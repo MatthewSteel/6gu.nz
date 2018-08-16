@@ -221,6 +221,7 @@ class SheetContentsComponent extends ContentsBaseComponent {
           toggleElementSize={toggleElementSize}
           startDragCallback={draggable ? this.startDragForRef : undefined}
           endDragCallback={draggable ? this.finishDrag : undefined}
+          writeLocValue={!readOnly && cellSelected && writeLoc}
         />
       );
     }).filter(Boolean);

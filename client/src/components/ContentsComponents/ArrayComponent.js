@@ -70,14 +70,16 @@ class ArrayComponent extends ContentsBaseComponent {
       viewSelX,
       viewSelY,
       setViewSelection,
+      writeLoc,
     } = this.props;
     const selectedCell = this.maybeSelectedCell();
     const contentsSelected = viewSelected && selectedCell.childSelected;
+    const nameSelected = viewSelected && !selectedCell.childSelected;
     const width = Math.min(viewWidth, 2);
 
     return (
       <Fragment>
-        {viewSelected && !selectedCell.childSelected && (
+        {nameSelected && (
           <CellSelectionComponent
             x={viewOffsetX}
             y={viewOffsetY}
@@ -105,6 +107,7 @@ class ArrayComponent extends ContentsBaseComponent {
             setSelection={this.setViewSelection}
             onDragStart={!readOnly && draggable && this.onNameDragStart}
             onDragEnd={clearDragProp}
+            renameFn={!readOnly && nameSelected && writeLoc}
           />
           <ArrayContentsComponent
             ref={contentsSelected && this.setChildSelectionTableRef}

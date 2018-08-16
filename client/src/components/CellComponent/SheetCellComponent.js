@@ -36,6 +36,7 @@ class SheetCellComponent extends PureComponent {
       startDragCallback,
       endDragCallback,
       toggleElementSize,
+      writeLocValue,
     } = this.props;
 
     return (
@@ -68,6 +69,7 @@ class SheetCellComponent extends PureComponent {
             setSelection={setSelection}
             onDragStart={startDragCallback && this.onNameDragStart}
             onDragEnd={endDragCallback}
+            renameFn={writeLocValue}
           />
           <CellValueComponent
             x={x}
