@@ -1,13 +1,5 @@
- - Put the lookup map onto the table object to memoize between calls.
-
 ## Display:
-  - Validate cells: If j lookup fails, italicise the key?
-
-
- Later (because "ugh, editing actions"):
-  - Datalist rendered in the header,
-  - Drop-down in the cell itself,
-
+  - Validate cells: If a lookup fails, italicise the key?
 
 - Long formula columns extend the table (bug),
 - Fancy relational stuff? One-to-many relationships, editing etc?
