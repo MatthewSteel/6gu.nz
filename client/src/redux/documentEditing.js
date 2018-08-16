@@ -501,6 +501,7 @@ export const documentReducer = (state, action) => {
 
     const refToDelete = getChildrenOfRef(state, contextId)
       .find(({ type, index }) => index === indexToDelete && type === typeToDelete);
+    if (!refToDelete) return state;
     const idsToDelete = refToDelete
       ? transitiveChildren(state, refToDelete.id)
       : new Set();

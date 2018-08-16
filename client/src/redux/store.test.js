@@ -274,6 +274,13 @@ describe('actions/the store', () => {
       TABLE_ROW,
     ]);
 
+    // "dummy row" delete
+    const numCellsBefore = getCells(store.getState()).length;
+    store.dispatch(deleteLoc(table.id, TABLE_ROW, 1));
+    const numCellsAfter = getCells(store.getState()).length;
+    expect(numCellsBefore).toBe(numCellsAfter);
+
+    // Delete everything, should clean up orphaned children
     store.dispatch(deleteThing(table.id));
     expect(getCells(store.getState())).toEqual([]);
   });
