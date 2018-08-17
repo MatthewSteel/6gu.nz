@@ -110,8 +110,8 @@ class TableContentsComponent extends ContentsBaseComponent {
         const columnName = tableData.keys[col];
         let cellReadOnly = true;
         let clickExpr = { ref: contextId };
-        const fkList = columns && columns[col]
-          && columns[col].foreignKey || undefined;
+        const fkList = (columns && columns[col] && columns[col].foreignKey)
+          || undefined;
         if (columnName) {
           clickExpr = {
             lookup: columnName,
