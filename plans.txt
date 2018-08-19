@@ -1,3 +1,12 @@
+Simple clipboard -- paste from Google sheets, CSV, JSON.
+Stop flicker on sheet rename,
+Browse into things, "deep complex objects",
+Each, array-indexing, call semantics changes.
+Table display -- get rid of the array component?
+  "If everything in view is an object"?
+  Or "If everything in view has the same keys"?
+
+
 ## Display:
   - Validate cells: If a lookup fails, italicise the key?
 
@@ -160,9 +169,6 @@ Possible projects after/during MVP work:
    - shift/ctrl + click could also make an array, or add to one :-)
    - Maybe "drag to select, makes an array. Hit 'tab' to turn it into an object/table". Seems reasonable?
    - "Make it an array" in the formula, or in the sheet, though?
- - Row/column headers (or scroll indicators of some other kind.)
-    - Simple fake scroll bars, maybe?
-    - Just shadows?
  - keyboard scrolling -- [shift or ctrl]+down scrolls current viewport?
  - Better sheet select, scratch-space,
  - Rethought book layout, maybe pop-over preview.
@@ -190,58 +196,7 @@ Helpful if we can edit whole-list/obj/table formulas too, so converting an array
     Or some "truncated" policy.
 
 
----------------
-[obj][ a ][ b ]
-[ 0 ][val][val]
----------------
-[ 1 ][...][...]
-[ 2 ][...][...]
----------------
-
-
-I think we can let the user come up with primary keys. Names could be helpful, though...
-  - Maybe maps/filters etc can have names in them?
-  - References can be mapped onto the table, not global.
-  - `While` tables can just have numbers, or not be named?
-
-Also: we may want to support polymorphic arr["property"] and arr[i].
-
-Can we select cols like `friends[[age, name]]` to get partial structs (or partial transpose-structs)?
-  Maybe `friends[{age, name}]`? What is `{age, name}` though...
-    They are "children by name, in the relative namespace of `friends`".
-    That's nice.
-
-    Should we merge lookup and lookupIndex? (Well, we have to display them differently...)
-      We could call `.name` and `.index` something like `.key` instead?
-
-
-Start shitty and upgrade it - for us and the user.
-That means:
-  - Let them import CSVs and "get to work" on them. Lookups, aggregates.
-  - Let them "tidy" the data model up. Define cross-relationships for simpler formulas.
-    - No, actually, I don't like this. How do you script some GTFS processing like this? Too much manual work. We don't want to be a fancy Excel, remember? AirTable have this problem too...
-    - Maybe it's actually just a property of the table, then?
-      Or maybe the user can script a transform from CSV -> "nice" table?
-      Sure, that's doable.
-
-
 Now, things about "dragging a cell down" etc... Auto-fills and so on. Are they just "fancy value input", or do they create formulas?
-
-
-OK, I like the idea of making relational tables out of flat input.
-  Should it just be a property of the table? "Do one-many on this col?"
-  Dunno.
-  Can we punt on this? How necessary is it to get this right right now?
-
-Hmm, maybe we should have two kinds of tables -- value tables and "view" tables. Then computed columns are kinda "easy". Not too usable, though...
-
-Do we face problems with recursion? Two-way data?
-  Say we want to have a `.friends` relation.
-    `a.friends.age` gives a list of ages.
-    `a.friends.friends` is a circular reference problem, maybe?
-      Actually, probably not. We can probably `flatten(a.friends.friends)`.
-      _We_ need to come after friends, and _we_ need to come after friends?
-      Yes. We can do a transitive closure! Hooray!
 
 You can augment tables, to whatever you want with them, operate on them like values, _but_, we give good, useful ways to do "better" data transformations, and let the user build tools for their own use.
 
@@ -251,11 +206,7 @@ Selection: In formulas it can make a list (of names), in the sheet it can make a
 
 I wonder -- what do users use "paste values" for?
 
-Ugh, I suspect "data tables" will be dense with formulas, unless we can impose some structure.
-  - "Value columns and formula columns" maybe?
-  - "adjacent tables/arays of the same height scroll together"?
-
-Maybe adding and removing columns copies the table?
+"adjacent tables/arays of the same height scroll together"?
 
 Maybe we have "series" tables and "data" tables.
 
@@ -294,14 +245,14 @@ Things they are used for:
  - Series data with calculations,
    - Pure series calculations after t=0,
  - Matrices
- - Drawing pictures :-/
+ - Drawing pictures :-)
 
 Time-series tends to go left-to-right? Hmm. Well, whatever, new habits.
   - Bad attitude.
 
 We could make it easy to copy, and maybe fix up references if the users wants to "copy, transform and hide the old one"?
   - Like a what-if...
-    `=restOfTheData(table1=table1(col1 = table1.col1 + 1))`
+    `restOfTheData(table1: table1(col1: table1.col1 + 1))`
 
 I like the idea of taking a table and adding rows to the bottom and columns to the right. Has to be user-friendly, though.
   Colour-coding based on insertion order? Re-ordering possible?
