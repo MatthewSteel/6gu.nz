@@ -1,3 +1,7 @@
+## Is there a demo?
+
+Yes! Watch it here: https://www.youtube.com/watch?v=qGOIt0xh0dw
+
 ## Code layout
 
 # /client
